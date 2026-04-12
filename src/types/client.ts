@@ -5,7 +5,7 @@ export interface Client {
   phone: string | null;
   address: string | null;
   document: string | null;
-  type: 'PF' | 'PJ';
+  type: "PF" | "PJ";
   notes: string;
   created_at: string;
 }
@@ -14,7 +14,7 @@ export interface ICustomer {
   idCustomers: string;
   name: string;
   document: string;
-  type: 'individual' | 'company';
+  type: "individual" | "company";
   email?: string;
   phone?: string;
   birthDate?: string;

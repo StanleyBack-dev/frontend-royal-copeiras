@@ -1,5 +1,3 @@
-
-
 export default function Debts() {
   // ...lógica de dados...
   return (

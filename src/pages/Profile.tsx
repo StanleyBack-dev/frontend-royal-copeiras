@@ -1,5 +1,3 @@
-
-
 export default function Profile() {
   // ...lógica de dados...
   return (

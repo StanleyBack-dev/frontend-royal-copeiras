@@ -1,5 +1,3 @@
-
-
 export default function Settings() {
   const [checked, setChecked] = useState(false);
   return (
