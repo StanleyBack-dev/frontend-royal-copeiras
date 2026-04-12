@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Sidebar from './components/organisms/Sidebar';
 import Header from './components/organisms/Header';
 import Dashboard from './pages/Dashboard';
-import Clients from './pages/Clients';
+import Customers from './pages/Customers';
 import Events from './pages/Events';
 import Finance from './pages/Finance';
 import Debts from './pages/Debts';
@@ -16,7 +16,7 @@ export default function App() {
 
   const views: Record<ActiveView, React.ReactNode> = {
     dashboard: <Dashboard />,
-    clients: <Clients />,
+    clients: <Customers />,
     events: <Events />,
     finances: <Finance />,
     debts: <Debts />,

@@ -1,30 +1,27 @@
-// Organism: ClientsTable
+// Organism: CustomersTable
 
-import type { ICustomer } from '../../../types/client';
+import type { Customer } from '../../../api/customers/types';
 import { User, Building2, Phone, Mail, Pencil, Trash2 } from 'lucide-react';
 import Table from '@atoms/Table';
 import Button from '@atoms/Button';
 
-interface ClientsTableProps {
-  clients: ICustomer[];
-  onEdit: (customer: ICustomer) => void;
+export interface CustomersTableProps {
+  clients: Customer[];
+  onEdit: (customer: Customer) => void;
   onRemove: (id: string) => void;
-  // search, setSearch, openCreate removidos: filtro e botão ficam na página
 }
-
-// import { Search } from 'lucide-react';
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
   return date.toLocaleDateString('pt-BR');
 }
 
-export function ClientsTable({ clients, onEdit, onRemove }: ClientsTableProps) {
+export default function CustomersTable({ clients, onEdit, onRemove }: CustomersTableProps) {
   const columns = [
     {
       key: 'name',
       label: 'Cliente',
-      render: (customer: ICustomer) => (
+      render: (customer: Customer) => (
         <div className="flex items-center gap-3">
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
@@ -41,14 +38,14 @@ export function ClientsTable({ clients, onEdit, onRemove }: ClientsTableProps) {
     {
       key: 'document',
       label: 'Documento',
-      render: (customer: ICustomer) => (
+      render: (customer: Customer) => (
         <span className="text-xs" style={{ color: '#9a7060' }}>{customer.document}</span>
       ),
     },
     {
       key: 'type',
       label: 'Tipo',
-      render: (customer: ICustomer) => (
+      render: (customer: Customer) => (
         <span
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
           style={
@@ -65,7 +62,7 @@ export function ClientsTable({ clients, onEdit, onRemove }: ClientsTableProps) {
     {
       key: 'contact',
       label: 'Contato',
-      render: (customer: ICustomer) => (
+      render: (customer: Customer) => (
         <div className="space-y-0.5">
           {customer.email && (
             <div className="flex items-center gap-1.5 text-xs" style={{ color: '#7a4430' }}>
@@ -85,16 +82,16 @@ export function ClientsTable({ clients, onEdit, onRemove }: ClientsTableProps) {
     {
       key: 'createdAt',
       label: 'Cadastro',
-      render: (customer: ICustomer) => (
+      render: (customer: Customer) => (
         <span className="text-xs" style={{ color: '#9a7060' }}>
-          {formatDate(typeof customer.createdAt === 'string' ? customer.createdAt : String(customer.createdAt))}
+          {formatDate(customer.createdAt)}
         </span>
       ),
     },
     {
       key: 'actions',
       label: '',
-      render: (customer: ICustomer) => (
+      render: (customer: Customer) => (
         <div className="flex items-center gap-2 justify-end">
           <Button
             size="sm"
@@ -120,7 +117,6 @@ export function ClientsTable({ clients, onEdit, onRemove }: ClientsTableProps) {
       columns={columns}
       data={clients}
       rowKey={row => row.idCustomers}
-      emptyMessage="Nenhum cliente encontrado"
     />
   );
 }

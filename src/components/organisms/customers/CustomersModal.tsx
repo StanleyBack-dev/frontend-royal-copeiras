@@ -1,4 +1,4 @@
-// Organism: ClientsModal
+// Organism: CustomersModal
 
 import React from 'react';
 import { X } from 'lucide-react';
@@ -9,8 +9,7 @@ import Button from '@atoms/Button';
 import type { ICustomer } from '../../../types/client';
 import { useState } from 'react';
 
-
-interface ClientsModalProps {
+interface CustomersModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (form: Omit<ICustomer, 'idCustomers' | 'createdAt' | 'updatedAt'>) => void;
@@ -19,10 +18,9 @@ interface ClientsModalProps {
   initialForm: Omit<ICustomer, 'idCustomers' | 'createdAt' | 'updatedAt'>;
 }
 
-export default function ClientsModal({ open, onClose, onSave, saving, editing, initialForm }: ClientsModalProps) {
+export default function CustomersModal({ open, onClose, onSave, saving, editing, initialForm }: CustomersModalProps) {
   const [form, setForm] = useState(initialForm);
 
-  // Atualiza o form se o cliente em edição mudar
   React.useEffect(() => {
     setForm(initialForm);
   }, [initialForm]);
