@@ -83,8 +83,12 @@ export default function CustomersModal({
       try {
         await onSave(data);
         notify('Cliente salvo com sucesso!', 'success');
-      } catch (err: any) {
-        notify(err?.message || 'Erro ao salvar cliente', 'error');
+      } catch (err: unknown) {
+        let message = 'Erro ao salvar cliente';
+        if (err && typeof err === 'object' && 'message' in err && typeof (err as any).message === 'string') {
+          message = (err as { message: string }).message;
+        }
+        notify(message, 'error');
       }
     }
   }
