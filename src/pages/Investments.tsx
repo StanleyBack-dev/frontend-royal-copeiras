@@ -1,5 +1,3 @@
-
-
 export default function Investments() {
   // ...lógica de dados...
   return (

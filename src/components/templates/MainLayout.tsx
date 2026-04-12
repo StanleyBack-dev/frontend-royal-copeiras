@@ -1,7 +1,7 @@
 // Template: MainLayout
-import Sidebar from '../organisms/Sidebar';
-import Header from '../organisms/Header';
-import type { ActiveView } from '../../types/views';
+import Sidebar from "../organisms/Sidebar";
+import Header from "../organisms/Header";
+import type { ActiveView } from "../../types/views";
 
 interface MainLayoutProps {
   activeView: ActiveView;
@@ -9,7 +9,11 @@ interface MainLayoutProps {
   children: React.ReactNode;
 }
 
-export default function MainLayout({ activeView, onNavigate, children }: MainLayoutProps) {
+export default function MainLayout({
+  activeView,
+  onNavigate,
+  children,
+}: MainLayoutProps) {
   return (
     <div className="flex min-h-screen">
       <Sidebar active={activeView} onNavigate={onNavigate} />

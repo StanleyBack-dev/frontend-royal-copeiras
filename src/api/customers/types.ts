@@ -2,7 +2,7 @@ export interface Customer {
   idCustomers: string;
   name: string;
   document: string;
-  type: 'individual' | 'company';
+  type: "individual" | "company";
   email?: string;
   phone?: string;
   birthDate?: string;
@@ -15,7 +15,7 @@ export interface Customer {
 export interface CreateCustomerPayload {
   name: string;
   document: string;
-  type: 'individual' | 'company';
+  type: "individual" | "company";
   email?: string;
   phone?: string;
   birthDate?: string;

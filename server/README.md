@@ -8,6 +8,7 @@ BFF em JavaScript puro (ESM)
   npm start
 
 Estrutura:
+
 - src/config/env.js: configuração de ambiente
 - src/app.js: configuração do express
 - src/index.js: entrypoint

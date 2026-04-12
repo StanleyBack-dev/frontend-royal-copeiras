@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { config } from '../../../../config/env.js';
+import axios from "axios";
+import { config } from "../../../../config/env.js";
 
 export class GetCustomersService {
   async findAll(userId, input = {}) {
@@ -22,13 +22,13 @@ export class GetCustomersService {
     `;
     const variables = { input };
     const headers = {
-      'x-user-id': userId,
-      'Authorization': `Bearer ${userId}`
+      "x-user-id": userId,
+      Authorization: `Bearer ${userId}`,
     };
     const response = await axios.post(
       config.backendGraphqlUrl,
       { query, variables },
-      { headers }
+      { headers },
     );
     return response.data.data.getCustomers;
   }

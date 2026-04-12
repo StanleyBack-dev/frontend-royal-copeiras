@@ -1,4 +1,4 @@
-import { Client } from './client';
+import { Client } from "./client";
 
 export interface Event {
   id: string;
@@ -6,8 +6,14 @@ export interface Event {
   title: string;
   date: string;
   location: string;
-  type: 'Casamento' | 'Corporativo' | 'Aniversário' | 'Confraternização' | 'Evento' | 'Outro';
-  status: 'Agendado' | 'Em andamento' | 'Concluído' | 'Cancelado';
+  type:
+    | "Casamento"
+    | "Corporativo"
+    | "Aniversário"
+    | "Confraternização"
+    | "Evento"
+    | "Outro";
+  status: "Agendado" | "Em andamento" | "Concluído" | "Cancelado";
   staff_count: number;
   value: number;
   notes: string;

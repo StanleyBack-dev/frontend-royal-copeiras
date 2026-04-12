@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
-          "ignoreDeprecations": "6.0",
-        "baseUrl": "./src",
-        "paths": {
-          "@/*": ["*"],
-          "@atoms/*": ["components/atoms/*"],
-          "@molecules/*": ["components/molecules/*"],
-          "@organisms/*": ["components/organisms/*"],
-          "@pages/*": ["pages/*"],
-          "@types/*": ["types/*"],
-          "@lib/*": ["lib/*"]
-        },
+    "ignoreDeprecations": "6.0",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@atoms/*": ["components/atoms/*"],
+      "@molecules/*": ["components/molecules/*"],
+      "@organisms/*": ["components/organisms/*"],
+      "@pages/*": ["pages/*"],
+      "@types/*": ["types/*"],
+      "@lib/*": ["lib/*"]
+    },
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],

@@ -1,5 +1,3 @@
-
-
 export default function Finance() {
   // ...lógica de dados...
   return (

@@ -1,5 +1,3 @@
-
-
 export default function Events() {
   // ...lógica de dados...
   return (
