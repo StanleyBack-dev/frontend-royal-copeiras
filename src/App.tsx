@@ -10,6 +10,7 @@ import Investments from "./pages/Investments";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import { ActiveView } from "./types/views";
+import { NotificationProvider } from "./components/notifications/NotificationProvider";
 
 export default function App() {
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
@@ -26,13 +27,14 @@ export default function App() {
   };
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#faf6f2" }}>
-      <Sidebar active={activeView} onNavigate={setActiveView} />
-
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header activeView={activeView} />
-        <main className="flex-1 p-8 overflow-auto">{views[activeView]}</main>
+    <NotificationProvider>
+      <div className="flex min-h-screen" style={{ background: "#faf6f2" }}>
+        <Sidebar active={activeView} onNavigate={setActiveView} />
+        <div className="flex-1 flex flex-col min-w-0">
+          <Header activeView={activeView} />
+          <main className="flex-1 p-8 overflow-auto">{views[activeView]}</main>
+        </div>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }
