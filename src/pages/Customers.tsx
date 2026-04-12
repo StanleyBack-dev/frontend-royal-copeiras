@@ -69,7 +69,6 @@ export default function Customers() {
   async function save(
     formData: Omit<Customer, "idCustomers" | "createdAt" | "updatedAt">,
   ) {
-    if (!formData.name.trim()) return;
     setSaving(true);
     try {
       if (editing) {
