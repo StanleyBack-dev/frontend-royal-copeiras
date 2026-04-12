@@ -8,9 +8,15 @@ import Textarea from "@atoms/Textarea";
 import Button from "@atoms/Button";
 import type { ICustomer } from "../../../types/client";
 import { useState } from "react";
-import { customerSchema } from '../../../validation/customer';
-import { useNotification } from '../../notifications/NotificationProvider';
-import { formatCPF, formatCNPJ, onlyDigits, formatPhone, formatLandline } from '../../../utils/format';
+import { customerSchema } from "../../../validation/customer";
+import { useNotification } from "../../notifications/NotificationProvider";
+import {
+  formatCPF,
+  formatCNPJ,
+  onlyDigits,
+  formatPhone,
+  formatLandline,
+} from "../../../utils/format";
 
 interface CustomersModalProps {
   open: boolean;
@@ -33,28 +39,28 @@ export default function CustomersModal({
 }: CustomersModalProps) {
   const [form, setForm] = useState(() => ({
     ...initialForm,
-    cpf: '',
-    cnpj: '',
+    cpf: "",
+    cnpj: "",
   }));
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [phoneType, setPhoneType] = useState<'cell' | 'landline'>('cell');
+  const [phoneType, setPhoneType] = useState<"cell" | "landline">("cell");
   const { notify } = useNotification();
 
   React.useEffect(() => {
     setForm({
       ...initialForm,
-      cpf: '',
-      cnpj: '',
+      cpf: "",
+      cnpj: "",
     });
     setErrors({});
-    setPhoneType('cell');
+    setPhoneType("cell");
   }, [initialForm]);
 
   function validate(formData: typeof form) {
     // Garante que só o campo correto de documento será validado
     const data = { ...formData };
-    if (data.type === 'individual') data.cnpj = '';
-    if (data.type === 'company') data.cpf = '';
+    if (data.type === "individual") data.cnpj = "";
+    if (data.type === "company") data.cpf = "";
     const result = customerSchema.safeParse(data);
     if (result.success) {
       setErrors({});
@@ -62,7 +68,10 @@ export default function CustomersModal({
     } else {
       const fieldErrors: Record<string, string> = {};
       result.error.issues.forEach((err) => {
-        const key = typeof err.path[0] === 'symbol' ? String(err.path[0]) : (err.path[0] as string | number);
+        const key =
+          typeof err.path[0] === "symbol"
+            ? String(err.path[0])
+            : (err.path[0] as string | number);
         if (key !== undefined) fieldErrors[String(key)] = err.message;
       });
       setErrors(fieldErrors);
@@ -74,29 +83,29 @@ export default function CustomersModal({
     e.preventDefault();
     // Só envia o campo correto de documento
     const data = { ...form };
-    if (data.type === 'individual') {
+    if (data.type === "individual") {
       data.document = data.cpf;
-    } else if (data.type === 'company') {
+    } else if (data.type === "company") {
       data.document = data.cnpj;
     }
     if (validate(data)) {
       try {
         await onSave(data);
-        notify('Cliente salvo com sucesso!', 'success');
+        notify("Cliente salvo com sucesso!", "success");
       } catch (err: unknown) {
-        let message = 'Erro ao salvar cliente';
+        let message = "Erro ao salvar cliente";
         function hasMessage(e: unknown): e is { message: string } {
           return (
-            typeof e === 'object' &&
+            typeof e === "object" &&
             e !== null &&
-            'message' in e &&
-            typeof (e as { message: unknown }).message === 'string'
+            "message" in e &&
+            typeof (e as { message: unknown }).message === "string"
           );
         }
         if (hasMessage(err)) {
           message = err.message;
         }
-        notify(message, 'error');
+        notify(message, "error");
       }
     }
   }
@@ -123,10 +132,7 @@ export default function CustomersModal({
             <X size={20} />
           </Button>
         </div>
-        <form
-          className="px-6 py-5 space-y-4"
-          onSubmit={handleSubmit}
-        >
+        <form className="px-6 py-5 space-y-4" onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <Input
@@ -155,36 +161,36 @@ export default function CustomersModal({
               </Select>
             </div>
             {/* Tipo de documento dinâmico */}
-            {form.type === 'individual' && (
+            {form.type === "individual" && (
               <div>
                 <Input
                   label="CPF *"
-                  value={formatCPF(form.cpf || '')}
-                  onChange={e => {
+                  value={formatCPF(form.cpf || "")}
+                  onChange={(e) => {
                     const raw = onlyDigits(e.target.value, 11);
                     setForm({ ...form, cpf: raw });
                   }}
                   placeholder="000.000.000-00"
                   error={errors.cpf}
                   maxLength={14}
-                  disabled={form.type !== 'individual'}
+                  disabled={form.type !== "individual"}
                   inputMode="numeric"
                 />
               </div>
             )}
-            {form.type === 'company' && (
+            {form.type === "company" && (
               <div>
                 <Input
                   label="CNPJ *"
-                  value={formatCNPJ(form.cnpj || '')}
-                  onChange={e => {
+                  value={formatCNPJ(form.cnpj || "")}
+                  onChange={(e) => {
                     const raw = onlyDigits(e.target.value, 14);
                     setForm({ ...form, cnpj: raw });
                   }}
                   placeholder="00.000.000/0000-00"
                   error={errors.cnpj}
                   maxLength={18}
-                  disabled={form.type !== 'company'}
+                  disabled={form.type !== "company"}
                   inputMode="numeric"
                 />
               </div>
@@ -228,7 +234,9 @@ export default function CustomersModal({
                 <Select
                   label="Tipo de Telefone"
                   value={phoneType}
-                  onChange={e => setPhoneType(e.target.value as 'cell' | 'landline')}
+                  onChange={(e) =>
+                    setPhoneType(e.target.value as "cell" | "landline")
+                  }
                   style={{ marginBottom: 8 }}
                 >
                   <option value="cell">Celular</option>
@@ -237,15 +245,26 @@ export default function CustomersModal({
               </div>
               <div>
                 <Input
-                  label={phoneType === 'cell' ? 'Celular' : 'Telefone Fixo'}
-                  value={form.phone ? (phoneType === 'cell' ? formatPhone(form.phone) : formatLandline(form.phone)) : ''}
-                  onChange={e => {
-                    const raw = onlyDigits(e.target.value, phoneType === 'cell' ? 11 : 10);
+                  label={phoneType === "cell" ? "Celular" : "Telefone Fixo"}
+                  value={
+                    form.phone
+                      ? phoneType === "cell"
+                        ? formatPhone(form.phone)
+                        : formatLandline(form.phone)
+                      : ""
+                  }
+                  onChange={(e) => {
+                    const raw = onlyDigits(
+                      e.target.value,
+                      phoneType === "cell" ? 11 : 10,
+                    );
                     setForm({ ...form, phone: raw });
                   }}
-                  placeholder={phoneType === 'cell' ? '(11) 91234-5678' : '(11) 2345-6789'}
+                  placeholder={
+                    phoneType === "cell" ? "(11) 91234-5678" : "(11) 2345-6789"
+                  }
                   error={errors.phone}
-                  maxLength={phoneType === 'cell' ? 15 : 14}
+                  maxLength={phoneType === "cell" ? 15 : 14}
                   inputMode="numeric"
                 />
               </div>

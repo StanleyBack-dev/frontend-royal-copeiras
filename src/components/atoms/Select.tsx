@@ -11,7 +11,14 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   (
-    { label, labelClassName = "", wrapperClassName = "", children, error, ...props },
+    {
+      label,
+      labelClassName = "",
+      wrapperClassName = "",
+      children,
+      error,
+      ...props
+    },
     ref,
   ) => (
     <div className={wrapperClassName}>
@@ -26,18 +33,16 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       <select
         ref={ref}
         {...props}
-        className={`w-full px-3 py-2.5 rounded-lg text-sm border outline-none ${props.className || ""} ${error ? 'border-red-500' : ''}`}
+        className={`w-full px-3 py-2.5 rounded-lg text-sm border outline-none ${props.className || ""} ${error ? "border-red-500" : ""}`}
         style={{
-          borderColor: error ? '#e53e3e' : '#e8d5c9',
+          borderColor: error ? "#e53e3e" : "#e8d5c9",
           color: "#2C1810",
           ...(props.style || {}),
         }}
       >
         {children}
       </select>
-      {error && (
-        <div className="text-xs text-red-600 mt-1">{error}</div>
-      )}
+      {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
     </div>
   ),
 );
