@@ -1,6 +1,6 @@
-// Molecule: SettingRow
 import React from "react";
 import Toggle from "../atoms/Toggle";
+import { colors, typography } from "../../config";
 
 interface SettingRowProps {
   label: string;
@@ -22,13 +22,13 @@ export default function SettingRow({
   return (
     <div
       className="flex items-center justify-between py-4 border-b last:border-0"
-      style={{ borderColor: "#e8d5c9" }}
+      style={{ borderColor: colors.brown[100] }}
     >
       <div>
-        <p className="text-sm font-medium" style={{ color: "#2C1810" }}>
+        <p className="text-sm font-medium" style={{ color: colors.brown[800], fontFamily: typography.fontFamily }}>
           {label}
         </p>
-        <p className="text-xs mt-0.5" style={{ color: "#9a7060" }}>
+        <p className="text-xs mt-0.5" style={{ color: colors.brown[300], fontFamily: typography.fontFamily }}>
           {description}
         </p>
       </div>

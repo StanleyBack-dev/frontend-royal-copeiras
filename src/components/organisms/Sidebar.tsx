@@ -1,5 +1,5 @@
-// Organism: Sidebar
 import React from "react";
+import { colors, typography } from "../../config";
 import {
   LayoutDashboard,
   Users,
@@ -45,21 +45,21 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
   return (
     <aside
       className="w-64 min-h-screen flex flex-col"
-      style={{ background: "#2C1810" }}
+      style={{ background: colors.brown[800] }}
     >
-      <div className="px-6 py-8 border-b" style={{ borderColor: "#3D2314" }}>
+      <div className="px-6 py-8 border-b" style={{ borderColor: colors.brown[500] }}>
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #C9A227, #a8811a)" }}
+            style={{ background: `linear-gradient(135deg, ${colors.gold[500]}, ${colors.gold[600]})` }}
           >
             <Crown size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="text-white font-bold text-sm leading-tight tracking-wide">
+            <h1 className="text-white font-bold text-sm leading-tight tracking-wide" style={{ fontFamily: typography.fontFamily }}>
               ROYAL
             </h1>
-            <p className="text-xs tracking-widest" style={{ color: "#C9A227" }}>
+            <p className="text-xs tracking-widest" style={{ color: colors.gold[500], fontFamily: typography.fontFamily }}>
               COPEIRAS
             </p>
           </div>
@@ -69,7 +69,7 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
       <nav className="flex-1 px-3 py-6 space-y-1">
         <p
           className="text-xs font-semibold uppercase tracking-widest px-3 mb-4"
-          style={{ color: "#7a6050" }}
+          style={{ color: colors.brown[500], fontFamily: typography.fontFamily }}
         >
           Menu Principal
         </p>

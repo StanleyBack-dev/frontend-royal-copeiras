@@ -1,4 +1,5 @@
 import React, { LabelHTMLAttributes } from "react";
+import { colors, typography } from "../../config";
 
 interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
   children: React.ReactNode;
@@ -13,7 +14,7 @@ export default function Label({
   return (
     <label
       className={`text-xs font-semibold uppercase tracking-wide mb-1 block ${className}`}
-      style={{ color: "#7a4430" }}
+      style={{ color: colors.brown[500], fontFamily: typography.fontFamily }}
       {...props}
     >
       {children}

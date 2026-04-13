@@ -1,5 +1,6 @@
 // Atom: Toggle
 import React, { ButtonHTMLAttributes } from "react";
+import { colors } from "../../config";
 
 interface ToggleProps extends Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -17,7 +18,7 @@ const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
       aria-pressed={checked}
       onClick={() => onChange(!checked)}
       className="relative w-11 h-6 rounded-full transition-all duration-200 focus:outline-none"
-      style={{ background: checked ? "#C9A227" : "#e8d5c9" }}
+      style={{ background: checked ? colors.gold[500] : colors.brown[100] }}
       {...props}
     >
       <span
