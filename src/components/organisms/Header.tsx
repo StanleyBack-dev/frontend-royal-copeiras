@@ -1,4 +1,3 @@
-// Organism: Header
 import { Bell, Search } from "lucide-react";
 import PageHeader from "@atoms/PageHeader";
 import SearchBar from "@atoms/SearchBar";

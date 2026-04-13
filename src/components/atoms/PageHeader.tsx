@@ -1,4 +1,5 @@
 import React from "react";
+import { colors, typography } from "../../config";
 
 interface PageHeaderProps {
   title: string;
@@ -16,14 +17,14 @@ export default function PageHeader({
   return (
     <header
       className={`flex items-center justify-between py-4 px-6 border-b bg-white ${className}`}
-      style={{ borderColor: "#e8d5c9" }}
+      style={{ borderColor: colors.brown[100], background: colors.white }}
     >
       <div>
-        <h2 className="text-lg font-bold" style={{ color: "#2C1810" }}>
+        <h2 className="text-lg font-bold" style={{ color: colors.brown[800], fontFamily: typography.fontFamily }}>
           {title}
         </h2>
         {subtitle && (
-          <p className="text-xs" style={{ color: "#9a7060" }}>
+          <p className="text-xs" style={{ color: colors.brown[300], fontFamily: typography.fontFamily }}>
             {subtitle}
           </p>
         )}

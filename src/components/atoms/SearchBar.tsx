@@ -1,4 +1,5 @@
 import React, { InputHTMLAttributes } from "react";
+import { colors, typography, radii } from "../../config";
 
 interface SearchBarProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -21,8 +22,8 @@ export default function SearchBar({
 }: SearchBarProps) {
   return (
     <div
-      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border ${className}`}
-      style={{ background: "#fff", borderColor: "#e8d5c9" }}
+      className={`flex items-center gap-2 px-4 py-2.5 border ${className}`}
+      style={{ background: colors.white, borderColor: colors.brown[100], borderRadius: radii.md }}
     >
       {icon}
       <input
@@ -31,7 +32,7 @@ export default function SearchBar({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="outline-none text-sm bg-transparent w-56"
-        style={{ color: "#2C1810" }}
+        style={{ color: colors.brown[800], fontFamily: typography.fontFamily }}
         {...props}
       />
     </div>

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import CustomersTable from "../components/organisms/customers/CustomersTable";
-import CustomersModal from "../components/organisms/customers/CustomersModal";
-import CustomersFilterBar from "../components/molecules/CustomersFilterBar";
+import DataTable, { DataTableColumn } from "../components/organisms/DataTable";
+import ModalForm from "../components/organisms/ModalForm";
+import FilterBar from "../components/molecules/FilterBar";
+import { Plus, Search } from "lucide-react";
+import { colors } from "../config";
 import type { Customer } from "../api/customers/types";
 import { getCustomers } from "../api/customers/methods/get";
 import { createCustomer } from "../api/customers/methods/create";
@@ -99,12 +101,46 @@ export default function Customers() {
       )
     : [];
 
+  const columns: DataTableColumn<Customer>[] = [
+    {
+      key: "name",
+      label: "Nome",
+      render: (c) => <span style={{ color: colors.brown[800], fontWeight: 600 }}>{c.name}</span>,
+    },
+    {
+      key: "document",
+      label: "Documento",
+    },
+    {
+      key: "type",
+      label: "Tipo",
+      render: (c) => c.type === "company" ? "Empresa" : "Pessoa Física",
+    },
+    {
+      key: "email",
+      label: "Email",
+    },
+    {
+      key: "phone",
+      label: "Telefone",
+    },
+    {
+      key: "isActive",
+      label: "Ativo",
+      render: (c) => c.isActive ? "Sim" : "Não",
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      <CustomersFilterBar
+      <FilterBar
         search={search}
         setSearch={setSearch}
-        onCreate={openCreate}
+        onAction={openCreate}
+        actionLabel="Novo Cliente"
+        placeholder="Buscar clientes..."
+        icon={<Search size={16} style={{ color: colors.brown[300] }} />}
+        leftIcon={<Plus size={16} />}
       />
       {loading ? (
         <div className="flex items-center justify-center h-64">
@@ -114,20 +150,23 @@ export default function Customers() {
           />
         </div>
       ) : (
-        <CustomersTable
-          clients={filtered}
+        <DataTable<Customer>
+          data={filtered}
+          columns={columns}
           onEdit={openEdit}
-          onRemove={remove}
+          onRemove={(c) => remove(c.idCustomers)}
+          getId={(c) => c.idCustomers}
         />
       )}
-      <CustomersModal
+      <ModalForm
         open={showModal}
+        title={editing ? "Editar Cliente" : "Novo Cliente"}
         onClose={() => setShowModal(false)}
-        onSave={save}
+        onSave={() => save(form)}
         saving={saving}
-        editing={editing}
-        initialForm={form}
-      />
+      >
+        <></>
+      </ModalForm>
     </div>
   );
 }

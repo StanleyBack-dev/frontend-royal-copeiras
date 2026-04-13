@@ -1,5 +1,5 @@
-// Molecule: StatCard
 import React from "react";
+import { colors, typography, radii } from "../../config";
 
 interface StatCardProps {
   icon?: React.ReactNode;
@@ -16,17 +16,17 @@ export default function StatCard({
   label,
   value,
   sub,
-  color = "#C9A227",
+  color = colors.gold[500],
   children,
   className = "",
 }: StatCardProps) {
   return (
     <div
       className={`bg-white rounded-xl p-6 shadow-sm border ${className}`}
-      style={{ borderColor: "#e8d5c9" }}
+      style={{ borderColor: colors.brown[100], borderRadius: radii.lg }}
     >
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-medium" style={{ color: "#7a4430" }}>
+        <p className="text-sm font-medium" style={{ color: colors.brown[500], fontFamily: typography.fontFamily }}>
           {label}
         </p>
         {icon && (
@@ -38,11 +38,11 @@ export default function StatCard({
           </div>
         )}
       </div>
-      <p className="text-2xl font-bold mb-1" style={{ color: "#2C1810" }}>
+      <p className="text-2xl font-bold mb-1" style={{ color: colors.brown[800], fontFamily: typography.fontFamily }}>
         {value}
       </p>
       {sub && (
-        <p className="text-xs" style={{ color: "#9a7060" }}>
+        <p className="text-xs" style={{ color: colors.brown[300], fontFamily: typography.fontFamily }}>
           {sub}
         </p>
       )}
