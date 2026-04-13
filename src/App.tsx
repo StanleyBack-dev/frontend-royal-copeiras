@@ -18,6 +18,8 @@ export default function App() {
   const views: Record<ActiveView, React.ReactNode> = {
     dashboard: <Dashboard />,
     clients: <Customers />,
+    employees: <div>Em breve: Funcionários</div>,
+    users: <div>Em breve: Usuários</div>,
     events: <Events />,
     finances: <Finance />,
     debts: <Debts />,
