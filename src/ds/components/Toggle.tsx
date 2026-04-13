@@ -1,5 +1,5 @@
-import React from 'react';
-import { colors } from '../tokens/index';
+import React from "react";
+import { colors } from "../tokens/index";
 
 export interface ToggleProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -15,8 +15,10 @@ export const Toggle = React.forwardRef<HTMLInputElement, ToggleProps>(
         style={{ background: colors.brown[100] }}
         {...props}
       />
-      <span className="text-xs" style={{ color: colors.brown[800] }}>{label}</span>
+      <span className="text-xs" style={{ color: colors.brown[800] }}>
+        {label}
+      </span>
     </label>
   ),
 );
-Toggle.displayName = 'Toggle';
+Toggle.displayName = "Toggle";

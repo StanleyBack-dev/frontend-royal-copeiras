@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 // import { typography } from '../tokens/index';
 
 export interface SearchBarProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -13,9 +13,9 @@ export const SearchBar = React.forwardRef<HTMLInputElement, SearchBarProps>(
         ref={ref}
         {...props}
         className="bg-transparent outline-none text-[#7a4430] text-sm flex-1"
-          // style={{ fontFamily: typography.fontFamily }}
+        // style={{ fontFamily: typography.fontFamily }}
       />
     </div>
   ),
 );
-SearchBar.displayName = 'SearchBar';
+SearchBar.displayName = "SearchBar";

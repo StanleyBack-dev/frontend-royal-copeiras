@@ -1,5 +1,5 @@
-import React from 'react';
-import { colors } from '../tokens/index';
+import React from "react";
+import { colors } from "../tokens/index";
 
 export interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
   children: React.ReactNode;
@@ -17,4 +17,4 @@ export const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
     </label>
   ),
 );
-Label.displayName = 'Label';
+Label.displayName = "Label";

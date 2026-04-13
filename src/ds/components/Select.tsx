@@ -1,5 +1,5 @@
-import React from 'react';
-import { colors } from '../tokens/index';
+import React from "react";
+import { colors } from "../tokens/index";
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
@@ -21,11 +21,11 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       <select
         ref={ref}
         {...props}
-        className={`w-full px-3 py-2.5 rounded-lg text-sm border outline-none ${error ? 'border-red-500' : ''}`}
+        className={`w-full px-3 py-2.5 rounded-lg text-sm border outline-none ${error ? "border-red-500" : ""}`}
         style={{
-          borderColor: error ? '#e53e3e' : colors.brown[100],
+          borderColor: error ? "#e53e3e" : colors.brown[100],
           color: colors.brown[800],
-            // fontFamily: typography.fontFamily,
+          // fontFamily: typography.fontFamily,
         }}
       >
         {children}
@@ -34,4 +34,4 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     </div>
   ),
 );
-Select.displayName = 'Select';
+Select.displayName = "Select";

@@ -1,5 +1,5 @@
-import React from 'react';
-import { colors } from '../tokens/index';
+import React from "react";
+import { colors } from "../tokens/index";
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -23,10 +23,10 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         style={{
           borderColor: colors.brown[100],
           color: colors.brown[800],
-            // fontFamily: typography.fontFamily,
+          // fontFamily: typography.fontFamily,
         }}
       />
     </div>
   ),
 );
-Textarea.displayName = 'Textarea';
+Textarea.displayName = "Textarea";
