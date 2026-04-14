@@ -3,30 +3,14 @@ import BellIcon from "../atoms/icons/BellIcon";
 import PageHeader from "@atoms/PageHeader";
 import SearchBar from "@atoms/SearchBar";
 import Button from "@atoms/Button";
-import DashboardIcon from "../atoms/icons/DashboardIcon";
-import ClientsIcon from "../atoms/icons/ClientsIcon";
-import EmployeesIcon from "../atoms/icons/EmployeesIcon";
-import UsersIcon from "../atoms/icons/UsersIcon";
-import EventsIcon from "../atoms/icons/EventsIcon";
-import FinancesIcon from "../atoms/icons/FinancesIcon";
-import DebtsIcon from "../atoms/icons/DebtsIcon";
-import InvestmentsIcon from "../atoms/icons/InvestmentsIcon";
-import ProfileIcon from "../atoms/icons/ProfileIcon";
-import SettingsIcon from "../atoms/icons/SettingsIcon";
 import { useState } from "react";
 
-const viewTitles: Record<string, { title: string; subtitle: string }> = {
-  dashboard: { title: "Painel Geral", subtitle: "Visão geral da empresa" },
-  clients: { title: "Clientes", subtitle: "Gerenciar clientes" },
-  events: { title: "Eventos", subtitle: "Agenda e histórico de eventos" },
-  finances: { title: "Finanças", subtitle: "Controle financeiro" },
-  debts: { title: "Dívidas", subtitle: "Contas a pagar e receber" },
-  investments: { title: "Investimentos", subtitle: "Gestão de investimentos" },
-  profile: { title: "Perfil", subtitle: "Informações da empresa" },
-  settings: { title: "Configurações", subtitle: "Preferências do sistema" },
-};
-
 import type { ActiveView } from "../../types/views";
+import {
+  primaryNavigationItems,
+  secondaryNavigationItems,
+  viewTitles,
+} from "../../router/navigation";
 
 interface HeaderProps {
   activeView: ActiveView;
@@ -38,32 +22,12 @@ interface HeaderProps {
 }
 
 export default function Header({ activeView, onNavigate }: HeaderProps) {
-  const info = viewTitles[activeView] || { title: "Painel", subtitle: "" };
+  const info = viewTitles[activeView as keyof typeof viewTitles] || {
+    title: "Painel",
+    subtitle: "",
+  };
   const [search, setSearch] = useState("");
-  const sidebarItems = [
-    { id: "dashboard", label: "Painel", icon: <DashboardIcon size={16} /> },
-    { id: "clients", label: "Clientes", icon: <ClientsIcon size={16} /> },
-    {
-      id: "employees",
-      label: "Funcionários",
-      icon: <EmployeesIcon size={16} />,
-    },
-    { id: "users", label: "Usuários", icon: <UsersIcon size={16} /> },
-    { id: "events", label: "Eventos", icon: <EventsIcon size={16} /> },
-    { id: "finances", label: "Finanças", icon: <FinancesIcon size={16} /> },
-    { id: "debts", label: "Dívidas", icon: <DebtsIcon size={16} /> },
-    {
-      id: "investments",
-      label: "Investimentos",
-      icon: <InvestmentsIcon size={16} />,
-    },
-    { id: "profile", label: "Perfil", icon: <ProfileIcon size={16} /> },
-    {
-      id: "settings",
-      label: "Configurações",
-      icon: <SettingsIcon size={16} />,
-    },
-  ];
+  const sidebarItems = [...primaryNavigationItems, ...secondaryNavigationItems];
   const filtered =
     search.length > 0
       ? sidebarItems.filter((item) =>

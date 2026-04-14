@@ -1,44 +1,11 @@
-import React from "react";
 import { colors, typography } from "../../config";
-import DashboardIcon from "../atoms/icons/DashboardIcon";
-import ClientsIcon from "../atoms/icons/ClientsIcon";
-import EmployeesIcon from "../atoms/icons/EmployeesIcon";
-import UsersIcon from "../atoms/icons/UsersIcon";
-import EventsIcon from "../atoms/icons/EventsIcon";
-import FinancesIcon from "../atoms/icons/FinancesIcon";
-import DebtsIcon from "../atoms/icons/DebtsIcon";
-import InvestmentsIcon from "../atoms/icons/InvestmentsIcon";
-import ProfileIcon from "../atoms/icons/ProfileIcon";
-import SettingsIcon from "../atoms/icons/SettingsIcon";
 import CrownIcon from "../atoms/icons/CrownIcon";
 import { ChevronRight } from "lucide-react";
 import type { ActiveView } from "../../types/views";
-
-interface NavItem {
-  id: ActiveView;
-  label: string;
-  icon: React.ReactNode;
-}
-
-const navItems: NavItem[] = [
-  { id: "dashboard", label: "Painel", icon: <DashboardIcon size={20} /> },
-  { id: "clients", label: "Clientes", icon: <ClientsIcon size={20} /> },
-  { id: "employees", label: "Funcionários", icon: <EmployeesIcon size={20} /> },
-  { id: "users", label: "Usuários", icon: <UsersIcon size={20} /> },
-  { id: "events", label: "Eventos", icon: <EventsIcon size={20} /> },
-  { id: "finances", label: "Finanças", icon: <FinancesIcon size={20} /> },
-  { id: "debts", label: "Dívidas", icon: <DebtsIcon size={20} /> },
-  {
-    id: "investments",
-    label: "Investimentos",
-    icon: <InvestmentsIcon size={20} />,
-  },
-];
-
-const bottomItems: NavItem[] = [
-  { id: "profile", label: "Perfil", icon: <ProfileIcon size={20} /> },
-  { id: "settings", label: "Configurações", icon: <SettingsIcon size={20} /> },
-];
+import {
+  primaryNavigationItems,
+  secondaryNavigationItems,
+} from "../../router/navigation";
 
 interface SidebarProps {
   active: ActiveView;
@@ -94,7 +61,7 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
         >
           Menu Principal
         </p>
-        {navItems.map((item) => {
+        {primaryNavigationItems.map((item) => {
           const isActive = active === item.id;
           return (
             <button
@@ -147,7 +114,7 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
         >
           Conta
         </p>
-        {bottomItems.map((item) => {
+        {secondaryNavigationItems.map((item) => {
           const isActive = active === item.id;
           return (
             <button

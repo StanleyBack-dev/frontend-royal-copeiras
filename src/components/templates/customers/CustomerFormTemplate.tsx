@@ -6,6 +6,7 @@ export interface CustomerFormTemplateProps<T extends Record<string, unknown>> {
   setValues: (values: T) => void;
   fields: FormField[];
   onSubmit: (values: T) => Promise<void>;
+  errors?: Partial<Record<Extract<keyof T, string>, string>>;
   saving?: boolean;
   onCancel?: () => void;
 }
@@ -18,6 +19,7 @@ export default function CustomerFormTemplate<
   setValues,
   fields,
   onSubmit,
+  errors,
   saving,
   onCancel,
 }: CustomerFormTemplateProps<T>) {
@@ -40,6 +42,7 @@ export default function CustomerFormTemplate<
           values={values}
           setValues={setValues}
           onSubmit={handleSubmit}
+          errors={errors}
           saving={saving}
           onCancel={onCancel}
         />

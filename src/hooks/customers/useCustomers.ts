@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { getCustomers } from "../../api/customers/methods/get";
-import { createCustomer } from "../../api/customers/methods/create";
-import { updateCustomer } from "../../api/customers/methods/update";
 import {
-  CustomerSchema,
-  CreateCustomerPayloadSchema,
-  Customer,
-  CreateCustomerPayload,
+  type Customer,
+  type CreateCustomerPayload,
 } from "../../api/customers/schema";
+import {
+  fetchCustomers,
+  saveCustomer,
+} from "../../features/customers/services/customer.service";
+import { customerUiCopy } from "../../features/customers/model/messages";
 
-interface UseCustomersResult {
+export interface UseCustomersResult {
   customers: Customer[];
   loading: boolean;
   saving: boolean;
@@ -32,16 +32,13 @@ export function useCustomers(userId: string): UseCustomersResult {
     setLoading(true);
     setError(null);
     try {
-      const data = await getCustomers(userId);
-      const parsed = CustomerSchema.array().safeParse(data);
-      if (parsed.success) {
-        setCustomers(parsed.data);
-      } else {
-        setError("Dados de clientes inválidos");
-      }
+      const data = await fetchCustomers(userId);
+      setCustomers(data);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Erro ao carregar clientes",
+        err instanceof Error
+          ? err.message
+          : customerUiCopy.errors.loadCustomersFallback,
       );
     } finally {
       setLoading(false);
@@ -57,19 +54,14 @@ export function useCustomers(userId: string): UseCustomersResult {
       setSaving(true);
       setError(null);
       try {
-        const parsed = CreateCustomerPayloadSchema.safeParse(formData);
-        if (!parsed.success) {
-          setError("Dados do cliente inválidos");
-          return;
-        }
-        if (editing) {
-          await updateCustomer(editing.idCustomers, parsed.data, userId);
-        } else {
-          await createCustomer(parsed.data, userId);
-        }
+        await saveCustomer({ userId, formData, editing });
         await load();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao salvar cliente");
+        setError(
+          err instanceof Error
+            ? err.message
+            : customerUiCopy.errors.saveCustomerFallback,
+        );
       } finally {
         setSaving(false);
       }
