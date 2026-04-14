@@ -8,6 +8,7 @@ import {
   saveCustomer,
 } from "../../features/customers/services/customer.service";
 import { customerUiCopy } from "../../features/customers/model/messages";
+import { useToast } from "../../shared/toast/useToast";
 
 export interface UseCustomersResult {
   customers: Customer[];
@@ -27,6 +28,7 @@ export function useCustomers(userId: string): UseCustomersResult {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { showError, showSuccess } = useToast();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -35,15 +37,16 @@ export function useCustomers(userId: string): UseCustomersResult {
       const data = await fetchCustomers(userId);
       setCustomers(data);
     } catch (err) {
-      setError(
+      const message =
         err instanceof Error
           ? err.message
-          : customerUiCopy.errors.loadCustomersFallback,
-      );
+          : customerUiCopy.errors.loadCustomersFallback;
+      setError(message);
+      showError(customerUiCopy.errors.loadCustomersFallback, message);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [showError, userId]);
 
   useEffect(() => {
     load();
@@ -55,18 +58,24 @@ export function useCustomers(userId: string): UseCustomersResult {
       setError(null);
       try {
         await saveCustomer({ userId, formData, editing });
+        showSuccess(
+          editing
+            ? customerUiCopy.success.updateCustomer
+            : customerUiCopy.success.createCustomer,
+        );
         await load();
       } catch (err) {
-        setError(
+        const message =
           err instanceof Error
             ? err.message
-            : customerUiCopy.errors.saveCustomerFallback,
-        );
+            : customerUiCopy.errors.saveCustomerFallback;
+        setError(message);
+        showError(customerUiCopy.errors.saveCustomerFallback, message);
       } finally {
         setSaving(false);
       }
     },
-    [userId, load],
+    [userId, load, showError, showSuccess],
   );
 
   return {

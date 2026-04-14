@@ -72,6 +72,10 @@ export const customerUiCopy = {
     loadCustomersFallback: "Erro ao carregar clientes",
     saveCustomerFallback: "Erro ao salvar cliente",
   },
+  success: {
+    createCustomer: "Cliente criado com sucesso",
+    updateCustomer: "Cliente atualizado com sucesso",
+  },
 } as const;
 
 export const customerValidationMessages = {
