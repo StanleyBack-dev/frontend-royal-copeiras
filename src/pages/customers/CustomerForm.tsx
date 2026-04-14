@@ -7,11 +7,13 @@ import {
   useCustomerForm,
 } from "@/features/customers";
 import { useCustomersContext } from "@/features/customers/context/useCustomersContext";
+import { useToast } from "@/shared/toast/useToast";
 
 export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const { customers, save, saving } = useCustomersContext();
+  const { showError } = useToast();
   const { form, editing, errors, setForm, submit } = useCustomerForm({
     mode,
     id,
@@ -21,7 +23,8 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
   async function handleSave(values: CustomerFormValues) {
     const result = submit(values);
     if (!result.success || !result.payload) {
-      alert(
+      showError(
+        customerUiCopy.errors.invalidFormData,
         (result.errors || [customerUiCopy.errors.invalidFormData]).join("\n"),
       );
       return;
