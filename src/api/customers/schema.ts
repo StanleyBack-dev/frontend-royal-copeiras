@@ -24,7 +24,6 @@ export const CustomerSchema = z.object({
   updatedAt: z.string(),
 });
 
-
 export const CreateCustomerPayloadSchema = CustomerSchema.omit({
   idCustomers: true,
   createdAt: true,

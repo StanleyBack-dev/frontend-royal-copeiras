@@ -58,7 +58,8 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
           cpf: found.type === "individual" ? found.document : "",
           cnpj: found.type === "company" ? found.document : "",
           type: found.type,
-          contactType: onlyDigits(found.phone || "").length > 10 ? "mobile" : "landline",
+          contactType:
+            onlyDigits(found.phone || "").length > 10 ? "mobile" : "landline",
           email: found.email || "",
           phone: found.phone || "",
           address: found.address || "",
@@ -70,7 +71,6 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
       setForm(emptyCustomer);
     }
   }, [mode, id, customers]);
-
 
   function handleFieldChange(
     field: string,
@@ -93,8 +93,14 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
 
   function validateForm(values: CustomerFormValues) {
     const data = {
-      cpf: values.type === "individual" ? onlyDigits(values.cpf ?? "", 11) : undefined,
-      cnpj: values.type === "company" ? onlyDigits(values.cnpj ?? "", 14) : undefined,
+      cpf:
+        values.type === "individual"
+          ? onlyDigits(values.cpf ?? "", 11)
+          : undefined,
+      cnpj:
+        values.type === "company"
+          ? onlyDigits(values.cnpj ?? "", 14)
+          : undefined,
       name: values.name,
       type: values.type,
       contactType: values.contactType,
@@ -130,7 +136,11 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
   async function handleSave(values: CustomerFormValues) {
     const result = validateForm(values);
     if (!result.success) {
-      alert(result.error.issues.map((e: { message: string }) => e.message).join("\n"));
+      alert(
+        result.error.issues
+          .map((e: { message: string }) => e.message)
+          .join("\n"),
+      );
       return;
     }
     await save(buildPayload(values), editing);
@@ -157,20 +167,24 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
       ],
     },
     ...(form.type === "individual"
-      ? [{
-          name: "cpf",
-          label: "CPF",
-          placeholder: "123.456.789-09",
-          maxLength: 14,
-          inputMode: "numeric" as const,
-        }]
-      : [{
-          name: "cnpj",
-          label: "CNPJ",
-          placeholder: "12.345.678/0001-90",
-          maxLength: 18,
-          inputMode: "numeric" as const,
-        }]),
+      ? [
+          {
+            name: "cpf",
+            label: "CPF",
+            placeholder: "123.456.789-09",
+            maxLength: 14,
+            inputMode: "numeric" as const,
+          },
+        ]
+      : [
+          {
+            name: "cnpj",
+            label: "CNPJ",
+            placeholder: "12.345.678/0001-90",
+            maxLength: 18,
+            inputMode: "numeric" as const,
+          },
+        ]),
     {
       name: "contactType",
       label: "Tipo de Telefone",
@@ -184,9 +198,7 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
       name: "phone",
       label: "Telefone",
       placeholder:
-        form.contactType === "landline"
-          ? "(11) 3456-7890"
-          : "(11) 91234-5678",
+        form.contactType === "landline" ? "(11) 3456-7890" : "(11) 91234-5678",
       maxLength: form.contactType === "landline" ? 14 : 15,
       inputMode: "tel",
     },

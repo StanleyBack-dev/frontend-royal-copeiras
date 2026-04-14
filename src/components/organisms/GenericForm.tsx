@@ -63,7 +63,8 @@ export default function GenericForm<T extends Record<string, unknown>>({
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {fields.map((field) => {
-          const fieldContainerClass = field.colSpan === 2 ? "md:col-span-2" : "";
+          const fieldContainerClass =
+            field.colSpan === 2 ? "md:col-span-2" : "";
 
           if (field.as === "select" && field.options) {
             return (
@@ -102,7 +103,9 @@ export default function GenericForm<T extends Record<string, unknown>>({
             return (
               <div
                 key={field.name}
-                className={field.colSpan === 2 ? "md:col-span-2" : fieldContainerClass}
+                className={
+                  field.colSpan === 2 ? "md:col-span-2" : fieldContainerClass
+                }
               >
                 <label
                   className="text-xs font-semibold uppercase tracking-wide mb-1 block"
