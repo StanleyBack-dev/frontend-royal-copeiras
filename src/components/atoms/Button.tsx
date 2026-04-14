@@ -1,5 +1,5 @@
 import React, { ButtonHTMLAttributes } from "react";
-import { colors, typography, radii } from "../../config";
+import { typography, radii } from "../../config";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "outline";
@@ -12,10 +12,10 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const baseStyles = `flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 focus:outline-none`;
 const variants = {
-  primary: `bg-gradient-to-tr from-[${colors.gold[500]}] to-[${colors.gold[600]}] text-white hover:opacity-90`,
-  secondary: `bg-[${colors.brown[50]}] text-[${colors.brown[500]}] hover:bg-[${colors.brown[100]}]`,
-  danger: `bg-[${colors.red[600]}] text-white hover:bg-[${colors.red[700]}]`,
-  outline: `border border-[${colors.brown[100]}] text-[${colors.brown[800]}] bg-white hover:bg-[${colors.brown[50]}]`,
+  primary: `bg-gradient-to-tr from-[#C9A227] to-[#a8811a] text-white hover:opacity-90`,
+  secondary: `bg-[#f5ede8] text-[#7a4430] hover:bg-[#e8d5c9]`,
+  danger: `bg-[#c22727] text-white hover:bg-[#a81a1a]`,
+  outline: `border border-[#e8d5c9] text-[#2C1810] bg-white hover:bg-[#f5ede8]`,
 };
 const sizes = {
   sm: `px-3 py-1.5 text-xs`,
@@ -40,7 +40,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-      style={{ fontFamily: typography.fontFamily, borderRadius: radii.md, ...props.style }}
+      style={{
+        fontFamily: typography.fontFamily,
+        borderRadius: radii.md,
+        ...props.style,
+      }}
       disabled={loading || props.disabled}
       {...props}
     >

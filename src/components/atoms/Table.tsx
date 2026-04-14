@@ -2,7 +2,7 @@ import React from "react";
 
 interface TableColumn<T> {
   key: keyof T | string;
-  label: string;
+  label: React.ReactNode;
   render?: (row: T) => React.ReactNode;
   className?: string;
 }

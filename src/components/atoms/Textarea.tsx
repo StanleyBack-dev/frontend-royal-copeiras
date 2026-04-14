@@ -14,7 +14,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       {label && (
         <label
           className={`text-xs font-semibold uppercase tracking-wide mb-1 block ${labelClassName}`}
-          style={{ color: colors.brown[500], fontFamily: typography.fontFamily }}
+          style={{
+            color: colors.brown[500],
+            fontFamily: typography.fontFamily,
+          }}
         >
           {label}
         </label>

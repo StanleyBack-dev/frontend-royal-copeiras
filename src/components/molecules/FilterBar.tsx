@@ -31,7 +31,13 @@ export default function FilterBar({
         placeholder={placeholder}
         icon={icon}
       />
-      <Button leftIcon={leftIcon} onClick={onAction}>
+      <Button
+        leftIcon={leftIcon}
+        onClick={onAction}
+        variant="primary"
+        size="md"
+        style={{ minWidth: 140 }}
+      >
         {actionLabel}
       </Button>
     </div>

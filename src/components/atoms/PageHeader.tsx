@@ -20,11 +20,23 @@ export default function PageHeader({
       style={{ borderColor: colors.brown[100], background: colors.white }}
     >
       <div>
-        <h2 className="text-lg font-bold" style={{ color: colors.brown[800], fontFamily: typography.fontFamily }}>
+        <h2
+          className="text-lg font-bold"
+          style={{
+            color: colors.brown[800],
+            fontFamily: typography.fontFamily,
+          }}
+        >
           {title}
         </h2>
         {subtitle && (
-          <p className="text-xs" style={{ color: colors.brown[300], fontFamily: typography.fontFamily }}>
+          <p
+            className="text-xs"
+            style={{
+              color: colors.brown[300],
+              fontFamily: typography.fontFamily,
+            }}
+          >
             {subtitle}
           </p>
         )}

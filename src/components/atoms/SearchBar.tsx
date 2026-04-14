@@ -23,7 +23,11 @@ export default function SearchBar({
   return (
     <div
       className={`flex items-center gap-2 px-4 py-2.5 border ${className}`}
-      style={{ background: colors.white, borderColor: colors.brown[100], borderRadius: radii.md }}
+      style={{
+        background: colors.white,
+        borderColor: colors.brown[100],
+        borderRadius: radii.md,
+      }}
     >
       {icon}
       <input
