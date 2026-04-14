@@ -1,9 +1,9 @@
-import { useState } from "react";
 import GenericForm, { FormField } from "../../organisms/GenericForm";
 
 export interface CustomerFormTemplateProps<T extends Record<string, unknown>> {
   title: string;
-  initialValues: T;
+  values: T;
+  setValues: (values: T) => void;
   fields: FormField[];
   onSubmit: (values: T) => Promise<void>;
   saving?: boolean;
@@ -14,14 +14,13 @@ export default function CustomerFormTemplate<
   T extends Record<string, unknown>,
 >({
   title,
-  initialValues,
+  values,
+  setValues,
   fields,
   onSubmit,
   saving,
   onCancel,
 }: CustomerFormTemplateProps<T>) {
-  const [values, setValues] = useState<T>(initialValues);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await onSubmit(values);
