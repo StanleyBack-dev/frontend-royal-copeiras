@@ -7,6 +7,17 @@ export interface FormField {
   options?: { value: string; label: string }[];
   placeholder?: string;
   required?: boolean;
+  maxLength?: number;
+  inputMode?:
+    | "text"
+    | "email"
+    | "tel"
+    | "search"
+    | "url"
+    | "none"
+    | "numeric"
+    | "decimal";
+  colSpan?: 1 | 2;
   as?: "input" | "select" | "textarea";
 }
 
@@ -52,9 +63,11 @@ export default function GenericForm<T extends Record<string, unknown>>({
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {fields.map((field) => {
+          const fieldContainerClass = field.colSpan === 2 ? "md:col-span-2" : "";
+
           if (field.as === "select" && field.options) {
             return (
-              <div key={field.name}>
+              <div key={field.name} className={fieldContainerClass}>
                 <label
                   className="text-xs font-semibold uppercase tracking-wide mb-1 block"
                   style={{ color: "#7a4430" }}
@@ -87,7 +100,10 @@ export default function GenericForm<T extends Record<string, unknown>>({
           }
           if (field.as === "textarea") {
             return (
-              <div key={field.name} className="col-span-2">
+              <div
+                key={field.name}
+                className={field.colSpan === 2 ? "md:col-span-2" : fieldContainerClass}
+              >
                 <label
                   className="text-xs font-semibold uppercase tracking-wide mb-1 block"
                   style={{ color: "#7a4430" }}
@@ -109,6 +125,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   onChange={handleChange}
                   placeholder={field.placeholder}
                   required={field.required}
+                  maxLength={field.maxLength}
                   rows={3}
                 />
               </div>
@@ -119,7 +136,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
             return (
               <div
                 key={field.name}
-                className="flex items-center gap-2 col-span-2"
+                className="flex items-center gap-2 md:col-span-2"
               >
                 <input
                   type="checkbox"
@@ -138,7 +155,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
           }
           // default input
           return (
-            <div key={field.name}>
+            <div key={field.name} className={fieldContainerClass}>
               <label
                 className="text-xs font-semibold uppercase tracking-wide mb-1 block"
                 style={{ color: "#7a4430" }}
@@ -161,6 +178,8 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 onChange={handleChange}
                 placeholder={field.placeholder}
                 required={field.required}
+                maxLength={field.maxLength}
+                inputMode={field.inputMode}
               />
             </div>
           );
