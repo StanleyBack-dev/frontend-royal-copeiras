@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { CreateCustomerPayload, Customer } from "../types";
+import type { CreateCustomerPayload, Customer } from "../schema";
 
 const API_BASE_URL = "/api/customers";
 

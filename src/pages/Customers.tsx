@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import DataTable, { DataTableColumn } from "../components/organisms/DataTable";
 import ModalForm from "../components/organisms/ModalForm";
 import FilterBar from "../components/molecules/FilterBar";
@@ -7,48 +7,33 @@ import SearchIcon from "../components/atoms/icons/SearchIcon";
 import { colors } from "../config";
 import EmailIcon from "../components/atoms/icons/EmailIcon";
 import PhoneIcon from "../components/atoms/icons/PhoneIcon";
-import type { Customer } from "../api/customers/types";
-import { getCustomers } from "../api/customers/methods/get";
-import { createCustomer } from "../api/customers/methods/create";
-import { updateCustomer } from "../api/customers/methods/update";
+import type { Customer } from "../api/customers/schema";
+import { useCustomers } from "../hooks/customers/useCustomers";
 
-const emptyCustomer: Omit<Customer, "idCustomers" | "createdAt" | "updatedAt"> =
-  {
-    name: "",
-    document: "",
-    type: "individual",
-    email: "",
-    phone: "",
-    birthDate: "",
-    address: "",
-    isActive: true,
-  };
+const emptyCustomer: import("../api/customers/schema").CreateCustomerPayload = {
+  name: "",
+  document: "",
+  type: "individual",
+  email: "",
+  phone: "",
+  birthDate: "",
+  address: "",
+  isActive: true,
+};
 
 export default function Customers() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  // TODO: Trocar pelo userId real
+  const userId = "mock-user-id";
+  const { customers, loading, saving, setCustomers, save } =
+    useCustomers(userId);
+
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
-  const [form, setForm] = useState(emptyCustomer);
-  const [saving, setSaving] = useState(false);
-
-  // TODO: Trocar pelo userId real
-  const userId = "mock-user-id";
-
-  async function load() {
-    setLoading(true);
-    try {
-      const data = await getCustomers(userId);
-      setCustomers(data);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
+  const [form, setForm] =
+    useState<import("../api/customers/schema").CreateCustomerPayload>(
+      emptyCustomer,
+    );
 
   function openCreate() {
     setEditing(null);
@@ -71,24 +56,14 @@ export default function Customers() {
     setShowModal(true);
   }
 
-  async function save(
-    formData: Omit<Customer, "idCustomers" | "createdAt" | "updatedAt">,
+  async function handleSave(
+    formData: import("../api/customers/schema").CreateCustomerPayload,
   ) {
-    setSaving(true);
-    try {
-      if (editing) {
-        await updateCustomer(editing.idCustomers, formData, userId);
-      } else {
-        await createCustomer(formData, userId);
-      }
-      setShowModal(false);
-      load();
-    } finally {
-      setSaving(false);
-    }
+    await save(formData, editing);
+    setShowModal(false);
   }
 
-  async function remove(id: string) {
+  function remove(id: string) {
     if (!confirm("Excluir este cliente?")) return;
     // TODO: implementar deleção no backend/api
     // await deleteCustomer(id, userId);
@@ -181,7 +156,7 @@ export default function Customers() {
         open={showModal}
         title={editing ? "Editar Cliente" : "Novo Cliente"}
         onClose={() => setShowModal(false)}
-        onSave={() => save(form)}
+        onSave={() => handleSave(form)}
         saving={saving}
       >
         <></>
