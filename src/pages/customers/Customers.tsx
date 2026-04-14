@@ -1,72 +1,30 @@
 import { useState } from "react";
-import DataTable, { DataTableColumn } from "../components/organisms/DataTable";
-import ModalForm from "../components/organisms/ModalForm";
-import FilterBar from "../components/molecules/FilterBar";
+import DataTable, {
+  DataTableColumn,
+} from "../../components/organisms/DataTable";
+import FilterBar from "../../components/molecules/FilterBar";
 import { Plus } from "lucide-react";
-import SearchIcon from "../components/atoms/icons/SearchIcon";
-import { colors } from "../config";
-import EmailIcon from "../components/atoms/icons/EmailIcon";
-import PhoneIcon from "../components/atoms/icons/PhoneIcon";
-import type { Customer } from "../api/customers/schema";
-import { useCustomers } from "../hooks/customers/useCustomers";
-
-const emptyCustomer: import("../api/customers/schema").CreateCustomerPayload = {
-  name: "",
-  document: "",
-  type: "individual",
-  email: "",
-  phone: "",
-  birthDate: "",
-  address: "",
-  isActive: true,
-};
+import SearchIcon from "../../components/atoms/icons/SearchIcon";
+import { colors } from "../../config";
+import EmailIcon from "../../components/atoms/icons/EmailIcon";
+import PhoneIcon from "../../components/atoms/icons/PhoneIcon";
+import EditIcon from "../../components/atoms/icons/EditIcon";
+import DeleteIcon from "../../components/atoms/icons/DeleteIcon";
+import { Link, useNavigate } from "react-router-dom";
+import type { Customer } from "../../api/customers/schema";
+import { useCustomers } from "../../hooks/customers/useCustomers";
+import CustomerHistoryTemplate from "../../components/templates/customers/CustomerHistoryTemplate";
 
 export default function Customers() {
   // TODO: Trocar pelo userId real
   const userId = "mock-user-id";
-  const { customers, loading, saving, setCustomers, save } =
-    useCustomers(userId);
-
+  const { customers, loading, setCustomers } = useCustomers(userId);
   const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<Customer | null>(null);
-  const [form, setForm] =
-    useState<import("../api/customers/schema").CreateCustomerPayload>(
-      emptyCustomer,
-    );
-
-  function openCreate() {
-    setEditing(null);
-    setForm(emptyCustomer);
-    setShowModal(true);
-  }
-
-  function openEdit(customer: Customer) {
-    setEditing(customer);
-    setForm({
-      name: customer.name,
-      document: customer.document,
-      type: customer.type,
-      email: customer.email || "",
-      phone: customer.phone || "",
-      birthDate: customer.birthDate || "",
-      address: customer.address || "",
-      isActive: customer.isActive,
-    });
-    setShowModal(true);
-  }
-
-  async function handleSave(
-    formData: import("../api/customers/schema").CreateCustomerPayload,
-  ) {
-    await save(formData, editing);
-    setShowModal(false);
-  }
+  const navigate = useNavigate();
 
   function remove(id: string) {
     if (!confirm("Excluir este cliente?")) return;
     // TODO: implementar deleção no backend/api
-    // await deleteCustomer(id, userId);
     setCustomers((prev) => prev.filter((c) => c.idCustomers !== id));
   }
 
@@ -123,14 +81,38 @@ export default function Customers() {
       label: "Ativo",
       render: (c) => (c.isActive ? "Sim" : "Não"),
     },
+    {
+      key: "actions",
+      label: "Ações",
+      render: (c) => (
+        <div className="flex gap-2">
+          <Link
+            to={`/customers/${c.idCustomers}/edit`}
+            title="Editar"
+            className="hover:text-yellow-700"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <EditIcon size={18} />
+          </Link>
+          <button
+            onClick={() => remove(c.idCustomers)}
+            title="Excluir"
+            className="hover:text-red-700"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <DeleteIcon size={18} />
+          </button>
+        </div>
+      ),
+    },
   ];
 
   return (
-    <div className="space-y-6">
+    <CustomerHistoryTemplate>
       <FilterBar
         search={search}
         setSearch={setSearch}
-        onAction={openCreate}
+        onAction={() => navigate("/customers/new")}
         actionLabel="Novo Cliente"
         placeholder="Buscar clientes..."
         icon={<SearchIcon size={16} style={{ color: colors.brown[300] }} />}
@@ -147,20 +129,9 @@ export default function Customers() {
         <DataTable<Customer>
           data={filtered}
           columns={columns}
-          onEdit={openEdit}
-          onRemove={(c) => remove(c.idCustomers)}
           getId={(c) => c.idCustomers}
         />
       )}
-      <ModalForm
-        open={showModal}
-        title={editing ? "Editar Cliente" : "Novo Cliente"}
-        onClose={() => setShowModal(false)}
-        onSave={() => handleSave(form)}
-        saving={saving}
-      >
-        <></>
-      </ModalForm>
-    </div>
+    </CustomerHistoryTemplate>
   );
 }
