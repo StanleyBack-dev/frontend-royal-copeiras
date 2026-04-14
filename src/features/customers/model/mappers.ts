@@ -1,4 +1,7 @@
-import type { CreateCustomerPayload, Customer } from "../../../api/customers/schema";
+import type {
+  CreateCustomerPayload,
+  Customer,
+} from "../../../api/customers/schema";
 import { onlyDigits } from "../../../utils/format";
 import {
   CUSTOMER_CNPJ_DIGITS,
@@ -14,7 +17,9 @@ export function inferCustomerContactType(phone?: string) {
     : "landline";
 }
 
-export function mapCustomerToFormValues(customer: Customer): CustomerFormValues {
+export function mapCustomerToFormValues(
+  customer: Customer,
+): CustomerFormValues {
   return {
     name: customer.name,
     cpf: customer.type === "individual" ? customer.document : "",

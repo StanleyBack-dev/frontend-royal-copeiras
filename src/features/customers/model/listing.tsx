@@ -13,10 +13,7 @@ interface CustomerTableColumnsParams {
   onRemove: (id: string) => void;
 }
 
-export function filterCustomersBySearch(
-  customers: Customer[],
-  search: string,
-) {
+export function filterCustomersBySearch(customers: Customer[], search: string) {
   const normalizedSearch = search.trim().toLowerCase();
 
   if (!normalizedSearch) {

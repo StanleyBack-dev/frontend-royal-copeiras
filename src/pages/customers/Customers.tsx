@@ -5,10 +5,7 @@ import SearchIcon from "@/components/atoms/icons/SearchIcon";
 import { colors } from "@/config";
 import { useNavigate } from "react-router-dom";
 import CustomerHistoryTemplate from "@/components/templates/customers/CustomerHistoryTemplate";
-import {
-  customerUiCopy,
-  useCustomersList,
-} from "@/features/customers";
+import { customerUiCopy, useCustomersList } from "@/features/customers";
 import { useCustomersContext } from "@/features/customers/context/useCustomersContext";
 import { customerRoutePaths } from "@/router";
 
@@ -26,7 +23,9 @@ export default function Customers() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={customerUiCopy.listing.searchPlaceholder}
-        searchIcon={<SearchIcon size={16} style={{ color: colors.brown[300] }} />}
+        searchIcon={
+          <SearchIcon size={16} style={{ color: colors.brown[300] }} />
+        }
         action={{
           label: customerUiCopy.listing.newAction,
           onClick: () => navigate(customerRoutePaths.create),

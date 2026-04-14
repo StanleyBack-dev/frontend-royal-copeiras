@@ -11,9 +11,7 @@ import {
 import type { CustomerFormValues } from "./form";
 import { customerUiCopy } from "./messages";
 
-export function getCustomerFormFields(
-  values: CustomerFormValues,
-): FormField[] {
+export function getCustomerFormFields(values: CustomerFormValues): FormField[] {
   return [
     {
       name: "name",

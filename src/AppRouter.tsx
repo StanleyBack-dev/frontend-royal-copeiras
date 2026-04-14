@@ -16,7 +16,10 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<Navigate to={customerRoutePaths.list} replace />} />
+          <Route
+            path="/"
+            element={<Navigate to={customerRoutePaths.list} replace />}
+          />
           <Route path={routePaths.dashboard} element={<Dashboard />} />
           <Route element={<CustomersProviderOutlet userId="mock-user-id" />}>
             <Route path={customerRoutePaths.list} element={<Customers />} />

@@ -22,11 +22,10 @@ interface HeaderProps {
 }
 
 export default function Header({ activeView, onNavigate }: HeaderProps) {
-  const info =
-    viewTitles[activeView as keyof typeof viewTitles] || {
-      title: "Painel",
-      subtitle: "",
-    };
+  const info = viewTitles[activeView as keyof typeof viewTitles] || {
+    title: "Painel",
+    subtitle: "",
+  };
   const [search, setSearch] = useState("");
   const sidebarItems = [...primaryNavigationItems, ...secondaryNavigationItems];
   const filtered =

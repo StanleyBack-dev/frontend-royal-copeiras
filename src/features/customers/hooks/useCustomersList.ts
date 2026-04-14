@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 import type { Customer } from "../../../api/customers/schema";
-import { filterCustomersBySearch, getCustomerTableColumns } from "../model/listing";
+import {
+  filterCustomersBySearch,
+  getCustomerTableColumns,
+} from "../model/listing";
 import { customerUiCopy } from "../model/messages";
 
 interface UseCustomersListParams {
@@ -14,16 +17,19 @@ export function useCustomersList({
 }: UseCustomersListParams) {
   const [search, setSearch] = useState("");
 
-  const removeCustomer = useCallback((id: string) => {
-    if (!confirm(customerUiCopy.listing.confirmDelete)) {
-      return;
-    }
+  const removeCustomer = useCallback(
+    (id: string) => {
+      if (!confirm(customerUiCopy.listing.confirmDelete)) {
+        return;
+      }
 
-    // TODO: implementar deleção no backend/api
-    setCustomers((previousCustomers) =>
-      previousCustomers.filter((customer) => customer.idCustomers !== id),
-    );
-  }, [setCustomers]);
+      // TODO: implementar deleção no backend/api
+      setCustomers((previousCustomers) =>
+        previousCustomers.filter((customer) => customer.idCustomers !== id),
+      );
+    },
+    [setCustomers],
+  );
 
   const filteredCustomers = useMemo(
     () => filterCustomersBySearch(customers, search),

@@ -17,33 +17,33 @@ export const customerTypeOptions = ["individual", "company"] as const;
 export const customerContactTypeOptions = ["mobile", "landline"] as const;
 
 const customerFormSchemaBase = z.object({
-    name: z
-      .string()
-      .trim()
-      .min(CUSTOMER_NAME_MIN_LENGTH, customerValidationMessages.nameRequired)
-      .max(CUSTOMER_NAME_MAX_LENGTH, customerValidationMessages.nameMax),
-    type: z.enum(customerTypeOptions),
-    contactType: z.enum(customerContactTypeOptions),
-    isActive: z.boolean(),
-    cpf: z.string().optional(),
-    cnpj: z.string().optional(),
-    email: z
-      .string()
-      .trim()
-      .min(CUSTOMER_EMAIL_MIN_LENGTH, customerValidationMessages.emailMin)
-      .max(CUSTOMER_EMAIL_MAX_LENGTH, customerValidationMessages.emailMax)
-      .email(customerValidationMessages.emailInvalid)
-      .optional()
-      .or(z.literal("")),
-    phone: z.string().optional().or(z.literal("")),
-    address: z
-      .string()
-      .trim()
-      .min(CUSTOMER_ADDRESS_MIN_LENGTH, customerValidationMessages.addressMin)
-      .max(CUSTOMER_ADDRESS_MAX_LENGTH, customerValidationMessages.addressMax)
-      .optional()
-      .or(z.literal("")),
-  });
+  name: z
+    .string()
+    .trim()
+    .min(CUSTOMER_NAME_MIN_LENGTH, customerValidationMessages.nameRequired)
+    .max(CUSTOMER_NAME_MAX_LENGTH, customerValidationMessages.nameMax),
+  type: z.enum(customerTypeOptions),
+  contactType: z.enum(customerContactTypeOptions),
+  isActive: z.boolean(),
+  cpf: z.string().optional(),
+  cnpj: z.string().optional(),
+  email: z
+    .string()
+    .trim()
+    .min(CUSTOMER_EMAIL_MIN_LENGTH, customerValidationMessages.emailMin)
+    .max(CUSTOMER_EMAIL_MAX_LENGTH, customerValidationMessages.emailMax)
+    .email(customerValidationMessages.emailInvalid)
+    .optional()
+    .or(z.literal("")),
+  phone: z.string().optional().or(z.literal("")),
+  address: z
+    .string()
+    .trim()
+    .min(CUSTOMER_ADDRESS_MIN_LENGTH, customerValidationMessages.addressMin)
+    .max(CUSTOMER_ADDRESS_MAX_LENGTH, customerValidationMessages.addressMax)
+    .optional()
+    .or(z.literal("")),
+});
 
 export const customerFormSchema = customerFormSchemaBase.superRefine(
   (data, ctx) => {

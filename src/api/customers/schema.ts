@@ -14,10 +14,7 @@ export const CustomerSchema = z.object({
   email: z
     .string()
     .trim()
-    .max(
-      CUSTOMER_EMAIL_MAX_LENGTH,
-      customerValidationMessages.emailMax,
-    )
+    .max(CUSTOMER_EMAIL_MAX_LENGTH, customerValidationMessages.emailMax)
     .email(customerValidationMessages.emailInvalid)
     .optional()
     .or(z.literal("")),
@@ -35,14 +32,8 @@ export const CreateCustomerPayloadSchema = z.object({
   email: z
     .string()
     .trim()
-    .min(
-      CUSTOMER_EMAIL_MIN_LENGTH,
-      customerValidationMessages.emailMin,
-    )
-    .max(
-      CUSTOMER_EMAIL_MAX_LENGTH,
-      customerValidationMessages.emailMax,
-    )
+    .min(CUSTOMER_EMAIL_MIN_LENGTH, customerValidationMessages.emailMin)
+    .max(CUSTOMER_EMAIL_MAX_LENGTH, customerValidationMessages.emailMax)
     .email(customerValidationMessages.emailInvalid)
     .optional()
     .or(z.literal("")),
@@ -51,7 +42,8 @@ export const CreateCustomerPayloadSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-export const UpdateCustomerPayloadSchema = CreateCustomerPayloadSchema.partial();
+export const UpdateCustomerPayloadSchema =
+  CreateCustomerPayloadSchema.partial();
 
 export type Customer = z.infer<typeof CustomerSchema>;
 export type CreateCustomerPayload = z.infer<typeof CreateCustomerPayloadSchema>;

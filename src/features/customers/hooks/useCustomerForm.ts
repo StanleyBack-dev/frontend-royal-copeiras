@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import type { CreateCustomerPayload, Customer } from "../../../api/customers/schema";
-import { customerFormSchema, emptyCustomerFormValues, type CustomerFormValues } from "../model/form";
+import type {
+  CreateCustomerPayload,
+  Customer,
+} from "../../../api/customers/schema";
+import {
+  customerFormSchema,
+  emptyCustomerFormValues,
+  type CustomerFormValues,
+} from "../model/form";
 import { normalizeCustomerFormValues } from "../model/formatters";
 import {
   mapCustomerFormToPayload,
@@ -21,7 +28,9 @@ interface SubmitCustomerFormResult {
   errors?: string[];
 }
 
-type CustomerFormErrors = Partial<Record<Extract<keyof CustomerFormValues, string>, string>>;
+type CustomerFormErrors = Partial<
+  Record<Extract<keyof CustomerFormValues, string>, string>
+>;
 
 export function useCustomerForm({
   mode,
@@ -67,7 +76,8 @@ export function useCustomerForm({
         const field = issue.path[0];
 
         if (typeof field === "string" && !(field in acc)) {
-          acc[field as Extract<keyof CustomerFormValues, string>] = issue.message;
+          acc[field as Extract<keyof CustomerFormValues, string>] =
+            issue.message;
         }
 
         return acc;
@@ -77,7 +87,9 @@ export function useCustomerForm({
   }
 
   function validate(values: CustomerFormValues) {
-    return customerFormSchema.safeParse(mapCustomerFormToValidationInput(values));
+    return customerFormSchema.safeParse(
+      mapCustomerFormToValidationInput(values),
+    );
   }
 
   function submit(values: CustomerFormValues): SubmitCustomerFormResult {
