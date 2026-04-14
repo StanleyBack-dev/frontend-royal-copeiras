@@ -1,4 +1,3 @@
-import React from "react";
 import { colors, typography } from "../../config";
 import CrownIcon from "../atoms/icons/CrownIcon";
 import { ChevronRight } from "lucide-react";
