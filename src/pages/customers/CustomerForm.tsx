@@ -14,7 +14,6 @@ const emptyCustomer: CreateCustomerPayload = {
   type: "individual",
   email: "",
   phone: "",
-  birthDate: "",
   address: "",
   isActive: true,
 };
@@ -38,7 +37,6 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
           type: found.type,
           email: found.email || "",
           phone: found.phone || "",
-          birthDate: found.birthDate || "",
           address: found.address || "",
           isActive: found.isActive,
         });

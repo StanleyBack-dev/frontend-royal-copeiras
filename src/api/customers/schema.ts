@@ -7,7 +7,6 @@ export const CustomerSchema = z.object({
   type: z.enum(["individual", "company"]),
   email: z.string().email().optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
-  birthDate: z.string().optional().or(z.literal("")),
   address: z.string().optional().or(z.literal("")),
   isActive: z.boolean(),
   createdAt: z.string(),

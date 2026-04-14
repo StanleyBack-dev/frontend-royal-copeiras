@@ -9,7 +9,6 @@ export const customerSchema = z
     cnpj: z.string().optional(),
     email: z.string().email("E-mail inválido").optional().or(z.literal("")),
     phone: z.string().optional().or(z.literal("")),
-    birthDate: z.string().optional().or(z.literal("")),
     address: z.string().optional().or(z.literal("")),
   })
   .refine(

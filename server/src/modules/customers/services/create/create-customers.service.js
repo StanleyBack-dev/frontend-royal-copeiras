@@ -12,7 +12,6 @@ export class CreateCustomersService {
           type
           email
           phone
-          birthDate
           address
           isActive
           createdAt
