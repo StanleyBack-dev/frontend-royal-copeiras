@@ -1,17 +1,17 @@
 import React from "react";
 import { colors, typography } from "../../config";
-import {
-  LayoutDashboard,
-  Users,
-  CalendarDays,
-  TrendingUp,
-  AlertCircle,
-  PiggyBank,
-  CircleUser as UserCircle,
-  Settings,
-  ChevronRight,
-  Crown,
-} from "lucide-react";
+import DashboardIcon from "../atoms/icons/DashboardIcon";
+import ClientsIcon from "../atoms/icons/ClientsIcon";
+import EmployeesIcon from "../atoms/icons/EmployeesIcon";
+import UsersIcon from "../atoms/icons/UsersIcon";
+import EventsIcon from "../atoms/icons/EventsIcon";
+import FinancesIcon from "../atoms/icons/FinancesIcon";
+import DebtsIcon from "../atoms/icons/DebtsIcon";
+import InvestmentsIcon from "../atoms/icons/InvestmentsIcon";
+import ProfileIcon from "../atoms/icons/ProfileIcon";
+import SettingsIcon from "../atoms/icons/SettingsIcon";
+import CrownIcon from "../atoms/icons/CrownIcon";
+import { ChevronRight } from "lucide-react";
 import type { ActiveView } from "../../types/views";
 
 interface NavItem {
@@ -21,19 +21,23 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: "dashboard", label: "Painel", icon: <LayoutDashboard size={20} /> },
-  { id: "clients", label: "Clientes", icon: <Users size={20} /> },
-  { id: "employees", label: "Funcionários", icon: <UserCircle size={20} /> },
-  { id: "users", label: "Usuários", icon: <Settings size={20} /> },
-  { id: "events", label: "Eventos", icon: <CalendarDays size={20} /> },
-  { id: "finances", label: "Finanças", icon: <TrendingUp size={20} /> },
-  { id: "debts", label: "Dívidas", icon: <AlertCircle size={20} /> },
-  { id: "investments", label: "Investimentos", icon: <PiggyBank size={20} /> },
+  { id: "dashboard", label: "Painel", icon: <DashboardIcon size={20} /> },
+  { id: "clients", label: "Clientes", icon: <ClientsIcon size={20} /> },
+  { id: "employees", label: "Funcionários", icon: <EmployeesIcon size={20} /> },
+  { id: "users", label: "Usuários", icon: <UsersIcon size={20} /> },
+  { id: "events", label: "Eventos", icon: <EventsIcon size={20} /> },
+  { id: "finances", label: "Finanças", icon: <FinancesIcon size={20} /> },
+  { id: "debts", label: "Dívidas", icon: <DebtsIcon size={20} /> },
+  {
+    id: "investments",
+    label: "Investimentos",
+    icon: <InvestmentsIcon size={20} />,
+  },
 ];
 
 const bottomItems: NavItem[] = [
-  { id: "profile", label: "Perfil", icon: <UserCircle size={20} /> },
-  { id: "settings", label: "Configurações", icon: <Settings size={20} /> },
+  { id: "profile", label: "Perfil", icon: <ProfileIcon size={20} /> },
+  { id: "settings", label: "Configurações", icon: <SettingsIcon size={20} /> },
 ];
 
 interface SidebarProps {
@@ -47,19 +51,33 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
       className="w-64 min-h-screen flex flex-col"
       style={{ background: colors.brown[800] }}
     >
-      <div className="px-6 py-8 border-b" style={{ borderColor: colors.brown[500] }}>
+      <div
+        className="px-6 py-8 border-b"
+        style={{ borderColor: colors.brown[500] }}
+      >
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${colors.gold[500]}, ${colors.gold[600]})` }}
+            style={{
+              background: `linear-gradient(135deg, ${colors.gold[500]}, ${colors.gold[600]})`,
+            }}
           >
-            <Crown size={20} className="text-white" />
+            <CrownIcon size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="text-white font-bold text-sm leading-tight tracking-wide" style={{ fontFamily: typography.fontFamily }}>
+            <h1
+              className="text-white font-bold text-sm leading-tight tracking-wide"
+              style={{ fontFamily: typography.fontFamily }}
+            >
               ROYAL
             </h1>
-            <p className="text-xs tracking-widest" style={{ color: colors.gold[500], fontFamily: typography.fontFamily }}>
+            <p
+              className="text-xs tracking-widest"
+              style={{
+                color: colors.gold[500],
+                fontFamily: typography.fontFamily,
+              }}
+            >
               COPEIRAS
             </p>
           </div>
@@ -69,7 +87,10 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
       <nav className="flex-1 px-3 py-6 space-y-1">
         <p
           className="text-xs font-semibold uppercase tracking-widest px-3 mb-4"
-          style={{ color: colors.brown[500], fontFamily: typography.fontFamily }}
+          style={{
+            color: colors.brown[500],
+            fontFamily: typography.fontFamily,
+          }}
         >
           Menu Principal
         </p>

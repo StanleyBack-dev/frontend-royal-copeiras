@@ -25,10 +25,22 @@ export default function SettingRow({
       style={{ borderColor: colors.brown[100] }}
     >
       <div>
-        <p className="text-sm font-medium" style={{ color: colors.brown[800], fontFamily: typography.fontFamily }}>
+        <p
+          className="text-sm font-medium"
+          style={{
+            color: colors.brown[800],
+            fontFamily: typography.fontFamily,
+          }}
+        >
           {label}
         </p>
-        <p className="text-xs mt-0.5" style={{ color: colors.brown[300], fontFamily: typography.fontFamily }}>
+        <p
+          className="text-xs mt-0.5"
+          style={{
+            color: colors.brown[300],
+            fontFamily: typography.fontFamily,
+          }}
+        >
           {description}
         </p>
       </div>

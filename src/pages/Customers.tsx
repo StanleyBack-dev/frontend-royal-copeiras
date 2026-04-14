@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import DataTable, { DataTableColumn } from "../components/organisms/DataTable";
 import ModalForm from "../components/organisms/ModalForm";
 import FilterBar from "../components/molecules/FilterBar";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
+import SearchIcon from "../components/atoms/icons/SearchIcon";
 import { colors } from "../config";
+import EmailIcon from "../components/atoms/icons/EmailIcon";
+import PhoneIcon from "../components/atoms/icons/PhoneIcon";
 import type { Customer } from "../api/customers/types";
 import { getCustomers } from "../api/customers/methods/get";
 import { createCustomer } from "../api/customers/methods/create";
@@ -105,7 +108,11 @@ export default function Customers() {
     {
       key: "name",
       label: "Nome",
-      render: (c) => <span style={{ color: colors.brown[800], fontWeight: 600 }}>{c.name}</span>,
+      render: (c) => (
+        <span style={{ color: colors.brown[800], fontWeight: 600 }}>
+          {c.name}
+        </span>
+      ),
     },
     {
       key: "document",
@@ -114,20 +121,32 @@ export default function Customers() {
     {
       key: "type",
       label: "Tipo",
-      render: (c) => c.type === "company" ? "Empresa" : "Pessoa Física",
+      render: (c) => (c.type === "company" ? "Empresa" : "Pessoa Física"),
     },
     {
       key: "email",
       label: "Email",
+      render: (c) => (
+        <span className="flex items-center gap-1">
+          {c.email}
+          {c.email && <EmailIcon size={14} />}
+        </span>
+      ),
     },
     {
       key: "phone",
       label: "Telefone",
+      render: (c) => (
+        <span className="flex items-center gap-1">
+          {c.phone}
+          {c.phone && <PhoneIcon size={14} />}
+        </span>
+      ),
     },
     {
       key: "isActive",
       label: "Ativo",
-      render: (c) => c.isActive ? "Sim" : "Não",
+      render: (c) => (c.isActive ? "Sim" : "Não"),
     },
   ];
 
@@ -139,7 +158,7 @@ export default function Customers() {
         onAction={openCreate}
         actionLabel="Novo Cliente"
         placeholder="Buscar clientes..."
-        icon={<Search size={16} style={{ color: colors.brown[300] }} />}
+        icon={<SearchIcon size={16} style={{ color: colors.brown[300] }} />}
         leftIcon={<Plus size={16} />}
       />
       {loading ? (

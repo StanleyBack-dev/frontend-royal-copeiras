@@ -7,10 +7,11 @@ Esta pasta contém as configurações globais do projeto, como tokens de cores, 
 Importe os tokens desejados:
 
 ```ts
-import { colors, typography, spacing } from 'src/config';
+import { colors, typography, spacing } from "src/config";
 ```
 
 ## Tokens disponíveis
+
 - `colors`: Paleta de cores do projeto
 - `typography`: Fontes, tamanhos e pesos
 - `spacing`: Espaçamentos
