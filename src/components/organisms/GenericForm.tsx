@@ -26,6 +26,7 @@ export interface GenericFormProps<T> {
   values: T;
   setValues: (values: T) => void;
   onSubmit: (e: FormEvent) => void;
+  errors?: Partial<Record<Extract<keyof T, string>, string>>;
   saving?: boolean;
   onCancel?: () => void;
 }
@@ -35,6 +36,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
   values,
   setValues,
   onSubmit,
+  errors,
   saving,
   onCancel,
 }: GenericFormProps<T>) {
@@ -78,7 +80,10 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 </label>
                 <select
                   className="w-full px-3 py-2.5 rounded-lg text-sm border outline-none"
-                  style={{ borderColor: "#e8d5c9", color: "#2C1810" }}
+                  style={{
+                    borderColor: errors?.[field.name] ? "#c2410c" : "#e8d5c9",
+                    color: "#2C1810",
+                  }}
                   name={field.name}
                   value={
                     values[field.name] as
@@ -89,6 +94,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   }
                   onChange={handleChange}
                   required={field.required}
+                  aria-invalid={!!errors?.[field.name]}
                 >
                   {field.options.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -96,6 +102,11 @@ export default function GenericForm<T extends Record<string, unknown>>({
                     </option>
                   ))}
                 </select>
+                {errors?.[field.name] && (
+                  <p className="mt-1 text-xs" style={{ color: "#c2410c" }}>
+                    {errors[field.name]}
+                  </p>
+                )}
               </div>
             );
           }
@@ -116,7 +127,10 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 </label>
                 <textarea
                   className="w-full px-3 py-2.5 rounded-lg text-sm border outline-none resize-none"
-                  style={{ borderColor: "#e8d5c9", color: "#2C1810" }}
+                  style={{
+                    borderColor: errors?.[field.name] ? "#c2410c" : "#e8d5c9",
+                    color: "#2C1810",
+                  }}
                   name={field.name}
                   value={
                     values[field.name] as
@@ -129,8 +143,14 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   placeholder={field.placeholder}
                   required={field.required}
                   maxLength={field.maxLength}
+                  aria-invalid={!!errors?.[field.name]}
                   rows={3}
                 />
+                {errors?.[field.name] && (
+                  <p className="mt-1 text-xs" style={{ color: "#c2410c" }}>
+                    {errors[field.name]}
+                  </p>
+                )}
               </div>
             );
           }
@@ -146,6 +166,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   name={field.name}
                   checked={!!values[field.name]}
                   onChange={handleChange}
+                  aria-invalid={!!errors?.[field.name]}
                 />
                 <label
                   className="font-medium text-xs"
@@ -153,6 +174,11 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 >
                   {field.label}
                 </label>
+                {errors?.[field.name] && (
+                  <p className="text-xs" style={{ color: "#c2410c" }}>
+                    {errors[field.name]}
+                  </p>
+                )}
               </div>
             );
           }
@@ -168,7 +194,10 @@ export default function GenericForm<T extends Record<string, unknown>>({
               </label>
               <input
                 className="w-full px-3 py-2.5 rounded-lg text-sm border outline-none"
-                style={{ borderColor: "#e8d5c9", color: "#2C1810" }}
+                style={{
+                  borderColor: errors?.[field.name] ? "#c2410c" : "#e8d5c9",
+                  color: "#2C1810",
+                }}
                 type={field.type || "text"}
                 name={field.name}
                 value={
@@ -183,7 +212,13 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 required={field.required}
                 maxLength={field.maxLength}
                 inputMode={field.inputMode}
+                aria-invalid={!!errors?.[field.name]}
               />
+              {errors?.[field.name] && (
+                <p className="mt-1 text-xs" style={{ color: "#c2410c" }}>
+                  {errors[field.name]}
+                </p>
+              )}
             </div>
           );
         })}

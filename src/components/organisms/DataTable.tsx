@@ -1,7 +1,5 @@
 import React from "react";
 import Table from "../atoms/Table";
-import EditIcon from "../atoms/icons/EditIcon";
-import DeleteIcon from "../atoms/icons/DeleteIcon";
 
 export interface DataTableColumn<T> {
   key: keyof T | string;
@@ -13,17 +11,19 @@ export interface DataTableColumn<T> {
 export interface DataTableProps<T> {
   data: T[];
   columns: DataTableColumn<T>[];
-  onEdit?: (row: T) => void;
-  onRemove?: (row: T) => void;
   getId?: (row: T) => string | number;
+  emptyMessage?: string;
+  onRowClick?: (row: T) => void;
+  className?: string;
 }
 
 export default function DataTable<T>({
   data,
   columns,
-  onEdit,
-  onRemove,
   getId,
+  emptyMessage,
+  onRowClick,
+  className,
 }: DataTableProps<T>) {
   const rowKey =
     getId ||
@@ -35,41 +35,15 @@ export default function DataTable<T>({
         String(Math.random())
       );
     });
-  const columnsWithActions: DataTableColumn<T>[] =
-    onEdit || onRemove
-      ? [
-          ...columns,
-          {
-            key: "__actions",
-            label: "Ações",
-            render: (row: T) => (
-              <div className="flex gap-2">
-                {onEdit && (
-                  <button
-                    type="button"
-                    onClick={() => onEdit(row)}
-                    className="p-1 rounded hover:bg-[#f5ede8]"
-                    title="Editar"
-                    style={{ lineHeight: 0 }}
-                  >
-                    <EditIcon size={18} />
-                  </button>
-                )}
-                {onRemove && (
-                  <button
-                    type="button"
-                    onClick={() => onRemove(row)}
-                    className="p-1 rounded hover:bg-[#f5ede8]"
-                    title="Excluir"
-                    style={{ lineHeight: 0 }}
-                  >
-                    <DeleteIcon size={18} />
-                  </button>
-                )}
-              </div>
-            ),
-          },
-        ]
-      : columns;
-  return <Table columns={columnsWithActions} data={data} rowKey={rowKey} />;
+
+  return (
+    <Table
+      columns={columns}
+      data={data}
+      rowKey={rowKey}
+      emptyMessage={emptyMessage}
+      onRowClick={onRowClick}
+      className={className}
+    />
+  );
 }
