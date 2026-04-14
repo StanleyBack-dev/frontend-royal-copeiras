@@ -1,15 +1,5 @@
 import React from "react";
 import { colors, typography } from "../../config";
-import DashboardIcon from "../atoms/icons/DashboardIcon";
-import ClientsIcon from "../atoms/icons/ClientsIcon";
-import EmployeesIcon from "../atoms/icons/EmployeesIcon";
-import UsersIcon from "../atoms/icons/UsersIcon";
-import EventsIcon from "../atoms/icons/EventsIcon";
-import FinancesIcon from "../atoms/icons/FinancesIcon";
-import DebtsIcon from "../atoms/icons/DebtsIcon";
-import InvestmentsIcon from "../atoms/icons/InvestmentsIcon";
-import ProfileIcon from "../atoms/icons/ProfileIcon";
-import SettingsIcon from "../atoms/icons/SettingsIcon";
 import CrownIcon from "../atoms/icons/CrownIcon";
 import { ChevronRight } from "lucide-react";
 import type { ActiveView } from "../../types/views";

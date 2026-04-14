@@ -3,16 +3,6 @@ import BellIcon from "../atoms/icons/BellIcon";
 import PageHeader from "@atoms/PageHeader";
 import SearchBar from "@atoms/SearchBar";
 import Button from "@atoms/Button";
-import DashboardIcon from "../atoms/icons/DashboardIcon";
-import ClientsIcon from "../atoms/icons/ClientsIcon";
-import EmployeesIcon from "../atoms/icons/EmployeesIcon";
-import UsersIcon from "../atoms/icons/UsersIcon";
-import EventsIcon from "../atoms/icons/EventsIcon";
-import FinancesIcon from "../atoms/icons/FinancesIcon";
-import DebtsIcon from "../atoms/icons/DebtsIcon";
-import InvestmentsIcon from "../atoms/icons/InvestmentsIcon";
-import ProfileIcon from "../atoms/icons/ProfileIcon";
-import SettingsIcon from "../atoms/icons/SettingsIcon";
 import { useState } from "react";
 
 import type { ActiveView } from "../../types/views";
