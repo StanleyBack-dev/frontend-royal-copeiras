@@ -7,6 +7,8 @@ export interface FormField {
   options?: { value: string; label: string }[];
   placeholder?: string;
   required?: boolean;
+  readOnly?: boolean;
+  disabled?: boolean;
   maxLength?: number;
   inputMode?:
     | "text"
@@ -59,7 +61,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
 
   return (
     <form
-      className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-auto p-8 md:p-10 border"
+      className="mx-auto w-full max-w-3xl rounded-2xl border bg-white p-4 shadow-2xl sm:p-6 lg:p-8"
       style={{ borderColor: "#e8d5c9" }}
       onSubmit={onSubmit}
     >
@@ -83,6 +85,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   style={{
                     borderColor: errors?.[field.name] ? "#c2410c" : "#e8d5c9",
                     color: "#2C1810",
+                    background: field.disabled ? "#f5ede8" : "#fff",
                   }}
                   name={field.name}
                   value={
@@ -94,6 +97,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   }
                   onChange={handleChange}
                   required={field.required}
+                  disabled={field.disabled}
                   aria-invalid={!!errors?.[field.name]}
                 >
                   {field.options.map((opt) => (
@@ -130,6 +134,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   style={{
                     borderColor: errors?.[field.name] ? "#c2410c" : "#e8d5c9",
                     color: "#2C1810",
+                    background: field.disabled ? "#f5ede8" : "#fff",
                   }}
                   name={field.name}
                   value={
@@ -142,8 +147,11 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   onChange={handleChange}
                   placeholder={field.placeholder}
                   required={field.required}
+                  readOnly={field.readOnly}
+                  disabled={field.disabled}
                   maxLength={field.maxLength}
                   aria-invalid={!!errors?.[field.name]}
+                  aria-readonly={field.readOnly}
                   rows={3}
                 />
                 {errors?.[field.name] && (
@@ -166,6 +174,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   name={field.name}
                   checked={!!values[field.name]}
                   onChange={handleChange}
+                  disabled={field.disabled}
                   aria-invalid={!!errors?.[field.name]}
                 />
                 <label
@@ -197,6 +206,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 style={{
                   borderColor: errors?.[field.name] ? "#c2410c" : "#e8d5c9",
                   color: "#2C1810",
+                  background: field.disabled ? "#f5ede8" : "#fff",
                 }}
                 type={field.type || "text"}
                 name={field.name}
@@ -210,9 +220,12 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 onChange={handleChange}
                 placeholder={field.placeholder}
                 required={field.required}
+                readOnly={field.readOnly}
+                disabled={field.disabled}
                 maxLength={field.maxLength}
                 inputMode={field.inputMode}
                 aria-invalid={!!errors?.[field.name]}
+                aria-readonly={field.readOnly}
               />
               {errors?.[field.name] && (
                 <p className="mt-1 text-xs" style={{ color: "#c2410c" }}>
@@ -223,11 +236,11 @@ export default function GenericForm<T extends Record<string, unknown>>({
           );
         })}
       </div>
-      <div className="flex gap-2 justify-end mt-8">
+      <div className="mt-8 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         {onCancel && (
           <button
             type="button"
-            className="px-4 py-2 rounded-lg text-sm font-medium"
+            className="rounded-lg px-4 py-2 text-sm font-medium"
             style={{ background: "#f5ede8", color: "#7a4430" }}
             onClick={onCancel}
             disabled={saving}
@@ -237,7 +250,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
         )}
         <button
           type="submit"
-          className="px-5 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+          className="rounded-lg px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
           style={{ background: "linear-gradient(135deg, #C9A227, #a8811a)" }}
           disabled={saving}
         >

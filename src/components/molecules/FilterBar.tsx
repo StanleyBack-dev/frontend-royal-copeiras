@@ -27,13 +27,17 @@ export default function FilterBar({
   className = "",
 }: FilterBarProps) {
   return (
-    <div className={`flex items-center justify-between mb-4 ${className}`}>
-      <SearchBar
-        value={searchValue}
-        onChange={onSearchChange}
-        placeholder={searchPlaceholder}
-        icon={searchIcon}
-      />
+    <div
+      className={`mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${className}`}
+    >
+      <div className="w-full sm:max-w-md">
+        <SearchBar
+          value={searchValue}
+          onChange={onSearchChange}
+          placeholder={searchPlaceholder}
+          icon={searchIcon}
+        />
+      </div>
       {actions ||
         (action ? (
           <Button
@@ -41,6 +45,7 @@ export default function FilterBar({
             onClick={action.onClick}
             variant="primary"
             size="md"
+            className="w-full sm:w-auto"
             style={{ minWidth: action.minWidth ?? 140 }}
           >
             {action.label}

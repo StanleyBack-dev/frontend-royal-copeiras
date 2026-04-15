@@ -9,13 +9,17 @@ export default function CustomerHistoryTemplate({
 }: CustomerHistoryTemplateProps) {
   return (
     <div
-      className="w-full h-full bg-white p-0 rounded-xl shadow-sm border overflow-hidden flex flex-col"
+      className="flex h-full w-full flex-col overflow-hidden rounded-xl border bg-white shadow-sm"
       style={{ borderColor: "#e8d5c9" }}
     >
-      <div className="px-8 pt-8 pb-0">
-        <h2 className="text-2xl font-bold mb-6">Histórico de Clientes</h2>
+      <div className="px-4 pb-0 pt-5 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8">
+        <h2 className="mb-4 text-xl font-bold sm:mb-6 sm:text-2xl">
+          Histórico de Clientes
+        </h2>
       </div>
-      <div className="flex-1 flex flex-col px-8 pb-8">{children}</div>
+      <div className="flex flex-1 flex-col px-4 pb-4 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8">
+        {children}
+      </div>
     </div>
   );
 }

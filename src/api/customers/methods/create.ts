@@ -7,7 +7,7 @@ export async function createCustomer(
   payload: CreateCustomerPayload,
   userId: string,
 ): Promise<Customer> {
-  const response = await axios.post(API_BASE_URL, payload, {
+  const response = await axios.post<Customer>(API_BASE_URL, payload, {
     headers: {
       "x-user-id": userId,
     },

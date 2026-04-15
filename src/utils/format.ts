@@ -48,6 +48,21 @@ export function formatDate(value: string): string {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
+export function formatDateTimeDisplay(value?: string): string {
+  if (!value) return "";
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(parsedDate);
+}
+
 export function onlyDigits(value: string, maxLength?: number): string {
   const digits = value.replace(/\D/g, "");
   return maxLength ? digits.slice(0, maxLength) : digits;

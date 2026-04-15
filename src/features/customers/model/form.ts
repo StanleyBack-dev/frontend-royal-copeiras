@@ -92,12 +92,15 @@ export const customerFormSchema = customerFormSchemaBase.superRefine(
   },
 );
 
-export type CustomerFormValues = z.infer<typeof customerFormSchema>;
+export type CustomerFormValues = z.infer<typeof customerFormSchema> & {
+  createdAt: string;
+};
 
 export const emptyCustomerFormValues: CustomerFormValues = {
   name: "",
   cpf: "",
   cnpj: "",
+  createdAt: "",
   type: "individual",
   contactType: "mobile",
   email: "",

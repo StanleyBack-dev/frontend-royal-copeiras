@@ -22,7 +22,7 @@ export default function SearchBar({
 }: SearchBarProps) {
   return (
     <div
-      className={`flex items-center gap-2 px-4 py-2.5 border ${className}`}
+      className={`flex w-full items-center gap-2 border px-3 py-2.5 sm:px-4 ${className}`}
       style={{
         background: colors.white,
         borderColor: colors.brown[100],
@@ -35,7 +35,7 @@ export default function SearchBar({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="outline-none text-sm bg-transparent w-56"
+        className="min-w-0 flex-1 bg-transparent text-sm outline-none"
         style={{ color: colors.brown[800], fontFamily: typography.fontFamily }}
         {...props}
       />

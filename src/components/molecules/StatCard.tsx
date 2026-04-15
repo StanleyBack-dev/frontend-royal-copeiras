@@ -22,12 +22,12 @@ export default function StatCard({
 }: StatCardProps) {
   return (
     <div
-      className={`bg-white rounded-xl p-6 shadow-sm border ${className}`}
+      className={`rounded-xl border bg-white p-4 shadow-sm sm:p-5 lg:p-6 ${className}`}
       style={{ borderColor: colors.brown[100], borderRadius: radii.lg }}
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <p
-          className="text-sm font-medium"
+          className="pr-2 text-sm font-medium sm:text-[15px]"
           style={{
             color: colors.brown[500],
             fontFamily: typography.fontFamily,
@@ -37,7 +37,7 @@ export default function StatCard({
         </p>
         {icon && (
           <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg sm:h-11 sm:w-11"
             style={{ background: color + "20", color }}
           >
             {icon}
@@ -45,7 +45,7 @@ export default function StatCard({
         )}
       </div>
       <p
-        className="text-2xl font-bold mb-1"
+        className="mb-1 text-xl font-bold sm:text-2xl"
         style={{ color: colors.brown[800], fontFamily: typography.fontFamily }}
       >
         {value}

@@ -10,11 +10,10 @@ import { useCustomersContext } from "@/features/customers/context/useCustomersCo
 import { customerRoutePaths } from "@/router";
 
 export default function Customers() {
-  const { customers, loading, setCustomers } = useCustomersContext();
+  const { customers, loading } = useCustomersContext();
   const navigate = useNavigate();
   const { search, setSearch, filteredCustomers, columns } = useCustomersList({
     customers,
-    setCustomers,
   });
 
   return (

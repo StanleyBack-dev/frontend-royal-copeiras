@@ -2,7 +2,7 @@ import type {
   CreateCustomerPayload,
   Customer,
 } from "../../../api/customers/schema";
-import { onlyDigits } from "../../../utils/format";
+import { formatDateTimeDisplay, onlyDigits } from "../../../utils/format";
 import {
   CUSTOMER_CNPJ_DIGITS,
   CUSTOMER_CPF_DIGITS,
@@ -24,6 +24,7 @@ export function mapCustomerToFormValues(
     name: customer.name,
     cpf: customer.type === "individual" ? customer.document : "",
     cnpj: customer.type === "company" ? customer.document : "",
+    createdAt: formatDateTimeDisplay(customer.createdAt),
     type: customer.type,
     contactType: inferCustomerContactType(customer.phone),
     email: customer.email || "",

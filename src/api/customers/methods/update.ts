@@ -8,7 +8,7 @@ export async function updateCustomer(
   payload: UpdateCustomerPayload,
   userId: string,
 ): Promise<Customer> {
-  const response = await axios.put(`${API_BASE_URL}/${id}`, payload, {
+  const response = await axios.put<Customer>(`${API_BASE_URL}/${id}`, payload, {
     headers: {
       "x-user-id": userId,
     },

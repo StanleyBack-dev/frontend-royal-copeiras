@@ -42,7 +42,7 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
       }
       values={form}
       setValues={setForm}
-      fields={getCustomerFormFields(form)}
+      fields={getCustomerFormFields(form, { isEditing: mode === "edit" })}
       onSubmit={handleSave}
       errors={errors}
       saving={saving}

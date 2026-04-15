@@ -4,6 +4,7 @@ import PageHeader from "@atoms/PageHeader";
 import SearchBar from "@atoms/SearchBar";
 import Button from "@atoms/Button";
 import { useState } from "react";
+import { Menu } from "lucide-react";
 
 import type { ActiveView } from "../../types/views";
 import {
@@ -19,9 +20,14 @@ interface HeaderProps {
   onBellClick?: () => void;
   actions?: React.ReactNode;
   onNavigate?: (view: ActiveView) => void;
+  onMenuClick?: () => void;
 }
 
-export default function Header({ activeView, onNavigate }: HeaderProps) {
+export default function Header({
+  activeView,
+  onNavigate,
+  onMenuClick,
+}: HeaderProps) {
   const info = viewTitles[activeView as keyof typeof viewTitles] || {
     title: "Painel",
     subtitle: "",
@@ -41,7 +47,15 @@ export default function Header({ activeView, onNavigate }: HeaderProps) {
       subtitle={info.subtitle}
       actions={
         <>
-          <div className="relative">
+          <button
+            type="button"
+            onClick={onMenuClick}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e8d5c9] bg-[#f5ede8] text-[#7a4430] lg:hidden"
+            aria-label="Abrir menu"
+          >
+            <Menu size={18} />
+          </button>
+          <div className="relative w-full sm:max-w-xs">
             <SearchBar
               value={search}
               onChange={setSearch}
@@ -50,7 +64,7 @@ export default function Header({ activeView, onNavigate }: HeaderProps) {
               className="bg-[#f5ede8] text-[#7a4430]"
             />
             {filtered.length > 0 && (
-              <div className="absolute left-0 mt-1 w-full bg-white rounded shadow z-50 border border-[#e8d5c9]">
+              <div className="absolute left-0 z-50 mt-1 w-full rounded border border-[#e8d5c9] bg-white shadow">
                 {filtered.map((item) => (
                   <button
                     key={item.id}
@@ -72,6 +86,7 @@ export default function Header({ activeView, onNavigate }: HeaderProps) {
           <Button
             variant="secondary"
             size="sm"
+            className="shrink-0"
             style={{
               position: "relative",
               background: "#f5ede8",
@@ -85,7 +100,7 @@ export default function Header({ activeView, onNavigate }: HeaderProps) {
               style={{ background: "#C9A227" }}
             />
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2 self-start sm:self-center">
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
               style={{

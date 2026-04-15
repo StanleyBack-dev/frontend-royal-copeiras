@@ -4,7 +4,7 @@ import type { Customer } from "../schema";
 const API_BASE_URL = "/api/customers";
 
 export async function getCustomers(userId: string): Promise<Customer[]> {
-  const response = await axios.get(API_BASE_URL, {
+  const response = await axios.get<Customer[]>(API_BASE_URL, {
     headers: {
       "x-user-id": userId,
     },
