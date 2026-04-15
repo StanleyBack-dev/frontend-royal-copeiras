@@ -40,6 +40,16 @@ export function formatCNPJ(value: string): string {
     .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
 }
 
+export function formatBrazilianDocument(value: string): string {
+  const digits = value.replace(/\D/g, "");
+
+  if (digits.length <= 11) {
+    return formatCPF(digits);
+  }
+
+  return formatCNPJ(digits);
+}
+
 export function formatDate(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 8);
   if (!digits) return "";
