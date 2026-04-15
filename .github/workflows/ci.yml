@@ -5,10 +5,10 @@ on:
     branches:
       - master
       - beta
-  push:
-    branches:
-      - master
-      - beta
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
