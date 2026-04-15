@@ -1,8 +1,10 @@
 import { Router } from "express";
 import customersRoutes from "./modules/customers/routes.js";
+import employeesRoutes from "./modules/employees/routes.js";
 
 const router = Router();
 
 router.use("/customers", customersRoutes);
+router.use("/employees", employeesRoutes);
 
 export default router;

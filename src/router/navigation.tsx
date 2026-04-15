@@ -17,12 +17,10 @@ export interface NavigationItem {
   icon: ReactNode;
 }
 
-export const routePaths: Record<
-  Exclude<ActiveView, "employees" | "users">,
-  string
-> = {
+export const routePaths: Record<Exclude<ActiveView, "users">, string> = {
   dashboard: "/dashboard",
   clients: "/clientes",
+  employees: "/funcionarios",
   events: "/eventos",
   finances: "/financas",
   debts: "/dividas",
@@ -40,12 +38,25 @@ export const customerRoutePaths = {
   legacyEdit: (id = ":id") => `/customers/${id}/edit`,
 };
 
+export const employeeRoutePaths = {
+  list: "/funcionarios",
+  create: "/funcionarios/new",
+  edit: (id = ":id") => `/funcionarios/${id}/edit`,
+  legacyList: "/employees",
+  legacyCreate: "/employees/new",
+  legacyEdit: (id = ":id") => `/employees/${id}/edit`,
+};
+
 export const viewTitles: Record<
-  Exclude<ActiveView, "employees" | "users">,
+  Exclude<ActiveView, "users">,
   { title: string; subtitle: string }
 > = {
   dashboard: { title: "Painel Geral", subtitle: "Visão geral da empresa" },
   clients: { title: "Clientes", subtitle: "Gerenciar clientes" },
+  employees: {
+    title: "Funcionários",
+    subtitle: "Gerenciar colaboradores",
+  },
   events: { title: "Eventos", subtitle: "Agenda e histórico de eventos" },
   finances: { title: "Finanças", subtitle: "Controle financeiro" },
   debts: { title: "Dívidas", subtitle: "Contas a pagar e receber" },
@@ -82,6 +93,13 @@ export function getActiveView(pathname: string): ActiveView {
     return "clients";
   }
 
+  if (
+    pathname.startsWith(employeeRoutePaths.list) ||
+    pathname.startsWith(employeeRoutePaths.legacyList)
+  ) {
+    return "employees";
+  }
+
   if (pathname.startsWith(routePaths.events)) return "events";
   if (pathname.startsWith(routePaths.finances)) return "finances";
   if (pathname.startsWith(routePaths.debts)) return "debts";
@@ -97,6 +115,8 @@ export function getPathForView(view: ActiveView) {
       return routePaths.dashboard;
     case "clients":
       return routePaths.clients;
+    case "employees":
+      return employeeRoutePaths.list;
     case "events":
       return routePaths.events;
     case "finances":
@@ -109,7 +129,6 @@ export function getPathForView(view: ActiveView) {
       return routePaths.profile;
     case "settings":
       return routePaths.settings;
-    case "employees":
     case "users":
     default:
       return null;
