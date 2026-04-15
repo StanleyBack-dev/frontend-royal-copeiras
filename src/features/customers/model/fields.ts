@@ -11,8 +11,22 @@ import {
 import type { CustomerFormValues } from "./form";
 import { customerUiCopy } from "./messages";
 
-export function getCustomerFormFields(values: CustomerFormValues): FormField[] {
+export function getCustomerFormFields(
+  values: CustomerFormValues,
+  options?: { isEditing?: boolean },
+): FormField[] {
   return [
+    ...(options?.isEditing
+      ? [
+          {
+            name: "createdAt",
+            label: customerUiCopy.form.labels.createdAt,
+            readOnly: true,
+            disabled: true,
+            colSpan: 2 as const,
+          },
+        ]
+      : []),
     {
       name: "name",
       label: customerUiCopy.form.labels.name,

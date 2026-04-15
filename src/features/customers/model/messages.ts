@@ -16,6 +16,7 @@ export const customerUiCopy = {
     labels: {
       name: "Nome",
       type: "Tipo",
+      createdAt: "Data de Criação",
       cpf: "CPF",
       cnpj: "CNPJ",
       contactType: "Tipo de Telefone",
@@ -45,7 +46,6 @@ export const customerUiCopy = {
     newAction: "Novo Cliente",
     searchPlaceholder: "Buscar clientes...",
     emptyMessage: "Nenhum cliente encontrado",
-    confirmDelete: "Excluir este cliente?",
     columns: {
       name: "Nome",
       document: "Documento",
@@ -53,7 +53,8 @@ export const customerUiCopy = {
       email: "Email",
       phone: "Telefone",
       isActive: "Ativo",
-      actions: "Ações",
+      createdAt: "Criação",
+      actions: "Editar",
     },
     values: {
       active: "Sim",
@@ -61,7 +62,6 @@ export const customerUiCopy = {
     },
     actions: {
       edit: "Editar",
-      delete: "Excluir",
     },
   },
   errors: {

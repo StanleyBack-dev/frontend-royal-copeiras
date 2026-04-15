@@ -3,15 +3,11 @@ import type { DataTableColumn } from "../../../components/organisms/DataTable";
 import EmailIcon from "../../../components/atoms/icons/EmailIcon";
 import PhoneIcon from "../../../components/atoms/icons/PhoneIcon";
 import EditIcon from "../../../components/atoms/icons/EditIcon";
-import DeleteIcon from "../../../components/atoms/icons/DeleteIcon";
 import { colors } from "../../../config";
 import type { Customer } from "../../../api/customers/schema";
 import { customerRoutePaths } from "../../../router";
+import { formatDateTimeDisplay } from "../../../utils/format";
 import { customerUiCopy } from "./messages";
-
-interface CustomerTableColumnsParams {
-  onRemove: (id: string) => void;
-}
 
 export function filterCustomersBySearch(customers: Customer[], search: string) {
   const normalizedSearch = search.trim().toLowerCase();
@@ -28,9 +24,7 @@ export function filterCustomersBySearch(customers: Customer[], search: string) {
   );
 }
 
-export function getCustomerTableColumns({
-  onRemove,
-}: CustomerTableColumnsParams): DataTableColumn<Customer>[] {
+export function getCustomerTableColumns(): DataTableColumn<Customer>[] {
   return [
     {
       key: "name",
@@ -82,6 +76,11 @@ export function getCustomerTableColumns({
           : customerUiCopy.listing.values.inactive,
     },
     {
+      key: "createdAt",
+      label: customerUiCopy.listing.columns.createdAt,
+      render: (customer) => formatDateTimeDisplay(customer.createdAt),
+    },
+    {
       key: "actions",
       label: customerUiCopy.listing.columns.actions,
       render: (customer) => (
@@ -94,15 +93,6 @@ export function getCustomerTableColumns({
           >
             <EditIcon size={18} />
           </Link>
-          <button
-            type="button"
-            onClick={() => onRemove(customer.idCustomers)}
-            title={customerUiCopy.listing.actions.delete}
-            className="hover:text-red-700"
-            style={{ display: "flex", alignItems: "center" }}
-          >
-            <DeleteIcon size={18} />
-          </button>
         </div>
       ),
     },

@@ -21,10 +21,10 @@ export default function SettingRow({
 }: SettingRowProps) {
   return (
     <div
-      className="flex items-center justify-between py-4 border-b last:border-0"
+      className="flex flex-col gap-3 border-b py-4 last:border-0 sm:flex-row sm:items-center sm:justify-between"
       style={{ borderColor: colors.brown[100] }}
     >
-      <div>
+      <div className="min-w-0">
         <p
           className="text-sm font-medium"
           style={{
@@ -47,7 +47,9 @@ export default function SettingRow({
       {right ? (
         right
       ) : typeof checked === "boolean" && onChange ? (
-        <Toggle checked={checked} onChange={onChange} {...toggleProps} />
+        <div className="self-start sm:self-center">
+          <Toggle checked={checked} onChange={onChange} {...toggleProps} />
+        </div>
       ) : null}
     </div>
   );
