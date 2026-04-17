@@ -5,8 +5,13 @@ import SearchBar from "@atoms/SearchBar";
 import Button from "@atoms/Button";
 import { useState } from "react";
 import { Menu } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import type { ActiveView } from "../../types/views";
+import { authRoutePaths } from "../../router";
+import { logoutCurrentSession, useAuthSession } from "../../features/auth";
+import { useToast } from "../../shared/toast/useToast";
+import { AuthApiError } from "../../api/auth/methods/http-error";
 import {
   primaryNavigationItems,
   secondaryNavigationItems,
@@ -28,11 +33,16 @@ export default function Header({
   onNavigate,
   onMenuClick,
 }: HeaderProps) {
+  const navigate = useNavigate();
+  const { session, clearSession } = useAuthSession();
+  const { showSuccess, showError } = useToast();
+
   const info = viewTitles[activeView as keyof typeof viewTitles] || {
     title: "Painel",
     subtitle: "",
   };
   const [search, setSearch] = useState("");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const sidebarItems = [...primaryNavigationItems, ...secondaryNavigationItems];
   const filtered =
     search.length > 0
@@ -40,6 +50,26 @@ export default function Header({
           item.label.toLowerCase().includes(search.toLowerCase()),
         )
       : [];
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+
+    try {
+      await logoutCurrentSession();
+      showSuccess("Sessao encerrada", "Logout realizado com sucesso.");
+    } catch (error) {
+      const message =
+        error instanceof AuthApiError || error instanceof Error
+          ? error.message
+          : "Nao foi possivel encerrar a sessao no servidor.";
+
+      showError("Logout parcial", message);
+    } finally {
+      clearSession();
+      setIsLoggingOut(false);
+      navigate(authRoutePaths.login, { replace: true });
+    }
+  }
 
   return (
     <PageHeader
@@ -107,16 +137,28 @@ export default function Header({
                 background: "linear-gradient(135deg, #C9A227, #a8811a)",
               }}
             >
-              RC
+              {session?.user?.name?.slice(0, 2).toUpperCase() || "RC"}
             </div>
             <div className="hidden sm:block">
               <p className="text-xs font-semibold" style={{ color: "#2C1810" }}>
-                Royal Copeiras
+                {session?.user?.name || "Royal Copeiras"}
               </p>
               <p className="text-xs" style={{ color: "#9a7060" }}>
-                Administrador
+                {session?.user?.group || "Administrador"}
               </p>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              loading={isLoggingOut}
+              onClick={() => {
+                void handleLogout();
+              }}
+            >
+              Sair
+            </Button>
           </div>
         </>
       }

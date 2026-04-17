@@ -1,0 +1,52 @@
+import { login } from "../../../api/auth/methods/login";
+import { logout } from "../../../api/auth/methods/logout";
+import { refreshAuthSession } from "../../../api/auth/methods/refreshAuthSession";
+import {
+  AuthSessionResponseSchema,
+  type AuthSessionResponse,
+} from "../../../api/auth/schema";
+
+interface LoginWithPasswordInput {
+  username: string;
+  password: string;
+}
+
+export async function loginWithPassword(
+  input: LoginWithPasswordInput,
+): Promise<AuthSessionResponse> {
+  const response = await login({
+    username: input.username,
+    password: input.password,
+  });
+
+  const parsed = AuthSessionResponseSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error("Nao foi possivel validar a sessao de autenticacao.");
+  }
+
+  return parsed.data;
+}
+
+export async function refreshSessionFromCookie(): Promise<AuthSessionResponse | null> {
+  try {
+    const response = await refreshAuthSession();
+    const parsed = AuthSessionResponseSchema.safeParse(response);
+
+    if (!parsed.success) {
+      return null;
+    }
+
+    if (!parsed.data.authenticated) {
+      return null;
+    }
+
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function logoutCurrentSession(): Promise<void> {
+  await logout();
+}
