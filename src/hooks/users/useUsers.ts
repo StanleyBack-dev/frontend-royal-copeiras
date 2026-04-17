@@ -9,7 +9,10 @@ import type {
   UpdateUserPayload,
   User,
 } from "../../api/users/schema";
-import { fetchUsers, saveUser } from "../../features/users/services/user.service";
+import {
+  fetchUsers,
+  saveUser,
+} from "../../features/users/services/user.service";
 import { userUiCopy } from "../../features/users/model/messages";
 import { useToast } from "../../shared/toast/useToast";
 
@@ -56,7 +59,8 @@ export function useUsers(userId: string): UseUsersResult {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState<PaginationMeta>(EMPTY_PAGINATION);
+  const [pagination, setPagination] =
+    useState<PaginationMeta>(EMPTY_PAGINATION);
   const paginationRef = useRef<PaginationMeta>(EMPTY_PAGINATION);
   const prefetchInFlightRef = useRef<Set<string>>(new Set());
   const { showError, showSuccess } = useToast();
@@ -82,7 +86,9 @@ export function useUsers(userId: string): UseUsersResult {
         setPagination(data.pagination);
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : userUiCopy.errors.loadUsersFallback;
+          err instanceof Error
+            ? err.message
+            : userUiCopy.errors.loadUsersFallback;
         setError(message);
         showError(userUiCopy.errors.loadUsersFallback, message);
       } finally {
@@ -133,7 +139,12 @@ export function useUsers(userId: string): UseUsersResult {
       isActive = false;
       inFlightPrefetches.delete(key);
     };
-  }, [pagination.currentPage, pagination.hasNextPage, pagination.limit, userId]);
+  }, [
+    pagination.currentPage,
+    pagination.hasNextPage,
+    pagination.limit,
+    userId,
+  ]);
 
   useEffect(() => {
     const inFlightPrefetches = prefetchInFlightRef.current;
@@ -195,12 +206,16 @@ export function useUsers(userId: string): UseUsersResult {
       try {
         await saveUser({ userId, formData, editing });
         showSuccess(
-          editing ? userUiCopy.success.updateUser : userUiCopy.success.createUser,
+          editing
+            ? userUiCopy.success.updateUser
+            : userUiCopy.success.createUser,
         );
         await load({ page: pagination.currentPage, limit: pagination.limit });
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : userUiCopy.errors.saveUserFallback;
+          err instanceof Error
+            ? err.message
+            : userUiCopy.errors.saveUserFallback;
         setError(message);
         showError(userUiCopy.errors.saveUserFallback, message);
       } finally {

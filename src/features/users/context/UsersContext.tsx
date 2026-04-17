@@ -12,7 +12,9 @@ interface UsersProviderProps {
 export function UsersProvider({ userId, children }: UsersProviderProps) {
   const usersState = useUsers(userId);
 
-  return <UsersContext.Provider value={usersState}>{children}</UsersContext.Provider>;
+  return (
+    <UsersContext.Provider value={usersState}>{children}</UsersContext.Provider>
+  );
 }
 
 export function UsersProviderOutlet({ userId }: { userId: string }) {

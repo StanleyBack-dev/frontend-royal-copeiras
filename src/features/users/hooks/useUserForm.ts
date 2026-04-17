@@ -32,7 +32,9 @@ interface SubmitUserFormResult {
   errors?: string[];
 }
 
-type UserFormErrors = Partial<Record<Extract<keyof UserFormValues, string>, string>>;
+type UserFormErrors = Partial<
+  Record<Extract<keyof UserFormValues, string>, string>
+>;
 
 export function useUserForm({ mode, id, users }: UseUserFormParams) {
   const [form, setForm] = useState<UserFormValues>(emptyUserFormValues);

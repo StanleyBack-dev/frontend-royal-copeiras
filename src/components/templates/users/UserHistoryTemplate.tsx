@@ -4,7 +4,9 @@ export interface UserHistoryTemplateProps {
   children?: React.ReactNode;
 }
 
-export default function UserHistoryTemplate({ children }: UserHistoryTemplateProps) {
+export default function UserHistoryTemplate({
+  children,
+}: UserHistoryTemplateProps) {
   return (
     <div
       className="flex h-full w-full flex-col overflow-hidden rounded-xl border bg-white shadow-sm"

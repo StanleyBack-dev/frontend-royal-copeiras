@@ -51,11 +51,7 @@ export async function fetchUsers(
   };
 }
 
-export async function saveUser({
-  userId,
-  formData,
-  editing,
-}: SaveUserParams) {
+export async function saveUser({ userId, formData, editing }: SaveUserParams) {
   if (editing) {
     const parsedPayload = UpdateUserPayloadSchema.safeParse(formData);
 

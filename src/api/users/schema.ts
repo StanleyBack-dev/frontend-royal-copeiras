@@ -14,18 +14,18 @@ export const UserGroupSchema = z.enum(["USER", "ADMIN", "ADMIN_MASTER"]);
 
 export const UserSchema = z.object({
   idUsers: z.string(),
-  name: z
-    .string()
-    .trim()
-    .min(USER_NAME_MIN_LENGTH)
-    .max(USER_NAME_MAX_LENGTH),
+  name: z.string().trim().min(USER_NAME_MIN_LENGTH).max(USER_NAME_MAX_LENGTH),
   email: z
     .string()
     .trim()
     .min(USER_EMAIL_MIN_LENGTH)
     .max(USER_EMAIL_MAX_LENGTH)
     .email(),
-  username: z.string().trim().min(USER_USERNAME_MIN_LENGTH).max(USER_USERNAME_MAX_LENGTH),
+  username: z
+    .string()
+    .trim()
+    .min(USER_USERNAME_MIN_LENGTH)
+    .max(USER_USERNAME_MAX_LENGTH),
   urlAvatar: z.string().trim().optional().nullable().or(z.literal("")),
   status: z.boolean(),
   group: UserGroupSchema,
@@ -55,10 +55,7 @@ export const CreateUserPayloadSchema = z.object({
     .trim()
     .min(USER_USERNAME_MIN_LENGTH, userValidationMessages.usernameMin)
     .max(USER_USERNAME_MAX_LENGTH, userValidationMessages.usernameMax)
-    .regex(
-      /^[a-zA-Z0-9._-]+$/,
-      userValidationMessages.usernamePattern,
-    ),
+    .regex(/^[a-zA-Z0-9._-]+$/, userValidationMessages.usernamePattern),
   group: UserGroupSchema,
   urlAvatar: z
     .string()

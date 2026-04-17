@@ -21,7 +21,9 @@ export default function Users() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder={userUiCopy.listing.searchPlaceholder}
-        searchIcon={<SearchIcon size={16} style={{ color: colors.brown[300] }} />}
+        searchIcon={
+          <SearchIcon size={16} style={{ color: colors.brown[300] }} />
+        }
         action={{
           label: userUiCopy.listing.newAction,
           onClick: () => navigate(userRoutePaths.create),
@@ -45,7 +47,8 @@ export default function Users() {
           />
           <div className="mt-4 flex items-center justify-between text-sm text-brown-700">
             <span>
-              Pagina {pagination.currentPage} de {Math.max(pagination.totalPages, 1)}
+              Pagina {pagination.currentPage} de{" "}
+              {Math.max(pagination.totalPages, 1)}
               {" - "}
               {pagination.total} registros
             </span>
