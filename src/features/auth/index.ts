@@ -12,9 +12,7 @@ export {
   refreshSessionFromCookie,
 } from "./services/auth.service";
 export { changePasswordFirstAccess } from "./services/change-password.service";
-export {
-  AuthSessionProvider,
-} from "./context/AuthSessionContext";
+export { AuthSessionProvider } from "./context/AuthSessionContext";
 export { useAuthSession } from "./context/useAuthSession";
 export { default as RequireAuthenticatedRoute } from "./guards/RequireAuthenticatedRoute";
 export { default as RequirePasswordChangeRoute } from "./guards/RequirePasswordChangeRoute";
