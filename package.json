@@ -10,6 +10,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "format-and-lint": "prettier --write . && npm run lint",
+    "prepush:check": "npx prettier --write . && npm run lint",
+    "setup-hooks": "node scripts/setup-git-hooks.cjs",
+    "prepare": "node scripts/setup-git-hooks.cjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json"
   },

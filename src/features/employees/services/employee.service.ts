@@ -1,6 +1,10 @@
 import { createEmployee } from "../../../api/employees/methods/create";
 import { getEmployees } from "../../../api/employees/methods/get";
 import { updateEmployee } from "../../../api/employees/methods/update";
+import type {
+  ListQueryParams,
+  PaginationMeta,
+} from "../../../api/shared/contracts";
 import {
   CreateEmployeePayloadSchema,
   EmployeeSchema,
@@ -16,15 +20,32 @@ interface SaveEmployeeParams {
   editing?: Employee | null;
 }
 
-export async function fetchEmployees(userId: string): Promise<Employee[]> {
-  const response = await getEmployees(userId);
-  const parsed = EmployeeSchema.array().safeParse(response);
+export interface EmployeesCollectionResult {
+  items: Employee[];
+  pagination: PaginationMeta;
+}
+
+export async function fetchEmployees(
+  userId: string,
+  params: ListQueryParams = {},
+): Promise<EmployeesCollectionResult> {
+  const response = await getEmployees(userId, params);
+  const parsed = EmployeeSchema.array().safeParse(response.items);
 
   if (!parsed.success) {
     throw new Error(employeeUiCopy.errors.invalidCollectionData);
   }
 
-  return parsed.data;
+  return {
+    items: parsed.data,
+    pagination: {
+      total: response.total,
+      currentPage: response.currentPage,
+      limit: response.limit,
+      totalPages: response.totalPages,
+      hasNextPage: response.hasNextPage,
+    },
+  };
 }
 
 export async function saveEmployee({

@@ -1,20 +1,24 @@
-import axios from "axios";
-import { config } from "../../../../config/env.js";
+import { executeGraphql } from "../../../../shared/http/graphql-client.js";
 
 export class UpdateEmployeesService {
-  async updateEmployee(userId, idEmployees, input) {
+  async updateEmployee(userId, idEmployees, input, context = {}) {
     const mutation = `
       mutation UpdateEmployees($input: UpdateEmployeesInputDto!) {
         updateEmployees(input: $input) {
-          idEmployees
-          name
-          document
-          email
-          phone
-          position
-          isActive
-          createdAt
-          updatedAt
+          success
+          message
+          code
+          data {
+            idEmployees
+            name
+            document
+            email
+            phone
+            position
+            isActive
+            createdAt
+            updatedAt
+          }
         }
       }
     `;
@@ -27,32 +31,14 @@ export class UpdateEmployeesService {
     delete sanitizedInput.createdAt;
     delete sanitizedInput.updatedAt;
 
-    const variables = { input: sanitizedInput };
-    const headers = {
-      "x-user-id": userId,
-      Authorization: `Bearer ${userId}`,
-    };
+    const data = await executeGraphql({
+      query: mutation,
+      variables: { input: sanitizedInput },
+      userId,
+      authorization: context.authorization,
+      requestId: context.requestId,
+    });
 
-    try {
-      const response = await axios.post(
-        config.backendGraphqlUrl,
-        { query: mutation, variables },
-        { headers },
-      );
-
-      return response.data.data.updateEmployees;
-    } catch (error) {
-      if (error.response) {
-        console.error(
-          "GraphQL error:",
-          error.response.status,
-          error.response.data,
-        );
-      } else {
-        console.error("GraphQL error:", error.message);
-      }
-
-      throw error;
-    }
+    return data.updateEmployees;
   }
 }

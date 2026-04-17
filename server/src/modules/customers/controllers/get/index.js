@@ -1,19 +1,27 @@
 import { GetCustomersService } from "../../services/get/get-customers.service.js";
-
-// Exemplo de autenticação simples (ajuste para produção)
-function getUserId(req) {
-  return req.headers["x-user-id"] || "mock-user-id";
-}
+import { getAuthContext } from "../../../../shared/auth/get-user-id.js";
+import { HttpError } from "../../../../shared/http/http-error.js";
+import { buildListInput } from "../../../../shared/http/parse-pagination.js";
 
 export function getCustomersController() {
   const getCustomersService = new GetCustomersService();
+
   return async (req, res) => {
     try {
-      const userId = getUserId(req);
-      const customers = await getCustomersService.findAll(userId);
+      const auth = getAuthContext(req);
+      const input = buildListInput(req.query, [
+        "idCustomers",
+        "startDate",
+        "endDate",
+      ]);
+      const customers = await getCustomersService.findAll(auth.userId, input, {
+        authorization: auth.authorization,
+        requestId: req.requestId,
+      });
       res.json(customers);
     } catch (error) {
-      res.status(500).json({ error: error.message || "Unknown error" });
+      const statusCode = error instanceof HttpError ? error.statusCode : 500;
+      res.status(statusCode).json({ error: error.message || "Unknown error" });
     }
   };
 }

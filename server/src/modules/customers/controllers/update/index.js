@@ -1,24 +1,29 @@
 import { UpdateCustomersService } from "../../services/update/update-customers.service.js";
-
-function getUserId(req) {
-  return req.headers["x-user-id"] || "00000000-0000-0000-0000-000000000001";
-}
+import { getAuthContext } from "../../../../shared/auth/get-user-id.js";
+import { HttpError } from "../../../../shared/http/http-error.js";
+import { invalidateCacheByPrefix } from "../../../../shared/cache/in-memory-cache.js";
 
 export function updateCustomersController() {
   const updateCustomersService = new UpdateCustomersService();
 
   return async (req, res) => {
     try {
-      const userId = getUserId(req);
+      const auth = getAuthContext(req);
       const customer = await updateCustomersService.updateCustomer(
-        userId,
+        auth.userId,
         req.params.id,
         req.body,
+        {
+          authorization: auth.authorization,
+          requestId: req.requestId,
+        },
       );
+      invalidateCacheByPrefix(`customers:list:${auth.userId}:`);
 
       res.json(customer);
     } catch (error) {
-      res.status(500).json({ error: error.message || "Unknown error" });
+      const statusCode = error instanceof HttpError ? error.statusCode : 500;
+      res.status(statusCode).json({ error: error.message || "Unknown error" });
     }
   };
 }
