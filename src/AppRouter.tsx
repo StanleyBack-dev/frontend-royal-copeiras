@@ -6,10 +6,14 @@ import { CustomersProviderOutlet } from "./features/customers";
 import Employees from "./pages/employees/Employees.tsx";
 import EmployeeForm from "./pages/employees/EmployeeForm.tsx";
 import { EmployeesProviderOutlet } from "./features/employees";
+import Users from "./pages/users/Users.tsx";
+import UserForm from "./pages/users/UserForm.tsx";
+import { UsersProviderOutlet } from "./features/users";
 import {
   AppLayout,
   customerRoutePaths,
   employeeRoutePaths,
+  userRoutePaths,
   routePaths,
 } from "./router";
 import Events from "./pages/Events";
@@ -74,6 +78,29 @@ export default function AppRouter() {
           <Route
             path={employeeRoutePaths.legacyEdit()}
             element={<Navigate to={employeeRoutePaths.edit()} replace />}
+          />
+          <Route element={<UsersProviderOutlet userId="mock-user-id" />}>
+            <Route path={userRoutePaths.list} element={<Users />} />
+            <Route
+              path={userRoutePaths.create}
+              element={<UserForm mode="create" />}
+            />
+            <Route
+              path={userRoutePaths.edit()}
+              element={<UserForm mode="edit" />}
+            />
+          </Route>
+          <Route
+            path={userRoutePaths.legacyList}
+            element={<Navigate to={userRoutePaths.list} replace />}
+          />
+          <Route
+            path={userRoutePaths.legacyCreate}
+            element={<Navigate to={userRoutePaths.create} replace />}
+          />
+          <Route
+            path={userRoutePaths.legacyEdit()}
+            element={<Navigate to={userRoutePaths.edit()} replace />}
           />
           <Route path={routePaths.events} element={<Events />} />
           <Route path={routePaths.finances} element={<Finance />} />
