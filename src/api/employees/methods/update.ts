@@ -1,5 +1,6 @@
-import axios from "axios";
 import type { Employee, UpdateEmployeePayload } from "../schema";
+import { httpClient } from "../../shared/httpClient";
+import { extractMutationData } from "../../shared/normalizers";
 
 const API_BASE_URL = "/api/employees";
 
@@ -8,11 +9,15 @@ export async function updateEmployee(
   payload: UpdateEmployeePayload,
   userId: string,
 ): Promise<Employee> {
-  const response = await axios.put<Employee>(`${API_BASE_URL}/${id}`, payload, {
-    headers: {
-      "x-user-id": userId,
+  const response = await httpClient.put<unknown>(
+    `${API_BASE_URL}/${id}`,
+    payload,
+    {
+      headers: {
+        "x-user-id": userId,
+      },
     },
-  });
+  );
 
-  return response.data;
+  return extractMutationData<Employee>(response.data);
 }

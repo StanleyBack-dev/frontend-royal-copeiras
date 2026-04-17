@@ -1,6 +1,10 @@
 import { createCustomer } from "../../../api/customers/methods/create";
 import { getCustomers } from "../../../api/customers/methods/get";
 import { updateCustomer } from "../../../api/customers/methods/update";
+import type {
+  ListQueryParams,
+  PaginationMeta,
+} from "../../../api/shared/contracts";
 import {
   CreateCustomerPayloadSchema,
   CustomerSchema,
@@ -16,15 +20,32 @@ interface SaveCustomerParams {
   editing?: Customer | null;
 }
 
-export async function fetchCustomers(userId: string): Promise<Customer[]> {
-  const response = await getCustomers(userId);
-  const parsed = CustomerSchema.array().safeParse(response);
+export interface CustomersCollectionResult {
+  items: Customer[];
+  pagination: PaginationMeta;
+}
+
+export async function fetchCustomers(
+  userId: string,
+  params: ListQueryParams = {},
+): Promise<CustomersCollectionResult> {
+  const response = await getCustomers(userId, params);
+  const parsed = CustomerSchema.array().safeParse(response.items);
 
   if (!parsed.success) {
     throw new Error(customerUiCopy.errors.invalidCollectionData);
   }
 
-  return parsed.data;
+  return {
+    items: parsed.data,
+    pagination: {
+      total: response.total,
+      currentPage: response.currentPage,
+      limit: response.limit,
+      totalPages: response.totalPages,
+      hasNextPage: response.hasNextPage,
+    },
+  };
 }
 
 export async function saveCustomer({
