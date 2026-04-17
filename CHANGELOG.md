@@ -1,3 +1,4 @@
+## [1.0.0-beta.1](https://github.com/StanleyBack-dev/frontend-royal-copeiras/compare/v1.3.0...v1.0.0-beta.1) (2026-04-17)
 # 1.0.0-beta.1 (2026-04-15)
 
 ### Bug Fixes
