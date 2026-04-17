@@ -116,7 +116,9 @@ export function useCustomers(userId: string): UseCustomersResult {
       return;
     }
 
-    prefetchInFlightRef.current.add(key);
+    const inFlightPrefetches = prefetchInFlightRef.current;
+
+    inFlightPrefetches.add(key);
     let isActive = true;
 
     void fetchCustomers(userId, {
@@ -128,13 +130,13 @@ export function useCustomers(userId: string): UseCustomersResult {
       })
       .finally(() => {
         if (isActive) {
-          prefetchInFlightRef.current.delete(key);
+          inFlightPrefetches.delete(key);
         }
       });
 
     return () => {
       isActive = false;
-      prefetchInFlightRef.current.delete(key);
+      inFlightPrefetches.delete(key);
     };
   }, [
     pagination.currentPage,
@@ -144,8 +146,10 @@ export function useCustomers(userId: string): UseCustomersResult {
   ]);
 
   useEffect(() => {
+    const inFlightPrefetches = prefetchInFlightRef.current;
+
     return () => {
-      prefetchInFlightRef.current.clear();
+      inFlightPrefetches.clear();
     };
   }, []);
 
