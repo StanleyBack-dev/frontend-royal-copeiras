@@ -14,7 +14,7 @@ export {
 export { changePasswordFirstAccess } from "./services/change-password.service";
 export {
   AuthSessionProvider,
-  useAuthSession,
 } from "./context/AuthSessionContext";
+export { useAuthSession } from "./context/useAuthSession";
 export { default as RequireAuthenticatedRoute } from "./guards/RequireAuthenticatedRoute";
 export { default as RequirePasswordChangeRoute } from "./guards/RequirePasswordChangeRoute";

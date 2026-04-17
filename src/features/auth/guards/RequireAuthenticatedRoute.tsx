@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { authRoutePaths } from "../../../router/navigation";
-import { useAuthSession } from "../context/AuthSessionContext";
+import { useAuthSession } from "../context/useAuthSession";
 
 export default function RequireAuthenticatedRoute() {
   const location = useLocation();

@@ -48,7 +48,7 @@ interface ManagementRoutesProps {
   loginPath: string;
 }
 
-export function renderManagementRoutes({
+export function ManagementRoutes({
   userId,
   loginPath,
 }: ManagementRoutesProps) {

@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { authRoutePaths, routePaths } from "../../../router/navigation";
-import { useAuthSession } from "../context/AuthSessionContext";
+import { useAuthSession } from "../context/useAuthSession";
 
 export default function RequirePasswordChangeRoute() {
   const { isAuthenticated, requiresPasswordChange, isInitializing } =

@@ -17,7 +17,7 @@ function withPageSuspense(element: React.ReactNode) {
   );
 }
 
-export function renderAuthRoutes() {
+export function AuthRoutes() {
   return (
     <>
       <Route

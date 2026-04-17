@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { Route } from "react-router-dom";
 import AppLayout from "../AppLayout";
 import { authRoutePaths, routePaths } from "../navigation";
-import { renderManagementRoutes } from "./ManagementRoutes";
+import { ManagementRoutes } from "./ManagementRoutes";
 
 const Dashboard = lazy(() => import("../../pages/Dashboard"));
 const Debts = lazy(() => import("../../pages/Debts"));
@@ -24,14 +24,14 @@ interface AppShellRoutesProps {
   userId?: string;
 }
 
-export function renderAppShellRoutes({ userId }: AppShellRoutesProps) {
+export function AppShellRoutes({ userId }: AppShellRoutesProps) {
   return (
     <Route element={<AppLayout />}>
       <Route
         path={routePaths.dashboard}
         element={withPageSuspense(<Dashboard />)}
       />
-      {renderManagementRoutes({ userId, loginPath: authRoutePaths.login })}
+      {ManagementRoutes({ userId, loginPath: authRoutePaths.login })}
       <Route path={routePaths.events} element={withPageSuspense(<Events />)} />
       <Route
         path={routePaths.finances}

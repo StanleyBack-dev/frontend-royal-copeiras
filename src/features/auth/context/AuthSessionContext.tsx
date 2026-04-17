@@ -2,7 +2,6 @@ import {
   createContext,
   useCallback,
   useEffect,
-  useContext,
   useMemo,
   useState,
   type ReactNode,
@@ -35,7 +34,9 @@ interface AuthSessionContextValue {
   markPasswordChanged: () => void;
 }
 
-const AuthSessionContext = createContext<AuthSessionContextValue | null>(null);
+export const AuthSessionContext = createContext<AuthSessionContextValue | null>(
+  null,
+);
 
 interface AuthSessionProviderProps {
   children: ReactNode;
@@ -116,16 +117,4 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
       {children}
     </AuthSessionContext.Provider>
   );
-}
-
-export function useAuthSession() {
-  const context = useContext(AuthSessionContext);
-
-  if (!context) {
-    throw new Error(
-      "useAuthSession deve ser usado dentro de AuthSessionProvider",
-    );
-  }
-
-  return context;
 }
