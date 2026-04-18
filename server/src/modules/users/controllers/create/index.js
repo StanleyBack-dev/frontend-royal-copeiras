@@ -1,4 +1,4 @@
-import { CreateUsersService } from "../../services/create/create-users.service.js";
+﻿import { CreateUsersService } from "../../services/create/create-users.service.js";
 import { getAuthContext } from "../../../../shared/auth/get-user-id.js";
 import { HttpError } from "../../../../shared/http/http-error.js";
 import { invalidateCacheByPrefix } from "../../../../shared/cache/in-memory-cache.js";
@@ -11,6 +11,7 @@ export function createUsersController() {
       const auth = getAuthContext(req);
       const user = await createUsersService.createUser(auth.userId, req.body, {
         authorization: auth.authorization,
+        cookieHeader: auth.cookieHeader,
         requestId: req.requestId,
       });
       invalidateCacheByPrefix(`users:list:${auth.userId}:`);

@@ -46,3 +46,7 @@ export const authRoutePaths = {
   passwordRecovery: "/recuperar-senha",
   passwordRecoveryReset: "/recuperar-senha/nova-senha",
 };
+
+export const utilityRoutePaths = {
+  accessDenied: "/acesso-negado",
+};

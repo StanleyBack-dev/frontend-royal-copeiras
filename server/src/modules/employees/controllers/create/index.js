@@ -1,4 +1,4 @@
-import { CreateEmployeesService } from "../../services/create/create-employees.service.js";
+﻿import { CreateEmployeesService } from "../../services/create/create-employees.service.js";
 import { getAuthContext } from "../../../../shared/auth/get-user-id.js";
 import { HttpError } from "../../../../shared/http/http-error.js";
 import { invalidateCacheByPrefix } from "../../../../shared/cache/in-memory-cache.js";
@@ -14,6 +14,7 @@ export function createEmployeesController() {
         req.body,
         {
           authorization: auth.authorization,
+          cookieHeader: auth.cookieHeader,
           requestId: req.requestId,
         },
       );

@@ -1,5 +1,6 @@
 import { createUser } from "../../../api/users/methods/create";
 import { getUsers } from "../../../api/users/methods/get";
+import { getUserPagePermissions } from "../../../api/users/methods/get-page-permissions";
 import { updateUser } from "../../../api/users/methods/update";
 import { unlockUser } from "../../../api/users/methods/unlock";
 import type {
@@ -12,8 +13,10 @@ import {
   UnlockUserResponseSchema,
   UpdateUserPayloadSchema,
   UpdateUserResponseSchema,
+  UserPagePermissionsResponseSchema,
   UserSchema,
   type CreateUserPayload,
+  type UserPagePermissionsResponse,
   type UpdateUserPayload,
   type User,
 } from "../../../api/users/schema";
@@ -66,6 +69,8 @@ export async function saveUser({ userId, formData, editing }: SaveUserParams) {
       {
         group: parsedPayload.data.group,
         status: parsedPayload.data.status,
+        pagePermissions: parsedPayload.data.pagePermissions,
+        useGroupDefaults: parsedPayload.data.useGroupDefaults,
       },
       userId,
     );
@@ -93,6 +98,20 @@ export async function saveUser({ userId, formData, editing }: SaveUserParams) {
   }
 
   return parsedResponse.data;
+}
+
+export async function fetchUserPagePermissions(
+  userId: string,
+  idUsers: string,
+): Promise<UserPagePermissionsResponse> {
+  const response = await getUserPagePermissions(idUsers, userId);
+  const parsed = UserPagePermissionsResponseSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error(userUiCopy.errors.invalidPermissionsData);
+  }
+
+  return parsed.data;
 }
 
 export async function unlockUserCredential(

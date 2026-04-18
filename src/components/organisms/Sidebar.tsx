@@ -2,6 +2,7 @@ import { colors, typography } from "../../config";
 import CrownIcon from "../atoms/icons/CrownIcon";
 import { ChevronRight } from "lucide-react";
 import type { ActiveView } from "../../types/views";
+import { useAuthSession } from "../../features/auth";
 import {
   primaryNavigationItems,
   secondaryNavigationItems,
@@ -20,6 +21,12 @@ export default function Sidebar({
   mobileOpen = false,
   onClose,
 }: SidebarProps) {
+  const { hasPageAccess } = useAuthSession();
+
+  const visiblePrimaryItems = primaryNavigationItems.filter((item) =>
+    hasPageAccess(item.id),
+  );
+
   return (
     <>
       <div
@@ -87,7 +94,7 @@ export default function Sidebar({
           >
             Menu Principal
           </p>
-          {primaryNavigationItems.map((item) => {
+          {visiblePrimaryItems.map((item) => {
             const isActive = active === item.id;
             return (
               <button

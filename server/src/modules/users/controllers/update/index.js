@@ -1,4 +1,4 @@
-import { UpdateUsersService } from "../../services/update/update-users.service.js";
+﻿import { UpdateUsersService } from "../../services/update/update-users.service.js";
 import { getAuthContext } from "../../../../shared/auth/get-user-id.js";
 import { HttpError } from "../../../../shared/http/http-error.js";
 import { invalidateCacheByPrefix } from "../../../../shared/cache/in-memory-cache.js";
@@ -15,6 +15,7 @@ export function updateUsersController() {
         req.body,
         {
           authorization: auth.authorization,
+          cookieHeader: auth.cookieHeader,
           requestId: req.requestId,
         },
       );
