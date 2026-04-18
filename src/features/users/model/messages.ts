@@ -21,6 +21,7 @@ export const userUiCopy = {
       status: "Ativo",
       createdAt: "Data de Criação",
       resetPassword: "Resetar senha temporária",
+      unlockUser: "Desbloquear usuário",
     },
     placeholders: {
       name: "Maria Aparecida da Silva",
@@ -66,12 +67,14 @@ export const userUiCopy = {
     invalidUserData: "Dados do usuário inválidos",
     invalidCreateUserResponse: "Resposta de criação de usuário inválida",
     invalidUpdateUserResponse: "Resposta de atualização de usuário inválida",
+    unlockUserFallback: "Erro ao desbloquear usuário",
     loadUsersFallback: "Erro ao carregar usuários",
     saveUserFallback: "Erro ao salvar usuário",
   },
   success: {
     createUser: "Usuário criado com sucesso",
     updateUser: "Usuário atualizado com sucesso",
+    unlockUser: "Usuário desbloqueado com sucesso",
     resetPasswordSoon: "Reset de senha temporária será implementado em breve",
   },
 } as const;

@@ -12,6 +12,7 @@ import type {
 import {
   fetchUsers,
   saveUser,
+  unlockUserCredential,
 } from "../../features/users/services/user.service";
 import { userUiCopy } from "../../features/users/model/messages";
 import { useToast } from "../../shared/toast/useToast";
@@ -31,6 +32,7 @@ export interface UseUsersResult {
     formData: CreateUserPayload | UpdateUserPayload,
     editing?: User | null,
   ) => Promise<void>;
+  unlock: (idUsers: string) => Promise<void>;
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;
 }
 
@@ -232,6 +234,35 @@ export function useUsers(userId: string): UseUsersResult {
     ],
   );
 
+  const unlock = useCallback(
+    async (idUsers: string) => {
+      setSaving(true);
+      setError(null);
+      try {
+        await unlockUserCredential(userId, idUsers);
+        showSuccess(userUiCopy.success.unlockUser);
+        await load({ page: pagination.currentPage, limit: pagination.limit });
+      } catch (err) {
+        const message =
+          err instanceof Error
+            ? err.message
+            : userUiCopy.errors.unlockUserFallback;
+        setError(message);
+        showError(userUiCopy.errors.unlockUserFallback, message);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [
+      userId,
+      load,
+      showError,
+      showSuccess,
+      pagination.currentPage,
+      pagination.limit,
+    ],
+  );
+
   return {
     users,
     loading,
@@ -244,6 +275,7 @@ export function useUsers(userId: string): UseUsersResult {
     nextPage,
     prevPage,
     save,
+    unlock,
     setUsers,
   };
 }

@@ -25,4 +25,8 @@ export {
   mapUserToFormValues,
 } from "./model/mappers";
 export { userUiCopy, userValidationMessages } from "./model/messages";
-export { fetchUsers, saveUser } from "./services/user.service";
+export {
+  fetchUsers,
+  saveUser,
+  unlockUserCredential,
+} from "./services/user.service";
