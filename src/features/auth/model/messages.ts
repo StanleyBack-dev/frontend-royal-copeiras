@@ -2,6 +2,9 @@ export const authValidationMessages = {
   identifierRequired: "Informe seu usuário",
   identifierMin: "Usuário muito curto",
   identifierMax: "Usuário muito longo",
+  emailRequired: "Informe seu e-mail",
+  emailInvalid: "Informe um e-mail valido",
+  recoveryCodeInvalid: "Informe o codigo numerico de 5 digitos",
 
   passwordRequired: "Informe sua senha",
   passwordMin: "A senha deve ter pelo menos 8 caracteres",
@@ -19,4 +22,8 @@ export const authApiErrorMessages = {
     "Primeiro acesso pendente. Altere sua senha para continuar.",
   AUTH_INVALID_OR_REVOKED_SESSION: "Sessão inválida ou revogada.",
   AUTH_EXPIRED_SESSION: "Sessão expirada.",
+  AUTH_PASSWORD_RECOVERY_CODE_INVALID_OR_EXPIRED:
+    "Codigo de recuperacao invalido ou expirado.",
+  AUTH_PASSWORD_RECOVERY_NOT_ALLOWED:
+    "Sua sessao de recuperacao expirou. Solicite um novo codigo.",
 } as const;

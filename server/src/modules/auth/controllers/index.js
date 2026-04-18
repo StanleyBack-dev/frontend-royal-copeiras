@@ -69,3 +69,36 @@ export function changeMyPasswordController() {
     }
   };
 }
+
+export function requestPasswordRecoveryController() {
+  return async (req, res) => {
+    try {
+      const result = await authService.requestPasswordRecovery(req.body);
+      res.status(200).json(result.data);
+    } catch (error) {
+      handleControllerError(res, error);
+    }
+  };
+}
+
+export function verifyPasswordRecoveryCodeController() {
+  return async (req, res) => {
+    try {
+      const result = await authService.verifyPasswordRecoveryCode(req.body);
+      res.status(200).json(result.data);
+    } catch (error) {
+      handleControllerError(res, error);
+    }
+  };
+}
+
+export function resetPasswordWithRecoveryController() {
+  return async (req, res) => {
+    try {
+      const result = await authService.resetPasswordWithRecovery(req.body);
+      res.status(200).json(result.data);
+    } catch (error) {
+      handleControllerError(res, error);
+    }
+  };
+}

@@ -203,6 +203,14 @@ export default function Login() {
             >
               Entrar
             </Button>
+
+            <button
+              type="button"
+              className="text-sm font-medium text-[#7a4430] hover:opacity-80 transition-opacity"
+              onClick={() => navigate(authRoutePaths.passwordRecovery)}
+            >
+              Esqueci minha senha
+            </button>
           </form>
         </div>
 

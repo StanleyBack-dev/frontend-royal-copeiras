@@ -12,6 +12,11 @@ export {
   refreshSessionFromCookie,
 } from "./services/auth.service";
 export { changePasswordFirstAccess } from "./services/change-password.service";
+export {
+  completePasswordRecovery,
+  requestRecoveryCode,
+  verifyRecoveryCode,
+} from "./services/password-recovery.service";
 export { AuthSessionProvider } from "./context/AuthSessionContext";
 export { useAuthSession } from "./context/useAuthSession";
 export { default as RequireAuthenticatedRoute } from "./guards/RequireAuthenticatedRoute";

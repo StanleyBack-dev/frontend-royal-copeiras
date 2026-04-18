@@ -43,4 +43,6 @@ export const userRoutePaths = {
 export const authRoutePaths = {
   login: "/",
   firstAccessChangePassword: "/primeiro-acesso/alterar-senha",
+  passwordRecovery: "/recuperar-senha",
+  passwordRecoveryReset: "/recuperar-senha/nova-senha",
 };

@@ -131,6 +131,68 @@ export class AuthService {
     });
   }
 
+  async requestPasswordRecovery(input) {
+    const mutation = `
+      mutation RequestPasswordRecovery($input: RequestPasswordRecoveryInputDto!) {
+        requestPasswordRecovery(input: $input) {
+          success
+          message
+          code
+        }
+      }
+    `;
+
+    return this.executeMutation({
+      query: mutation,
+      variables: { input },
+      dataPath: "requestPasswordRecovery",
+      invalidResponseMessage:
+        "Resposta de solicitacao de recuperacao invalida.",
+    });
+  }
+
+  async verifyPasswordRecoveryCode(input) {
+    const mutation = `
+      mutation VerifyPasswordRecoveryCode($input: VerifyPasswordRecoveryCodeInputDto!) {
+        verifyPasswordRecoveryCode(input: $input) {
+          success
+          message
+          code
+          data {
+            recoveryToken
+            expiresAt
+          }
+        }
+      }
+    `;
+
+    return this.executeMutation({
+      query: mutation,
+      variables: { input },
+      dataPath: "verifyPasswordRecoveryCode",
+      invalidResponseMessage: "Resposta de validacao do codigo invalida.",
+    });
+  }
+
+  async resetPasswordWithRecovery(input) {
+    const mutation = `
+      mutation ResetPasswordWithRecovery($input: ResetPasswordWithRecoveryInputDto!) {
+        resetPasswordWithRecovery(input: $input) {
+          success
+          message
+          code
+        }
+      }
+    `;
+
+    return this.executeMutation({
+      query: mutation,
+      variables: { input },
+      dataPath: "resetPasswordWithRecovery",
+      invalidResponseMessage: "Resposta de redefinicao de senha invalida.",
+    });
+  }
+
   async executeMutation({
     query,
     variables,
