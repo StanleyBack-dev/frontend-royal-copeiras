@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PageAccessKeySchema } from "../../../api/users/schema";
 import {
   USER_EMAIL_MAX_LENGTH,
   USER_EMAIL_MIN_LENGTH,
@@ -47,6 +48,8 @@ export const createUserFormSchema = z.object({
   group: z.enum(userGroupOptions),
   urlAvatar: urlAvatarSchema,
   status: z.boolean(),
+  pagePermissions: z.array(PageAccessKeySchema).default([]),
+  useGroupDefaults: z.boolean().default(true),
 });
 
 export const updateUserFormSchema = z.object({
@@ -56,6 +59,8 @@ export const updateUserFormSchema = z.object({
   group: z.enum(userGroupOptions),
   urlAvatar: urlAvatarSchema.optional().or(z.literal("")),
   status: z.boolean(),
+  pagePermissions: z.array(PageAccessKeySchema).default([]),
+  useGroupDefaults: z.boolean().default(true),
 });
 
 export type UserFormValues = z.infer<typeof createUserFormSchema> & {
@@ -69,5 +74,7 @@ export const emptyUserFormValues: UserFormValues = {
   group: "USER",
   urlAvatar: "",
   status: true,
+  pagePermissions: [],
+  useGroupDefaults: true,
   createdAt: "",
 };

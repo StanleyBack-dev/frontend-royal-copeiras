@@ -1,4 +1,4 @@
-import { UpdateCustomersService } from "../../services/update/update-customers.service.js";
+﻿import { UpdateCustomersService } from "../../services/update/update-customers.service.js";
 import { getAuthContext } from "../../../../shared/auth/get-user-id.js";
 import { HttpError } from "../../../../shared/http/http-error.js";
 import { invalidateCacheByPrefix } from "../../../../shared/cache/in-memory-cache.js";
@@ -15,6 +15,7 @@ export function updateCustomersController() {
         req.body,
         {
           authorization: auth.authorization,
+          cookieHeader: auth.cookieHeader,
           requestId: req.requestId,
         },
       );

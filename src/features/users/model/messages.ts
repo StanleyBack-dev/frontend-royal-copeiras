@@ -22,6 +22,8 @@ export const userUiCopy = {
       createdAt: "Data de Criação",
       resetPassword: "Resetar senha temporária",
       unlockUser: "Desbloquear usuário",
+      pagePermissions: "Permissões de páginas",
+      useGroupDefaults: "Usar permissões padrão do grupo",
     },
     placeholders: {
       name: "Maria Aparecida da Silva",
@@ -67,7 +69,9 @@ export const userUiCopy = {
     invalidUserData: "Dados do usuário inválidos",
     invalidCreateUserResponse: "Resposta de criação de usuário inválida",
     invalidUpdateUserResponse: "Resposta de atualização de usuário inválida",
+    invalidPermissionsData: "Resposta de permissões de página inválida",
     unlockUserFallback: "Erro ao desbloquear usuário",
+    loadPermissionsFallback: "Erro ao carregar permissões de páginas",
     loadUsersFallback: "Erro ao carregar usuários",
     saveUserFallback: "Erro ao salvar usuário",
   },

@@ -19,5 +19,12 @@ export {
 } from "./services/password-recovery.service";
 export { AuthSessionProvider } from "./context/AuthSessionContext";
 export { useAuthSession } from "./context/useAuthSession";
+export { default as RequireAuthorizationRoute } from "./guards/RequireAuthorizationRoute";
 export { default as RequireAuthenticatedRoute } from "./guards/RequireAuthenticatedRoute";
 export { default as RequirePasswordChangeRoute } from "./guards/RequirePasswordChangeRoute";
+export { createPageAccessPolicy } from "./policies/page-access.policy";
+export { requireActiveUserPolicy } from "./policies/active-user.policy";
+export type {
+  AuthorizationPolicy,
+  AuthorizationPolicyContext,
+} from "./model/authorization-policy";

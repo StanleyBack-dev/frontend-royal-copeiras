@@ -1,4 +1,4 @@
-import { GetCustomersService } from "../../services/get/get-customers.service.js";
+﻿import { GetCustomersService } from "../../services/get/get-customers.service.js";
 import { getAuthContext } from "../../../../shared/auth/get-user-id.js";
 import { HttpError } from "../../../../shared/http/http-error.js";
 import { buildListInput } from "../../../../shared/http/parse-pagination.js";
@@ -16,6 +16,7 @@ export function getCustomersController() {
       ]);
       const customers = await getCustomersService.findAll(auth.userId, input, {
         authorization: auth.authorization,
+        cookieHeader: auth.cookieHeader,
         requestId: req.requestId,
       });
       res.json(customers);

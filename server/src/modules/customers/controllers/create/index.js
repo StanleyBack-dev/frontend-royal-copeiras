@@ -1,4 +1,4 @@
-import { CreateCustomersService } from "../../services/create/create-customers.service.js";
+﻿import { CreateCustomersService } from "../../services/create/create-customers.service.js";
 import { getAuthContext } from "../../../../shared/auth/get-user-id.js";
 import { HttpError } from "../../../../shared/http/http-error.js";
 import { invalidateCacheByPrefix } from "../../../../shared/cache/in-memory-cache.js";
@@ -14,6 +14,7 @@ export function createCustomersController() {
         req.body,
         {
           authorization: auth.authorization,
+          cookieHeader: auth.cookieHeader,
           requestId: req.requestId,
         },
       );

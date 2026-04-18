@@ -1,4 +1,4 @@
-import { executeGraphql } from "../../../../shared/http/graphql-client.js";
+﻿import { executeGraphql } from "../../../../shared/http/graphql-client.js";
 
 export class UpdateUsersService {
   async updateUser(userId, idUsers, input, context = {}) {
@@ -36,6 +36,7 @@ export class UpdateUsersService {
       variables: { input: sanitizedInput },
       userId,
       authorization: context.authorization,
+      cookieHeader: context.cookieHeader,
       requestId: context.requestId,
     });
 

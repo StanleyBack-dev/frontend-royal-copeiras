@@ -1,4 +1,4 @@
-import { executeGraphql } from "../../../../shared/http/graphql-client.js";
+﻿import { executeGraphql } from "../../../../shared/http/graphql-client.js";
 
 export class UnlockUserCredentialService {
   async unlockUser(userId, idUsers, context = {}) {
@@ -21,6 +21,7 @@ export class UnlockUserCredentialService {
       variables: { input: { idUsers } },
       userId,
       authorization: context.authorization,
+      cookieHeader: context.cookieHeader,
       requestId: context.requestId,
     });
 
