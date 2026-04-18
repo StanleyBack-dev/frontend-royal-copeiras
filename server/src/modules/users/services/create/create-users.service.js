@@ -14,7 +14,6 @@ export class CreateUsersService {
             email
             username
             group
-            temporaryPassword
             mustChangePassword
             urlAvatar
             status

@@ -1,6 +1,7 @@
 import { createUser } from "../../../api/users/methods/create";
 import { getUsers } from "../../../api/users/methods/get";
 import { updateUser } from "../../../api/users/methods/update";
+import { unlockUser } from "../../../api/users/methods/unlock";
 import type {
   ListQueryParams,
   PaginationMeta,
@@ -8,6 +9,7 @@ import type {
 import {
   CreateUserPayloadSchema,
   CreateUserResponseSchema,
+  UnlockUserResponseSchema,
   UpdateUserPayloadSchema,
   UpdateUserResponseSchema,
   UserSchema,
@@ -91,4 +93,16 @@ export async function saveUser({ userId, formData, editing }: SaveUserParams) {
   }
 
   return parsedResponse.data;
+}
+
+export async function unlockUserCredential(
+  userId: string,
+  idUsers: string,
+): Promise<void> {
+  const response = await unlockUser(idUsers, userId);
+  const parsed = UnlockUserResponseSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error(userUiCopy.errors.invalidUpdateUserResponse);
+  }
 }

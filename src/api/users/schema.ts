@@ -78,7 +78,6 @@ export const CreateUserResponseSchema = z.object({
   email: z.string(),
   username: z.string(),
   group: UserGroupSchema,
-  temporaryPassword: z.string(),
   mustChangePassword: z.boolean(),
   urlAvatar: z.string().trim().optional().nullable().or(z.literal("")),
   status: z.boolean(),
@@ -93,9 +92,15 @@ export const UpdateUserResponseSchema = z.object({
   updatedAt: z.string(),
 });
 
+export const UnlockUserResponseSchema = z.object({
+  idUsers: z.string(),
+  updatedAt: z.string(),
+});
+
 export type UserGroup = z.infer<typeof UserGroupSchema>;
 export type User = z.infer<typeof UserSchema>;
 export type CreateUserPayload = z.infer<typeof CreateUserPayloadSchema>;
 export type UpdateUserPayload = z.infer<typeof UpdateUserPayloadSchema>;
 export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
 export type UpdateUserResponse = z.infer<typeof UpdateUserResponseSchema>;
+export type UnlockUserResponse = z.infer<typeof UnlockUserResponseSchema>;
