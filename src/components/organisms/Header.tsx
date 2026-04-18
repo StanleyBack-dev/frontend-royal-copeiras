@@ -34,7 +34,7 @@ export default function Header({
   onMenuClick,
 }: HeaderProps) {
   const navigate = useNavigate();
-  const { session, clearSession } = useAuthSession();
+  const { session, clearSession, hasPageAccess } = useAuthSession();
   const { showSuccess, showError } = useToast();
 
   const info = viewTitles[activeView as keyof typeof viewTitles] || {
@@ -43,7 +43,10 @@ export default function Header({
   };
   const [search, setSearch] = useState("");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const sidebarItems = [...primaryNavigationItems, ...secondaryNavigationItems];
+  const sidebarItems = [
+    ...primaryNavigationItems.filter((item) => hasPageAccess(item.id)),
+    ...secondaryNavigationItems,
+  ];
   const filtered =
     search.length > 0
       ? sidebarItems.filter((item) =>

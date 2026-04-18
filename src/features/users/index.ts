@@ -9,6 +9,10 @@ export { useUsersList } from "./hooks/useUsersList";
 export * from "./model/constants";
 export { getUserFormFields } from "./model/fields";
 export {
+  getDefaultPagePermissionsByGroup,
+  pagePermissionOptions,
+} from "./model/page-permissions";
+export {
   createUserFormSchema,
   emptyUserFormValues,
   updateUserFormSchema,
@@ -27,6 +31,7 @@ export {
 export { userUiCopy, userValidationMessages } from "./model/messages";
 export {
   fetchUsers,
+  fetchUserPagePermissions,
   saveUser,
   unlockUserCredential,
 } from "./services/user.service";

@@ -3,6 +3,7 @@ export {
   customerRoutePaths,
   employeeRoutePaths,
   routePaths,
+  utilityRoutePaths,
   userRoutePaths,
 } from "./navigation/paths";
 export { viewTitles } from "./navigation/titles";

@@ -1,10 +1,12 @@
 import { login } from "../../../api/auth/methods/login";
+import { getMyPagePermissions } from "../../../api/auth/methods/getMyPagePermissions";
 import { logout } from "../../../api/auth/methods/logout";
 import { refreshAuthSession } from "../../../api/auth/methods/refreshAuthSession";
 import {
   AuthSessionResponseSchema,
   type AuthSessionResponse,
 } from "../../../api/auth/schema";
+import type { PageAccessKey } from "../../../api/users/schema";
 
 interface LoginWithPasswordInput {
   username: string;
@@ -49,4 +51,11 @@ export async function refreshSessionFromCookie(): Promise<AuthSessionResponse | 
 
 export async function logoutCurrentSession(): Promise<void> {
   await logout();
+}
+
+export async function loadMyPagePermissions(
+  userId: string,
+): Promise<PageAccessKey[]> {
+  const response = await getMyPagePermissions(userId);
+  return response.effectivePermissions;
 }

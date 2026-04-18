@@ -1,4 +1,4 @@
-import { executeGraphql } from "../../../../shared/http/graphql-client.js";
+﻿import { executeGraphql } from "../../../../shared/http/graphql-client.js";
 import {
   buildCacheKey,
   getOrSetCache,
@@ -48,6 +48,7 @@ export class GetUsersService {
           variables: { input },
           userId,
           authorization: context.authorization,
+          cookieHeader: context.cookieHeader,
           requestId: context.requestId,
         });
 

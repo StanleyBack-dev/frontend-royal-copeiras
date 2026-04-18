@@ -11,6 +11,16 @@ import {
 import { userValidationMessages } from "../../features/users/model/messages";
 
 export const UserGroupSchema = z.enum(["USER", "ADMIN", "ADMIN_MASTER"]);
+export const PageAccessKeySchema = z.enum([
+  "DASHBOARD",
+  "CLIENTS",
+  "EMPLOYEES",
+  "USERS",
+  "EVENTS",
+  "FINANCES",
+  "DEBTS",
+  "INVESTMENTS",
+]);
 
 export const UserSchema = z.object({
   idUsers: z.string(),
@@ -64,12 +74,15 @@ export const CreateUserPayloadSchema = z.object({
     .url(userValidationMessages.urlAvatarInvalid)
     .optional()
     .or(z.literal("")),
+  pagePermissions: z.array(PageAccessKeySchema).optional(),
 });
 
 export const UpdateUserPayloadSchema = z.object({
   idUsers: z.string(),
   group: UserGroupSchema.optional(),
   status: z.boolean().optional(),
+  pagePermissions: z.array(PageAccessKeySchema).optional(),
+  useGroupDefaults: z.boolean().optional(),
 });
 
 export const CreateUserResponseSchema = z.object({
@@ -97,10 +110,23 @@ export const UnlockUserResponseSchema = z.object({
   updatedAt: z.string(),
 });
 
+export const UserPagePermissionsResponseSchema = z.object({
+  idUsers: z.string(),
+  group: UserGroupSchema,
+  effectivePermissions: z.array(PageAccessKeySchema),
+  defaultPermissions: z.array(PageAccessKeySchema),
+  useGroupDefaults: z.boolean(),
+  updatedAt: z.string().nullable().optional(),
+});
+
 export type UserGroup = z.infer<typeof UserGroupSchema>;
+export type PageAccessKey = z.infer<typeof PageAccessKeySchema>;
 export type User = z.infer<typeof UserSchema>;
 export type CreateUserPayload = z.infer<typeof CreateUserPayloadSchema>;
 export type UpdateUserPayload = z.infer<typeof UpdateUserPayloadSchema>;
 export type CreateUserResponse = z.infer<typeof CreateUserResponseSchema>;
 export type UpdateUserResponse = z.infer<typeof UpdateUserResponseSchema>;
 export type UnlockUserResponse = z.infer<typeof UnlockUserResponseSchema>;
+export type UserPagePermissionsResponse = z.infer<
+  typeof UserPagePermissionsResponseSchema
+>;

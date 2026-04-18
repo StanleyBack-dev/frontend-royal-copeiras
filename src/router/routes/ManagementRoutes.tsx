@@ -4,6 +4,7 @@ import { Navigate, Route } from "react-router-dom";
 import { CustomersProviderOutlet } from "../../features/customers";
 import { EmployeesProviderOutlet } from "../../features/employees";
 import { UsersProviderOutlet } from "../../features/users";
+import RequirePageAccessRoute from "../../features/auth/guards/RequirePageAccessRoute";
 import {
   customerRoutePaths,
   employeeRoutePaths,
@@ -51,27 +52,29 @@ interface ManagementRoutesProps {
 export function ManagementRoutes({ userId, loginPath }: ManagementRoutesProps) {
   return (
     <>
-      <Route
-        element={
-          <UserScopedProviderRoute
-            userId={userId}
-            loginPath={loginPath}
-            ProviderOutlet={CustomersProviderOutlet}
+      <Route element={<RequirePageAccessRoute view="clients" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={loginPath}
+              ProviderOutlet={CustomersProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={customerRoutePaths.list}
+            element={withPageSuspense(<Customers />)}
           />
-        }
-      >
-        <Route
-          path={customerRoutePaths.list}
-          element={withPageSuspense(<Customers />)}
-        />
-        <Route
-          path={customerRoutePaths.create}
-          element={withPageSuspense(<CustomerForm mode="create" />)}
-        />
-        <Route
-          path={customerRoutePaths.edit()}
-          element={withPageSuspense(<CustomerForm mode="edit" />)}
-        />
+          <Route
+            path={customerRoutePaths.create}
+            element={withPageSuspense(<CustomerForm mode="create" />)}
+          />
+          <Route
+            path={customerRoutePaths.edit()}
+            element={withPageSuspense(<CustomerForm mode="edit" />)}
+          />
+        </Route>
       </Route>
       <Route
         path={customerRoutePaths.legacyList}
@@ -86,27 +89,29 @@ export function ManagementRoutes({ userId, loginPath }: ManagementRoutesProps) {
         element={<Navigate to={customerRoutePaths.edit()} replace />}
       />
 
-      <Route
-        element={
-          <UserScopedProviderRoute
-            userId={userId}
-            loginPath={loginPath}
-            ProviderOutlet={EmployeesProviderOutlet}
+      <Route element={<RequirePageAccessRoute view="employees" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={loginPath}
+              ProviderOutlet={EmployeesProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={employeeRoutePaths.list}
+            element={withPageSuspense(<Employees />)}
           />
-        }
-      >
-        <Route
-          path={employeeRoutePaths.list}
-          element={withPageSuspense(<Employees />)}
-        />
-        <Route
-          path={employeeRoutePaths.create}
-          element={withPageSuspense(<EmployeeForm mode="create" />)}
-        />
-        <Route
-          path={employeeRoutePaths.edit()}
-          element={withPageSuspense(<EmployeeForm mode="edit" />)}
-        />
+          <Route
+            path={employeeRoutePaths.create}
+            element={withPageSuspense(<EmployeeForm mode="create" />)}
+          />
+          <Route
+            path={employeeRoutePaths.edit()}
+            element={withPageSuspense(<EmployeeForm mode="edit" />)}
+          />
+        </Route>
       </Route>
       <Route
         path={employeeRoutePaths.legacyList}
@@ -121,27 +126,29 @@ export function ManagementRoutes({ userId, loginPath }: ManagementRoutesProps) {
         element={<Navigate to={employeeRoutePaths.edit()} replace />}
       />
 
-      <Route
-        element={
-          <UserScopedProviderRoute
-            userId={userId}
-            loginPath={loginPath}
-            ProviderOutlet={UsersProviderOutlet}
+      <Route element={<RequirePageAccessRoute view="users" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={loginPath}
+              ProviderOutlet={UsersProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={userRoutePaths.list}
+            element={withPageSuspense(<Users />)}
           />
-        }
-      >
-        <Route
-          path={userRoutePaths.list}
-          element={withPageSuspense(<Users />)}
-        />
-        <Route
-          path={userRoutePaths.create}
-          element={withPageSuspense(<UserForm mode="create" />)}
-        />
-        <Route
-          path={userRoutePaths.edit()}
-          element={withPageSuspense(<UserForm mode="edit" />)}
-        />
+          <Route
+            path={userRoutePaths.create}
+            element={withPageSuspense(<UserForm mode="create" />)}
+          />
+          <Route
+            path={userRoutePaths.edit()}
+            element={withPageSuspense(<UserForm mode="edit" />)}
+          />
+        </Route>
       </Route>
       <Route
         path={userRoutePaths.legacyList}

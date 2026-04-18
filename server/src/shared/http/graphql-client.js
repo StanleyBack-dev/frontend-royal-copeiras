@@ -110,6 +110,7 @@ export async function executeGraphql({
   variables,
   userId,
   authorization,
+  cookieHeader,
   requestId,
 }) {
   const operationName = getOperationName(query);
@@ -127,9 +128,11 @@ export async function executeGraphql({
   try {
     const resolvedAuthHeaders = authorization
       ? { Authorization: authorization }
-      : devAuthConfig.enabled
-        ? await getDevAuthHeaders()
-        : {};
+      : cookieHeader
+        ? { Cookie: cookieHeader }
+        : devAuthConfig.enabled
+          ? await getDevAuthHeaders()
+          : {};
 
     const response = await postGraphqlWithRetry(
       { query, variables },

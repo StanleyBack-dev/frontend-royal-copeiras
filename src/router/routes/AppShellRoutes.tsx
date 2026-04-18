@@ -1,9 +1,11 @@
 import { lazy, Suspense } from "react";
 import { Route } from "react-router-dom";
 import AppLayout from "../AppLayout";
-import { authRoutePaths, routePaths } from "../navigation";
+import { authRoutePaths, routePaths, utilityRoutePaths } from "../navigation";
+import RequirePageAccessRoute from "../../features/auth/guards/RequirePageAccessRoute";
 import { ManagementRoutes } from "./ManagementRoutes";
 
+const AccessDenied = lazy(() => import("../../pages/AccessDenied"));
 const Dashboard = lazy(() => import("../../pages/Dashboard"));
 const Debts = lazy(() => import("../../pages/Debts"));
 const Events = lazy(() => import("../../pages/Events"));
@@ -27,21 +29,34 @@ interface AppShellRoutesProps {
 export function AppShellRoutes({ userId }: AppShellRoutesProps) {
   return (
     <Route element={<AppLayout />}>
-      <Route
-        path={routePaths.dashboard}
-        element={withPageSuspense(<Dashboard />)}
-      />
+      <Route element={<RequirePageAccessRoute view="dashboard" />}>
+        <Route
+          path={routePaths.dashboard}
+          element={withPageSuspense(<Dashboard />)}
+        />
+      </Route>
       {ManagementRoutes({ userId, loginPath: authRoutePaths.login })}
-      <Route path={routePaths.events} element={withPageSuspense(<Events />)} />
-      <Route
-        path={routePaths.finances}
-        element={withPageSuspense(<Finance />)}
-      />
-      <Route path={routePaths.debts} element={withPageSuspense(<Debts />)} />
-      <Route
-        path={routePaths.investments}
-        element={withPageSuspense(<Investments />)}
-      />
+      <Route element={<RequirePageAccessRoute view="events" />}>
+        <Route
+          path={routePaths.events}
+          element={withPageSuspense(<Events />)}
+        />
+      </Route>
+      <Route element={<RequirePageAccessRoute view="finances" />}>
+        <Route
+          path={routePaths.finances}
+          element={withPageSuspense(<Finance />)}
+        />
+      </Route>
+      <Route element={<RequirePageAccessRoute view="debts" />}>
+        <Route path={routePaths.debts} element={withPageSuspense(<Debts />)} />
+      </Route>
+      <Route element={<RequirePageAccessRoute view="investments" />}>
+        <Route
+          path={routePaths.investments}
+          element={withPageSuspense(<Investments />)}
+        />
+      </Route>
       <Route
         path={routePaths.profile}
         element={withPageSuspense(<Profile />)}
@@ -49,6 +64,10 @@ export function AppShellRoutes({ userId }: AppShellRoutesProps) {
       <Route
         path={routePaths.settings}
         element={withPageSuspense(<Settings />)}
+      />
+      <Route
+        path={utilityRoutePaths.accessDenied}
+        element={withPageSuspense(<AccessDenied />)}
       />
     </Route>
   );
