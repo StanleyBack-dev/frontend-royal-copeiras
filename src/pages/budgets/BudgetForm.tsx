@@ -170,7 +170,6 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     }
 
     const outcome = await pdfActions.shareWhatsApp(
-      result.payload,
       selectedLead.name,
       selectedLead.phone,
     );

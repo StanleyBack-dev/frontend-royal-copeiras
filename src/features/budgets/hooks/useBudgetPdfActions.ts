@@ -101,7 +101,6 @@ export function useBudgetPdfActions({
   }
 
   async function shareWhatsApp(
-    draft: CreateBudgetPayload,
     leadName: string,
     phone: string,
   ): Promise<"shared" | "fallback" | null> {
