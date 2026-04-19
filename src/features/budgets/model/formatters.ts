@@ -91,10 +91,10 @@ export function normalizeBudgetFormValues(
     advancePercentage: onlyDigits(values.advancePercentage).slice(0, 3),
     items: values.items.map((item) => ({
       ...item,
+      serviceType: item.serviceType,
       quantity: onlyDigits(item.quantity),
       unitPrice: formatCurrencyInput(item.unitPrice),
-      description: item.description.trimStart(),
-      notes: item.notes.trimStart(),
+      description: item.description,
     })),
   };
 }

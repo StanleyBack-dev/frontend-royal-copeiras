@@ -1,12 +1,12 @@
 import GenericForm from "@/components/organisms/GenericForm";
-import Button from "@/components/atoms/Button";
 import Input from "@/components/atoms/Input";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
-import { formatDateTimeDisplay } from "@/utils/format";
 import {
   budgetUiCopy,
   getBudgetFormFields,
   buildEventDates,
+  budgetFormSchema,
+  normalizeBudgetFormValues,
   type BudgetFormValues,
   useBudgetForm,
   useBudgetPdfActions,
@@ -16,8 +16,17 @@ import BudgetItemsEditor from "@/features/budgets/components/BudgetItemsEditor";
 import { useBudgetsContext } from "@/features/budgets/context/useBudgetsContext";
 import { useToast } from "@/shared/toast/useToast";
 import { budgetRoutePaths } from "@/router";
-import { useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { updateBudget } from "@/api/budgets/methods";
+import { getHttpErrorMessage } from "@/api/shared/http-error";
+import {
+  FileText,
+  MessageCircle,
+  Mail,
+  RotateCcw,
+  FileSignature,
+} from "lucide-react";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -30,8 +39,8 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { budgets, leads, save, saving } = useBudgetsContext();
-  const { showError } = useToast();
+  const { budgets, leads, save, saving, setBudgets } = useBudgetsContext();
+  const { showError, showSuccess } = useToast();
   const { session } = useAuthSession();
   const initialLeadId = searchParams.get("leadId") || undefined;
   const {
@@ -50,27 +59,69 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     budgets,
     initialLeadId,
   });
+
+  const [emailSent, setEmailSent] = useState(false);
+
   const isNonDraftLocked =
     mode === "edit" && Boolean(editing && editing.status !== "draft");
-  const [pdfFrozenAt, setPdfFrozenAt] = useState<string | undefined>(
-    editing?.pdfFrozenAt,
-  );
+  const isGenerated = editing?.status === "generated";
 
-  useEffect(() => {
-    setPdfFrozenAt(editing?.pdfFrozenAt || undefined);
-  }, [editing?.idBudgets, editing?.pdfFrozenAt]);
+  const selectedLead = leads.find((l) => l.idLeads === form.idLeads) ?? null;
+  const isSelectedLeadInactive = selectedLead?.isActive === false;
+  const isChangingToInactiveLead = Boolean(
+    editing && form.idLeads !== editing.idLeads && isSelectedLeadInactive,
+  );
+  const leadHasEmail = Boolean(selectedLead?.email);
+  const leadHasPhone = Boolean(selectedLead?.phone);
+  const sendValidation = useMemo(
+    () => budgetFormSchema.safeParse(normalizeBudgetFormValues(form)),
+    [form],
+  );
+  const isFormReadyToSend = sendValidation.success;
+  const sendPendingMessages = useMemo(() => {
+    if (sendValidation.success) {
+      return [];
+    }
+
+    return Array.from(
+      new Set(sendValidation.error.issues.map((issue) => issue.message)),
+    );
+  }, [sendValidation]);
+
+  const updateLocalStatus = useCallback(
+    (status: string, extra?: { sentVia?: string; sentAt?: string }) => {
+      if (!editing) return;
+      setBudgets((prev) =>
+        prev.map((b) =>
+          b.idBudgets === editing.idBudgets
+            ? { ...b, status: status as never, ...extra }
+            : b,
+        ),
+      );
+    },
+    [editing, setBudgets],
+  );
 
   const pdfActions = useBudgetPdfActions({
     userId: session?.user.idUsers || "",
     budgetId: editing?.idBudgets,
     budgetNumber: form.budgetNumber,
-    onFrozen: (pdf) => {
-      setPdfFrozenAt(pdf.frozenAt);
+    onEmailSent: () => {
+      setEmailSent(true);
     },
   });
 
   async function handleSave(values: BudgetFormValues) {
-    if (isNonDraftLocked) {
+    if (isNonDraftLocked) return;
+
+    if (
+      (mode === "create" || isChangingToInactiveLead) &&
+      isSelectedLeadInactive
+    ) {
+      showError(
+        "Lead inativo",
+        "Não é possível salvar um orçamento para um lead inativo. Reative o lead ou selecione outro lead.",
+      );
       return;
     }
 
@@ -85,7 +136,11 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     }
 
     await save(result.payload, editing);
-    navigate(budgetRoutePaths.list);
+    if (mode === "create") {
+      navigate(budgetRoutePaths.list);
+    } else {
+      showSuccess("Orçamento atualizado com sucesso");
+    }
   }
 
   async function handlePreview() {
@@ -102,79 +157,114 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     await pdfActions.preview(result.payload);
   }
 
-  return (
-    <ManagementPanelTemplate
-      title={
-        mode === "edit"
-          ? budgetUiCopy.form.editTitle
-          : budgetUiCopy.form.createTitle
-      }
-      description="Crie propostas comerciais com composição de itens e vínculo direto ao lead responsável pela oportunidade."
-      actions={
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              void handlePreview();
-            }}
-            loading={pdfActions.previewing}
-            disabled={saving || !session?.user.idUsers}
-          >
-            Preview PDF
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              void pdfActions.freeze();
-            }}
-            loading={pdfActions.freezing}
-            disabled={
-              saving ||
-              !pdfActions.canFreezeOrDownload ||
-              !session?.user.idUsers
-            }
-          >
-            Congelar PDF
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              void pdfActions.downloadOfficial();
-            }}
-            loading={pdfActions.downloading}
-            disabled={
-              saving ||
-              !pdfActions.canFreezeOrDownload ||
-              !session?.user.idUsers
-            }
-          >
-            Baixar oficial
-          </Button>
-        </div>
-      }
-    >
-      <GenericForm<BudgetFormValues>
-        fields={getBudgetFormFields(form, {
-          isEditing: mode === "edit",
-          leads,
-          disableAll: isNonDraftLocked,
-        })}
-        values={form}
-        setValues={setForm}
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleSave(form);
-        }}
-        errors={errors}
-        saving={saving}
-        submitDisabled={isNonDraftLocked}
-        onCancel={() => navigate(budgetRoutePaths.list)}
-      >
+  async function handleSendWhatsApp() {
+    if (!editing || !selectedLead?.phone || !selectedLead?.name) return;
+
+    const result = submit(form);
+    if (!result.success || !result.payload) {
+      showError(
+        budgetUiCopy.errors.invalidFormData,
+        (result.errors || [budgetUiCopy.errors.invalidFormData]).join("\n"),
+      );
+      return;
+    }
+
+    const outcome = await pdfActions.shareWhatsApp(
+      selectedLead.name,
+      selectedLead.phone,
+    );
+
+    if (outcome === null) return;
+    // Orçamento mantém status "generated" para continuar permitindo envios
+  }
+
+  async function handleSendEmail() {
+    if (!editing?.idBudgets) return;
+
+    const result = submit(form);
+    if (!result.success || !result.payload) {
+      showError(
+        budgetUiCopy.errors.invalidFormData,
+        (result.errors || [budgetUiCopy.errors.invalidFormData]).join("\n"),
+      );
+      return;
+    }
+
+    await pdfActions.sendEmail();
+  }
+
+  async function handleGenerateBudget() {
+    if (!editing?.idBudgets) return;
+
+    if (isSelectedLeadInactive) {
+      showError(
+        "Lead inativo",
+        "Não é possível gerar um orçamento para um lead inativo. Reative o lead para continuar.",
+      );
+      return;
+    }
+
+    const result = submit(form);
+    if (!result.success || !result.payload) {
+      showError(
+        budgetUiCopy.errors.invalidFormData,
+        (result.errors || [budgetUiCopy.errors.invalidFormData]).join("\n"),
+      );
+      return;
+    }
+
+    try {
+      await updateBudget(
+        editing.idBudgets,
+        { status: "generated" },
+        session?.user.idUsers || "",
+      );
+      updateLocalStatus("generated");
+      showSuccess("Orçamento gerado com sucesso");
+    } catch (error) {
+      const message = getHttpErrorMessage(error, "Erro ao gerar orçamento");
+      showError("Erro ao gerar orçamento", message);
+    }
+  }
+
+  async function handleRevertToDraft() {
+    if (!editing) return;
+
+    try {
+      await updateBudget(
+        editing.idBudgets,
+        { status: "draft" },
+        session?.user.idUsers || "",
+      );
+      updateLocalStatus("draft", { sentVia: undefined, sentAt: undefined });
+      setEmailSent(false);
+      showSuccess("Orçamento voltou para Rascunho");
+    } catch (error) {
+      const message = getHttpErrorMessage(error, "Erro ao reverter status");
+      showError("Erro ao reverter para rascunho", message);
+    }
+  }
+
+  const formGuidanceContent =
+    isSelectedLeadInactive ||
+    isNonDraftLocked ||
+    (!isFormReadyToSend && editing?.idBudgets) ||
+    editing?.sentAt ? (
+      <div className="space-y-4">
+        {isSelectedLeadInactive ? (
+          <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">
+              Lead inativo
+            </p>
+            <p className="mt-1 text-sm text-rose-900">
+              Nao e possivel criar ou gerar orcamento para lead inativo. Reative
+              o lead ou selecione outro lead ativo.
+            </p>
+          </div>
+        ) : null}
+
         {isNonDraftLocked ? (
-          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+          <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
               Edição bloqueada
             </p>
@@ -184,19 +274,223 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
           </div>
         ) : null}
 
-        {editing ? (
-          <div className="mb-4 rounded-xl border border-[#e8d5c9] bg-[#faf6f2] px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-              PDF oficial
+        {!isNonDraftLocked && editing?.idBudgets && !isFormReadyToSend ? (
+          <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">
+              Geração bloqueada
             </p>
-            <p className="mt-1 text-sm text-[#2c1810]">
-              {pdfFrozenAt
-                ? `Congelado em ${formatDateTimeDisplay(pdfFrozenAt)}`
-                : "Ainda não congelado"}
+            <p className="mt-1 text-sm text-rose-900">
+              Preencha os campos obrigatórios para liberar o botão de gerar
+              orçamento.
             </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-rose-900">
+              {sendPendingMessages.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
           </div>
         ) : null}
 
+        {editing?.sentAt ? (
+          <div className="rounded-xl border border-[#e8d5c9] bg-[#faf6f2] px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+              Envio registrado
+            </p>
+            <p className="mt-1 text-sm text-[#2c1810]">
+              Enviado via{" "}
+              <span className="font-semibold">
+                {editing.sentVia === "email"
+                  ? "E-mail"
+                  : editing.sentVia === "whatsapp"
+                    ? "WhatsApp"
+                    : editing.sentVia}
+              </span>{" "}
+              em{" "}
+              <span className="font-semibold">
+                {new Intl.DateTimeFormat("pt-BR", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }).format(new Date(editing.sentAt))}
+              </span>
+            </p>
+          </div>
+        ) : null}
+      </div>
+    ) : null;
+
+  return (
+    <ManagementPanelTemplate
+      title={
+        mode === "edit"
+          ? budgetUiCopy.form.editTitle
+          : budgetUiCopy.form.createTitle
+      }
+      description="Crie propostas comerciais com composição de itens e vínculo direto ao lead responsável pela oportunidade."
+    >
+      <div className="flex justify-center mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
+          {/* Preview PDF */}
+          <button
+            type="button"
+            onClick={() => {
+              void handlePreview();
+            }}
+            disabled={saving || !session?.user.idUsers || pdfActions.previewing}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Visualizar prévia do orçamento"
+          >
+            <FileText size={32} className="text-[#C9A227]" />
+            <span className="text-xs font-semibold text-center text-[#2C1810]">
+              {pdfActions.previewing ? "Carregando..." : "Preview"}
+            </span>
+          </button>
+
+          {/* Gerar Orçamento */}
+          {!isNonDraftLocked && editing?.idBudgets ? (
+            <button
+              type="button"
+              onClick={() => {
+                void handleGenerateBudget();
+              }}
+              disabled={
+                saving ||
+                !editing?.idBudgets ||
+                isSelectedLeadInactive ||
+                !isFormReadyToSend ||
+                !session?.user.idUsers
+              }
+              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title={
+                isSelectedLeadInactive
+                  ? "Nao e possivel gerar para lead inativo"
+                  : !isFormReadyToSend
+                    ? "Preencha todos os campos obrigatórios para gerar"
+                    : "Gerar orçamento"
+              }
+            >
+              <FileSignature size={32} className="text-[#C9A227]" />
+              <span className="text-xs font-semibold text-center text-[#2C1810]">
+                Gerar
+              </span>
+            </button>
+          ) : null}
+
+          {/* Gerar Contrato */}
+          <button
+            type="button"
+            disabled={true}
+            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            title="Gerar contrato (em breve)"
+          >
+            <FileSignature size={32} className="text-[#999]" />
+            <span className="text-xs font-semibold text-center text-[#999]">
+              Contrato
+            </span>
+          </button>
+
+          {/* Enviar Email */}
+          {isNonDraftLocked && isGenerated && !emailSent ? (
+            <button
+              type="button"
+              onClick={() => {
+                void handleSendEmail();
+              }}
+              disabled={
+                saving ||
+                !editing?.idBudgets ||
+                !leadHasEmail ||
+                !session?.user.idUsers ||
+                pdfActions.sendingEmail
+              }
+              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title={
+                !leadHasEmail
+                  ? "O lead selecionado não possui e-mail cadastrado"
+                  : "Enviar por e-mail"
+              }
+            >
+              <Mail size={32} className="text-[#C9A227]" />
+              <span className="text-xs font-semibold text-center text-[#2C1810]">
+                {pdfActions.sendingEmail ? "Enviando" : "Email"}
+              </span>
+            </button>
+          ) : null}
+
+          {/* Enviar WhatsApp */}
+          {isNonDraftLocked && isGenerated ? (
+            <button
+              type="button"
+              onClick={() => {
+                void handleSendWhatsApp();
+              }}
+              disabled={
+                saving ||
+                !editing?.idBudgets ||
+                !leadHasPhone ||
+                !session?.user.idUsers ||
+                pdfActions.sharingWhatsApp
+              }
+              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title={
+                !leadHasPhone
+                  ? "O lead selecionado não possui telefone cadastrado"
+                  : "Enviar por WhatsApp"
+              }
+            >
+              <MessageCircle size={32} className="text-[#C9A227]" />
+              <span className="text-xs font-semibold text-center text-[#2C1810]">
+                {pdfActions.sharingWhatsApp ? "Enviando" : "WhatsApp"}
+              </span>
+            </button>
+          ) : null}
+
+          {/* Voltar ao Rascunho */}
+          {isNonDraftLocked ? (
+            <button
+              type="button"
+              onClick={() => {
+                void handleRevertToDraft();
+              }}
+              disabled={saving}
+              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Voltar ao rascunho"
+            >
+              <RotateCcw size={32} className="text-[#C9A227]" />
+              <span className="text-xs font-semibold text-center text-[#2C1810]">
+                Voltar
+              </span>
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <GenericForm<BudgetFormValues>
+        fields={getBudgetFormFields(form, {
+          isEditing: mode === "edit",
+          leads,
+          disableAll: isNonDraftLocked,
+          currentLeadId: editing?.idLeads,
+        })}
+        contentAfterFieldName={mode === "edit" ? "createdAt" : "idLeads"}
+        contentAfterField={formGuidanceContent}
+        values={form}
+        setValues={setForm}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSave(form);
+        }}
+        errors={errors}
+        saving={saving}
+        submitDisabled={
+          isNonDraftLocked ||
+          (mode === "create" && isSelectedLeadInactive) ||
+          isChangingToInactiveLead
+        }
+        onCancel={() => navigate(budgetRoutePaths.list)}
+      >
         <div className="mb-6 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
           <div className="mb-4">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-[#7a4430]">

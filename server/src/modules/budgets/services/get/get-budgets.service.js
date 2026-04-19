@@ -30,12 +30,10 @@ export class GetBudgetsService {
             durationHours
             paymentMethod
             advancePercentage
-            notes
             subtotal
             totalAmount
-            pdfUrl
-            pdfHash
-            pdfFrozenAt
+            sentVia
+            sentAt
             items {
               idBudgetItems
               description

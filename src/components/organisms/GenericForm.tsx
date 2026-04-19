@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
 
 export interface FormField {
@@ -32,6 +33,8 @@ export interface GenericFormProps<T> {
   saving?: boolean;
   submitDisabled?: boolean;
   onCancel?: () => void;
+  contentAfterFieldName?: string;
+  contentAfterField?: ReactNode;
   children?: ReactNode;
 }
 
@@ -44,6 +47,8 @@ export default function GenericForm<T extends object>({
   saving,
   submitDisabled,
   onCancel,
+  contentAfterFieldName,
+  contentAfterField,
   children,
 }: GenericFormProps<T>) {
   const valuesRecord = values as Record<string, unknown>;
@@ -78,7 +83,7 @@ export default function GenericForm<T extends object>({
             field.colSpan === 2 ? "md:col-span-2" : "";
 
           if (field.as === "select" && field.options) {
-            return (
+            const fieldNode = (
               <div key={field.name} className={fieldContainerClass}>
                 <label
                   className="text-xs font-semibold uppercase tracking-wide mb-1 block"
@@ -122,9 +127,20 @@ export default function GenericForm<T extends object>({
                 )}
               </div>
             );
+
+            if (contentAfterFieldName === field.name && contentAfterField) {
+              return (
+                <Fragment key={`${field.name}-with-content`}>
+                  {fieldNode}
+                  <div className="md:col-span-2">{contentAfterField}</div>
+                </Fragment>
+              );
+            }
+
+            return fieldNode;
           }
           if (field.as === "textarea") {
-            return (
+            const fieldNode = (
               <div
                 key={field.name}
                 className={
@@ -172,10 +188,21 @@ export default function GenericForm<T extends object>({
                 )}
               </div>
             );
+
+            if (contentAfterFieldName === field.name && contentAfterField) {
+              return (
+                <Fragment key={`${field.name}-with-content`}>
+                  {fieldNode}
+                  <div className="md:col-span-2">{contentAfterField}</div>
+                </Fragment>
+              );
+            }
+
+            return fieldNode;
           }
           // checkbox
           if (field.type === "checkbox") {
-            return (
+            const fieldNode = (
               <div
                 key={field.name}
                 className="flex items-center gap-2 md:col-span-2"
@@ -201,9 +228,20 @@ export default function GenericForm<T extends object>({
                 )}
               </div>
             );
+
+            if (contentAfterFieldName === field.name && contentAfterField) {
+              return (
+                <Fragment key={`${field.name}-with-content`}>
+                  {fieldNode}
+                  <div className="md:col-span-2">{contentAfterField}</div>
+                </Fragment>
+              );
+            }
+
+            return fieldNode;
           }
           // default input
-          return (
+          const fieldNode = (
             <div key={field.name} className={fieldContainerClass}>
               <label
                 className="text-xs font-semibold uppercase tracking-wide mb-1 block"
@@ -245,6 +283,17 @@ export default function GenericForm<T extends object>({
               )}
             </div>
           );
+
+          if (contentAfterFieldName === field.name && contentAfterField) {
+            return (
+              <Fragment key={`${field.name}-with-content`}>
+                {fieldNode}
+                <div className="md:col-span-2">{contentAfterField}</div>
+              </Fragment>
+            );
+          }
+
+          return fieldNode;
         })}
       </div>
       {children ? <div className="mt-6">{children}</div> : null}

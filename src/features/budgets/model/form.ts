@@ -7,6 +7,10 @@ import {
   BUDGET_EVENT_MAX_DAYS,
 } from "./constants";
 import { budgetValidationMessages } from "./messages";
+import {
+  budgetServiceTypeOptions,
+  type BudgetServiceType,
+} from "./service-items";
 
 export const budgetEventDateModeOptions = ["single", "multiple"] as const;
 export const budgetPaymentMethodOptions = [
@@ -79,10 +83,10 @@ export const budgetAdvancePercentageOptions = Array.from(
 
 export interface BudgetItemFormValues {
   id?: string;
+  serviceType: BudgetServiceType | "";
   description: string;
   quantity: string;
   unitPrice: string;
-  notes: string;
 }
 
 export interface BudgetFormValues {
@@ -100,15 +104,14 @@ export interface BudgetFormValues {
   durationHours: string;
   paymentMethod: string;
   advancePercentage: string;
-  notes: string;
   items: BudgetItemFormValues[];
 }
 
 export const emptyBudgetItemFormValues: BudgetItemFormValues = {
+  serviceType: "",
   description: "",
   quantity: "1",
   unitPrice: "",
-  notes: "",
 };
 
 export function createEmptyBudgetFormValues(
@@ -131,7 +134,6 @@ export function createEmptyBudgetFormValues(
     durationHours: "",
     paymentMethod: "",
     advancePercentage: "",
-    notes: "",
     items: [{ ...emptyBudgetItemFormValues }],
   };
 }
@@ -175,14 +177,13 @@ const budgetFormSchemaBase = z.object({
     .string()
     .trim()
     .min(1, budgetValidationMessages.advancePercentageRequired),
-  notes: z.string(),
   items: z.array(
     z.object({
       id: z.string().optional(),
+      serviceType: z.enum(budgetServiceTypeOptions).or(z.literal("")),
       description: z.string(),
       quantity: z.string(),
       unitPrice: z.string(),
-      notes: z.string(),
     }),
   ),
 });
@@ -270,6 +271,27 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
         code: z.ZodIssueCode.custom,
         path: ["items"],
         message: budgetValidationMessages.itemDescriptionRequired,
+      });
+    }
+
+    if (data.items.some((item) => !item.serviceType.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["items"],
+        message: budgetValidationMessages.itemServiceTypeRequired,
+      });
+    }
+
+    const selectedTypes = data.items
+      .map((item) => item.serviceType.trim())
+      .filter(Boolean);
+    const uniqueTypes = new Set(selectedTypes);
+
+    if (selectedTypes.length !== uniqueTypes.size) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["items"],
+        message: budgetValidationMessages.itemServiceTypeDuplicated,
       });
     }
 

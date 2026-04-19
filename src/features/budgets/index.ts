@@ -25,6 +25,12 @@ export {
 } from "./model/form";
 export { normalizeBudgetFormValues } from "./model/formatters";
 export {
+  budgetServiceTypeOptions,
+  buildBudgetServiceDescription,
+  inferBudgetServiceType,
+  type BudgetServiceType,
+} from "./model/service-items";
+export {
   calculateBudgetTotals,
   mapBudgetFormToPayload,
   mapBudgetToFormValues,

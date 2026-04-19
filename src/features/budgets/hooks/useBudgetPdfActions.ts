@@ -1,37 +1,43 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { CreateBudgetPayload } from "../../../api/budgets/schema";
 import {
-  downloadBudgetPdf,
-  freezeBudgetPdf,
   generateBudgetPreviewPdf,
+  sendBudgetEmail,
 } from "../../../api/budgets/methods";
 import { getHttpErrorMessage } from "../../../api/shared/http-error";
-import type { BudgetPdfFile } from "../../../api/budgets/pdf-schema";
 import { useToast } from "../../../shared/toast/useToast";
-import {
-  downloadBase64File,
-  openBase64FileInNewTab,
-} from "../../../utils/file";
+import { openBase64FileInNewTab } from "../../../utils/file";
 
 interface UseBudgetPdfActionsParams {
   userId: string;
   budgetId?: string;
   budgetNumber?: string;
-  onFrozen?: (pdf: BudgetPdfFile) => void;
+  onEmailSent?: () => void;
+}
+
+function base64ToFile(
+  base64: string,
+  mimeType: string,
+  fileName: string,
+): File {
+  const byteChars = atob(base64);
+  const byteNumbers = new Uint8Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) {
+    byteNumbers[i] = byteChars.charCodeAt(i);
+  }
+  return new File([byteNumbers], fileName, { type: mimeType });
 }
 
 export function useBudgetPdfActions({
   userId,
   budgetId,
   budgetNumber,
-  onFrozen,
+  onEmailSent,
 }: UseBudgetPdfActionsParams) {
   const [previewing, setPreviewing] = useState(false);
-  const [freezing, setFreezing] = useState(false);
-  const [downloading, setDownloading] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [sharingWhatsApp, setSharingWhatsApp] = useState(false);
   const { showError, showSuccess } = useToast();
-
-  const canFreezeOrDownload = useMemo(() => Boolean(budgetId), [budgetId]);
 
   async function preview(draft: CreateBudgetPayload) {
     setPreviewing(true);
@@ -39,8 +45,9 @@ export function useBudgetPdfActions({
     try {
       const pdf = await generateBudgetPreviewPdf(
         {
+          idBudgets: budgetId,
           budgetNumber: budgetNumber || undefined,
-          draft,
+          draft: budgetId ? undefined : draft,
         },
         userId,
       );
@@ -67,64 +74,107 @@ export function useBudgetPdfActions({
     }
   }
 
-  async function freeze() {
+  async function sendEmail() {
     if (!budgetId) {
       showError(
         "Salve o orçamento antes",
-        "É necessário salvar o orçamento antes de gerar a versão oficial do PDF.",
+        "É necessário salvar o orçamento antes de enviar por e-mail.",
       );
-      return null;
+      return;
     }
 
-    setFreezing(true);
+    setSendingEmail(true);
 
     try {
-      const pdf = await freezeBudgetPdf(budgetId, userId);
-      downloadBase64File(pdf.base64Content, pdf.fileName, pdf.mimeType);
-      onFrozen?.(pdf);
-      showSuccess("PDF oficial gerado com sucesso");
-      return pdf;
+      await sendBudgetEmail(budgetId, userId);
+      showSuccess("Orçamento enviado por e-mail com sucesso");
+      onEmailSent?.();
     } catch (error) {
-      const message = getHttpErrorMessage(error, "Erro ao gerar PDF oficial");
-      showError("Erro ao gerar PDF oficial", message);
-      return null;
+      const message = getHttpErrorMessage(
+        error,
+        "Erro ao enviar o orçamento por e-mail",
+      );
+      showError("Erro ao enviar por e-mail", message);
     } finally {
-      setFreezing(false);
+      setSendingEmail(false);
     }
   }
 
-  async function downloadOfficial() {
+  async function shareWhatsApp(
+    leadName: string,
+    phone: string,
+  ): Promise<"shared" | "fallback" | null> {
     if (!budgetId) {
       showError(
         "Salve o orçamento antes",
-        "É necessário salvar o orçamento antes de baixar a versão oficial.",
+        "É necessário salvar o orçamento antes de compartilhar.",
       );
       return null;
     }
 
-    setDownloading(true);
+    setSharingWhatsApp(true);
 
     try {
-      const pdf = await downloadBudgetPdf(budgetId, userId);
-      downloadBase64File(pdf.base64Content, pdf.fileName, pdf.mimeType);
-      showSuccess("PDF baixado com sucesso");
-      return pdf;
+      const pdf = await generateBudgetPreviewPdf(
+        { idBudgets: budgetId, budgetNumber: budgetNumber || undefined },
+        userId,
+      );
+
+      if (!pdf) return null;
+
+      const fileName = `orcamento-${budgetNumber || budgetId}.pdf`;
+      const file = base64ToFile(pdf.base64Content, pdf.mimeType, fileName);
+
+      const shareText =
+        `Olá, ${leadName}! Segue em anexo a proposta comercial.\n` +
+        `Orçamento: ${budgetNumber || ""}\n` +
+        `Qualquer dúvida, estamos à disposição!\n\nRoyal Copeiras`;
+
+      const canShare =
+        typeof navigator.share === "function" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [file] });
+
+      if (canShare) {
+        await navigator.share({ files: [file], text: shareText });
+        showSuccess("PDF compartilhado com sucesso");
+        return "shared";
+      }
+
+      // Fallback: open WhatsApp with text only
+      const digits = phone.replace(/\D/g, "");
+      const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+      const fallbackText =
+        `Olá, ${leadName}! Temos uma proposta comercial para você.\n` +
+        `Orçamento: ${budgetNumber || ""}\n` +
+        `Acesse seu e-mail para visualizar todos os detalhes da proposta. ` +
+        `Qualquer dúvida, estamos à disposição!\n\nRoyal Copeiras`;
+      window.open(
+        `https://wa.me/${normalized}?text=${encodeURIComponent(fallbackText)}`,
+        "_blank",
+      );
+      showSuccess(
+        "PDF não pôde ser anexado neste navegador — mensagem enviada via link",
+      );
+      return "fallback";
     } catch (error) {
-      const message = getHttpErrorMessage(error, "Erro ao baixar PDF oficial");
-      showError("Erro ao baixar PDF oficial", message);
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return null;
+      }
+      const message = getHttpErrorMessage(error, "Erro ao compartilhar o PDF");
+      showError("Erro ao compartilhar", message);
       return null;
     } finally {
-      setDownloading(false);
+      setSharingWhatsApp(false);
     }
   }
 
   return {
     preview,
-    freeze,
-    downloadOfficial,
+    sendEmail,
+    shareWhatsApp,
     previewing,
-    freezing,
-    downloading,
-    canFreezeOrDownload,
+    sendingEmail,
+    sharingWhatsApp,
   };
 }
