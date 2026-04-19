@@ -10,12 +10,23 @@ import { budgetUiCopy } from "./messages";
 
 export function getBudgetFormFields(
   values: BudgetFormValues,
-  options: { isEditing?: boolean; leads: Lead[]; disableAll?: boolean },
+  options: {
+    isEditing?: boolean;
+    leads: Lead[];
+    disableAll?: boolean;
+    currentLeadId?: string;
+  },
 ): FormField[] {
   const disableAll = Boolean(options.disableAll);
+  const visibleLeads = options.leads.filter(
+    (lead) => lead.isActive || lead.idLeads === options.currentLeadId,
+  );
   const leadOptions = [
     { value: "", label: budgetUiCopy.form.placeholders.lead },
-    ...options.leads.map((lead) => ({ value: lead.idLeads, label: lead.name })),
+    ...visibleLeads.map((lead) => ({
+      value: lead.idLeads,
+      label: lead.isActive ? lead.name : `${lead.name} (inativo)`,
+    })),
   ];
 
   return [
@@ -50,6 +61,7 @@ export function getBudgetFormFields(
       as: "select",
       options: [
         { value: "draft", label: budgetUiCopy.form.options.draft },
+        { value: "generated", label: budgetUiCopy.form.options.generated },
         { value: "sent", label: budgetUiCopy.form.options.sent },
         { value: "approved", label: budgetUiCopy.form.options.approved },
         { value: "rejected", label: budgetUiCopy.form.options.rejected },
@@ -57,7 +69,7 @@ export function getBudgetFormFields(
         { value: "canceled", label: budgetUiCopy.form.options.canceled },
       ],
       required: true,
-      disabled: disableAll,
+      disabled: true,
     },
     {
       name: "issueDate",
@@ -160,14 +172,6 @@ export function getBudgetFormFields(
         ...budgetAdvancePercentageOptions,
       ],
       required: true,
-      disabled: disableAll,
-    },
-    {
-      name: "notes",
-      label: budgetUiCopy.form.labels.notes,
-      as: "textarea",
-      placeholder: budgetUiCopy.form.placeholders.notes,
-      colSpan: 2,
       disabled: disableAll,
     },
   ];

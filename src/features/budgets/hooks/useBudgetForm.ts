@@ -8,6 +8,10 @@ import {
 } from "@/features/budgets/model/form";
 import { normalizeBudgetFormValues } from "@/features/budgets/model/formatters";
 import {
+  buildBudgetServiceDescription,
+  budgetServiceTypeOptions,
+} from "@/features/budgets/model/service-items";
+import {
   calculateBudgetTotals,
   mapBudgetFormToPayload,
   mapBudgetToFormValues,
@@ -63,7 +67,25 @@ export function useBudgetForm({
       normalizeBudgetFormValues(
         {
           ...current,
-          items: [...current.items, { ...emptyBudgetItemFormValues }],
+          items: [
+            ...current.items,
+            (() => {
+              const usedTypes = new Set(
+                current.items.map((item) => item.serviceType).filter(Boolean),
+              );
+              const nextType =
+                budgetServiceTypeOptions.find((type) => !usedTypes.has(type)) ||
+                "";
+
+              return {
+                ...emptyBudgetItemFormValues,
+                serviceType: nextType,
+                description: nextType
+                  ? buildBudgetServiceDescription(nextType, 1)
+                  : "",
+              };
+            })(),
+          ],
         },
         current,
       ),

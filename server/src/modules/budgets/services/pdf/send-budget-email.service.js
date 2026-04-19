@@ -1,26 +1,19 @@
 import { executeGraphql } from "../../../../shared/http/graphql-client.js";
 
-export class DownloadBudgetPdfService {
+export class SendBudgetEmailService {
   async execute(userId, idBudgets, context = {}) {
-    const query = `
-      query DownloadBudgetPdf($input: DownloadBudgetPdfInputDto!) {
-        downloadBudgetPdf(input: $input) {
+    const mutation = `
+      mutation SendBudgetEmail($input: SendBudgetEmailInputDto!) {
+        sendBudgetEmail(input: $input) {
           success
           message
           code
-          data {
-            fileName
-            mimeType
-            base64Content
-            snapshotHash
-            frozenAt
-          }
         }
       }
     `;
 
     const data = await executeGraphql({
-      query,
+      query: mutation,
       variables: { input: { idBudgets } },
       userId,
       authorization: context.authorization,
@@ -28,6 +21,6 @@ export class DownloadBudgetPdfService {
       requestId: context.requestId,
     });
 
-    return data.downloadBudgetPdf;
+    return data.sendBudgetEmail;
   }
 }

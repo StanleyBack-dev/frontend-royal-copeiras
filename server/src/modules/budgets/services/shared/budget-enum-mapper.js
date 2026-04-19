@@ -1,5 +1,6 @@
 const BUDGET_STATUS_ENUM_VALUES = new Set([
   "DRAFT",
+  "GENERATED",
   "SENT",
   "APPROVED",
   "REJECTED",

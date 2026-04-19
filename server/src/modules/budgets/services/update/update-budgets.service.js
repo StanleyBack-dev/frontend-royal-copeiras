@@ -25,11 +25,10 @@ export class UpdateBudgetsService {
             durationHours
             paymentMethod
             advancePercentage
-            notes
             subtotal
             totalAmount
-            pdfUrl
-            pdfHash
+            sentVia
+            sentAt
             items {
               idBudgetItems
               description
@@ -57,8 +56,6 @@ export class UpdateBudgetsService {
     delete sanitizedInput.updatedAt;
     delete sanitizedInput.budgetNumber;
     delete sanitizedInput.subtotal;
-    delete sanitizedInput.pdfHash;
-    delete sanitizedInput.pdfUrl;
 
     const data = await executeGraphql({
       query: mutation,

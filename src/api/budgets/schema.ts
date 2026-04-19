@@ -20,6 +20,7 @@ const nullableNumberToOptional = () =>
 
 export const budgetStatusOptions = [
   "draft",
+  "generated",
   "sent",
   "approved",
   "rejected",
@@ -60,12 +61,10 @@ export const BudgetSchema = z.object({
   durationHours: nullableNumberToOptional(),
   paymentMethod: nullableStringToEmpty(),
   advancePercentage: nullableNumberToOptional(),
-  notes: nullableStringToEmpty(),
   subtotal: z.number(),
   totalAmount: z.number(),
-  pdfUrl: nullableStringToEmpty(),
-  pdfHash: nullableStringToEmpty(),
-  pdfFrozenAt: nullableStringToEmpty(),
+  sentVia: nullableStringToOptional(),
+  sentAt: nullableStringToOptional(),
   items: z.preprocess(
     (value) => (value == null ? [] : value),
     z.array(BudgetItemSchema).optional(),
@@ -85,7 +84,6 @@ export const CreateBudgetPayloadSchema = z.object({
   durationHours: z.number().int().min(1).optional(),
   paymentMethod: z.string().optional().or(z.literal("")),
   advancePercentage: z.number().min(0).max(100).optional(),
-  notes: z.string().optional().or(z.literal("")),
   totalAmount: z.number().min(0).optional(),
   items: z.array(CreateBudgetItemPayloadSchema).min(1),
 });
