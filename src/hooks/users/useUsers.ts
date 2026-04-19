@@ -3,6 +3,7 @@ import type {
   ListQueryParams,
   PaginationMeta,
 } from "../../api/shared/contracts";
+import { getHttpErrorMessage } from "../../api/shared/http-error";
 import { useSearchParams } from "react-router-dom";
 import type {
   CreateUserPayload,
@@ -87,10 +88,10 @@ export function useUsers(userId: string): UseUsersResult {
         setUsers(data.items);
         setPagination(data.pagination);
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : userUiCopy.errors.loadUsersFallback;
+        const message = getHttpErrorMessage(
+          err,
+          userUiCopy.errors.loadUsersFallback,
+        );
         setError(message);
         showError(userUiCopy.errors.loadUsersFallback, message);
       } finally {
@@ -214,10 +215,10 @@ export function useUsers(userId: string): UseUsersResult {
         );
         await load({ page: pagination.currentPage, limit: pagination.limit });
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : userUiCopy.errors.saveUserFallback;
+        const message = getHttpErrorMessage(
+          err,
+          userUiCopy.errors.saveUserFallback,
+        );
         setError(message);
         showError(userUiCopy.errors.saveUserFallback, message);
       } finally {
@@ -243,10 +244,10 @@ export function useUsers(userId: string): UseUsersResult {
         showSuccess(userUiCopy.success.unlockUser);
         await load({ page: pagination.currentPage, limit: pagination.limit });
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : userUiCopy.errors.unlockUserFallback;
+        const message = getHttpErrorMessage(
+          err,
+          userUiCopy.errors.unlockUserFallback,
+        );
         setError(message);
         showError(userUiCopy.errors.unlockUserFallback, message);
       } finally {

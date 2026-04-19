@@ -1,16 +1,29 @@
 import { lazy, Suspense } from "react";
-import { Route } from "react-router-dom";
+import type { ComponentType } from "react";
+import { Navigate, Route } from "react-router-dom";
 import AppLayout from "../AppLayout";
-import { authRoutePaths, routePaths, utilityRoutePaths } from "../navigation";
+import {
+  authRoutePaths,
+  budgetRoutePaths,
+  leadRoutePaths,
+  routePaths,
+  utilityRoutePaths,
+} from "../navigation";
 import RequirePageAccessRoute from "../../features/auth/guards/RequirePageAccessRoute";
+import { BudgetsProviderOutlet } from "../../features/budgets";
+import { LeadsProviderOutlet } from "../../features/leads";
 import { ManagementRoutes } from "./ManagementRoutes";
 
 const AccessDenied = lazy(() => import("../../pages/AccessDenied"));
 const Dashboard = lazy(() => import("../../pages/Dashboard"));
 const Debts = lazy(() => import("../../pages/Debts"));
+const BudgetForm = lazy(() => import("../../pages/budgets/BudgetForm"));
+const Budgets = lazy(() => import("../../pages/budgets/Budgets"));
 const Events = lazy(() => import("../../pages/Events"));
 const Finance = lazy(() => import("../../pages/Finance"));
 const Investments = lazy(() => import("../../pages/Investments"));
+const LeadForm = lazy(() => import("../../pages/leads/LeadForm"));
+const Leads = lazy(() => import("../../pages/leads/Leads"));
 const Profile = lazy(() => import("../../pages/Profile"));
 const Settings = lazy(() => import("../../pages/Settings"));
 
@@ -20,6 +33,24 @@ function withPageSuspense(element: React.ReactNode) {
       {element}
     </Suspense>
   );
+}
+
+interface UserScopedProviderRouteProps {
+  userId?: string;
+  loginPath: string;
+  ProviderOutlet: ComponentType<{ userId: string }>;
+}
+
+function UserScopedProviderRoute({
+  userId,
+  loginPath,
+  ProviderOutlet,
+}: UserScopedProviderRouteProps) {
+  if (!userId) {
+    return <Navigate to={loginPath} replace />;
+  }
+
+  return <ProviderOutlet userId={userId} />;
 }
 
 interface AppShellRoutesProps {
@@ -42,6 +73,78 @@ export function AppShellRoutes({ userId }: AppShellRoutesProps) {
           element={withPageSuspense(<Events />)}
         />
       </Route>
+      <Route element={<RequirePageAccessRoute view="events" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={authRoutePaths.login}
+              ProviderOutlet={LeadsProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={leadRoutePaths.list}
+            element={withPageSuspense(<Leads />)}
+          />
+          <Route
+            path={leadRoutePaths.create}
+            element={withPageSuspense(<LeadForm mode="create" />)}
+          />
+          <Route
+            path={leadRoutePaths.edit()}
+            element={withPageSuspense(<LeadForm mode="edit" />)}
+          />
+        </Route>
+      </Route>
+      <Route
+        path={leadRoutePaths.legacyList}
+        element={<Navigate to={leadRoutePaths.list} replace />}
+      />
+      <Route
+        path={leadRoutePaths.legacyCreate}
+        element={<Navigate to={leadRoutePaths.create} replace />}
+      />
+      <Route
+        path={leadRoutePaths.legacyEdit()}
+        element={<Navigate to={leadRoutePaths.edit()} replace />}
+      />
+      <Route element={<RequirePageAccessRoute view="events" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={authRoutePaths.login}
+              ProviderOutlet={BudgetsProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={budgetRoutePaths.list}
+            element={withPageSuspense(<Budgets />)}
+          />
+          <Route
+            path={budgetRoutePaths.create}
+            element={withPageSuspense(<BudgetForm mode="create" />)}
+          />
+          <Route
+            path={budgetRoutePaths.edit()}
+            element={withPageSuspense(<BudgetForm mode="edit" />)}
+          />
+        </Route>
+      </Route>
+      <Route
+        path={budgetRoutePaths.legacyList}
+        element={<Navigate to={budgetRoutePaths.list} replace />}
+      />
+      <Route
+        path={budgetRoutePaths.legacyCreate}
+        element={<Navigate to={budgetRoutePaths.create} replace />}
+      />
+      <Route
+        path={budgetRoutePaths.legacyEdit()}
+        element={<Navigate to={budgetRoutePaths.edit()} replace />}
+      />
       <Route element={<RequirePageAccessRoute view="finances" />}>
         <Route
           path={routePaths.finances}
