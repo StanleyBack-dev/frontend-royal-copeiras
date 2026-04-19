@@ -1,13 +1,18 @@
 import { httpClient } from "../../shared/httpClient";
 import { extractMutationData } from "../../shared/normalizers";
-import type { BudgetPdfFile } from "../pdf-schema";
 
-export async function freezeBudgetPdf(
+interface SendBudgetEmailResult {
+  success: boolean;
+  message: string;
+  code: string;
+}
+
+export async function sendBudgetEmail(
   idBudgets: string,
   userId: string,
-): Promise<BudgetPdfFile> {
+): Promise<SendBudgetEmailResult> {
   const response = await httpClient.post<unknown>(
-    `/api/budgets/${idBudgets}/pdf/freeze`,
+    `/api/budgets/${idBudgets}/pdf/send-email`,
     {},
     {
       headers: {
@@ -16,5 +21,5 @@ export async function freezeBudgetPdf(
     },
   );
 
-  return extractMutationData<BudgetPdfFile>(response.data);
+  return extractMutationData<SendBudgetEmailResult>(response.data);
 }

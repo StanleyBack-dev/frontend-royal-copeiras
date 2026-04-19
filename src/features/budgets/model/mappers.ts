@@ -7,6 +7,10 @@ import { formatDateTimeDisplay } from "../../../utils/format";
 import type { BudgetFormValues, BudgetItemFormValues } from "./form";
 import { buildEventDates, budgetPaymentMethodOptions } from "./form";
 import { formatCurrencyInput, parseCurrencyInput } from "./formatters";
+import {
+  buildBudgetServiceDescription,
+  inferBudgetServiceType,
+} from "./service-items";
 
 function toDecimal(value: string): number | undefined {
   return parseCurrencyInput(value);
@@ -16,11 +20,15 @@ function mapBudgetItemFormToPayload(
   item: BudgetItemFormValues,
   index: number,
 ): CreateBudgetItemPayload {
+  const quantity = Number(item.quantity || 0);
+  const description = item.serviceType
+    ? buildBudgetServiceDescription(item.serviceType, quantity)
+    : item.description.trim();
+
   return {
-    description: item.description.trim(),
-    quantity: Number(item.quantity || 0),
+    description,
+    quantity,
     unitPrice: toDecimal(item.unitPrice) ?? 0,
-    notes: item.notes.trim(),
     sortOrder: index,
   };
 }
@@ -53,13 +61,12 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
         : "",
     advancePercentage:
       budget.advancePercentage != null ? String(budget.advancePercentage) : "",
-    notes: budget.notes || "",
     items: (budget.items || []).map((item) => ({
       id: item.idBudgetItems,
+      serviceType: inferBudgetServiceType(item.description),
       description: item.description,
       quantity: String(item.quantity),
       unitPrice: formatCurrencyInput(String(item.unitPrice * 100)),
-      notes: item.notes || "",
     })),
   };
 }
@@ -88,7 +95,6 @@ export function mapBudgetFormToPayload(
     advancePercentage: values.advancePercentage
       ? Number(values.advancePercentage)
       : undefined,
-    notes: values.notes.trim(),
     totalAmount,
     items,
   };

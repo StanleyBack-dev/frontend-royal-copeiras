@@ -98,6 +98,7 @@ export function getLeadFormFields(
       name: "source",
       label: leadUiCopy.form.labels.source,
       as: "select",
+      required: true,
       options: [
         { value: "", label: leadUiCopy.form.options.selectSource },
         ...leadSourceOptions.map((value) => ({

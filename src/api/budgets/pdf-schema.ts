@@ -10,8 +10,9 @@ export const BudgetPdfFileSchema = z.object({
 });
 
 export const GenerateBudgetPreviewPayloadSchema = z.object({
+  idBudgets: z.string().uuid().optional(),
   budgetNumber: z.string().optional().or(z.literal("")),
-  draft: CreateBudgetPayloadSchema,
+  draft: CreateBudgetPayloadSchema.optional(),
 });
 
 export type BudgetPdfFile = z.infer<typeof BudgetPdfFileSchema>;
