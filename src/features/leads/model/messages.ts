@@ -1,0 +1,106 @@
+import {
+  LEAD_DOCUMENT_DIGITS_CNPJ,
+  LEAD_DOCUMENT_DIGITS_CPF,
+  LEAD_EMAIL_MAX_LENGTH,
+  LEAD_EMAIL_MIN_LENGTH,
+  LEAD_NAME_MAX_LENGTH,
+  LEAD_NAME_MIN_LENGTH,
+} from "./constants";
+
+export const leadUiCopy = {
+  form: {
+    createTitle: "Novo Lead",
+    editTitle: "Editar Lead",
+    labels: {
+      name: "Nome",
+      email: "Email",
+      type: "Tipo",
+      cpf: "CPF",
+      cnpj: "CNPJ",
+      contactType: "Tipo de Telefone",
+      phone: "Telefone",
+      source: "Origem",
+      status: "Status",
+      notes: "Observações",
+      isActive: "Ativo",
+      createdAt: "Data de Criação",
+    },
+    placeholders: {
+      name: "Renata Barros",
+      email: "renata@empresa.com",
+      cpf: "123.456.789-09",
+      cnpj: "12.345.678/0001-90",
+      mobilePhone: "(11) 91234-5678",
+      landlinePhone: "(11) 3456-7890",
+      notes: "Detalhes relevantes do contato e da negociação.",
+    },
+    options: {
+      person: "Pessoa Física",
+      company: "Empresa",
+      mobile: "Móvel",
+      landline: "Fixo",
+      selectSource: "Selecione uma origem",
+      new: "Novo",
+      qualified: "Qualificado",
+      won: "Convertido",
+      lost: "Perdido",
+    },
+    sourceOptions: {
+      instagram: "Instagram",
+      referral: "Indicação",
+      website: "Site",
+      whatsapp: "WhatsApp",
+      event: "Evento",
+      other: "Outros",
+    },
+  },
+  listing: {
+    title: "Leads",
+    description:
+      "Centralize captação e evolução comercial antes da geração do orçamento.",
+    newAction: "Novo Lead",
+    searchPlaceholder: "Buscar leads...",
+    emptyMessage: "Nenhum lead encontrado",
+    columns: {
+      name: "Nome",
+      source: "Origem",
+      email: "Email",
+      phone: "Telefone",
+      status: "Status",
+      isActive: "Ativo",
+      createdAt: "Criação",
+      actions: "Editar",
+    },
+    values: {
+      active: "Sim",
+      inactive: "Não",
+    },
+    actions: {
+      edit: "Editar",
+      createBudget: "Gerar orçamento",
+    },
+  },
+  errors: {
+    invalidCollectionData: "Dados de leads inválidos",
+    invalidFormData: "Dados do formulário inválidos",
+    invalidLeadData: "Dados do lead inválidos",
+    invalidLeadResponse: "Resposta de lead inválida",
+    loadLeadsFallback: "Erro ao carregar leads",
+    saveLeadFallback: "Erro ao salvar lead",
+  },
+  success: {
+    createLead: "Lead criado com sucesso",
+    updateLead: "Lead atualizado com sucesso",
+  },
+} as const;
+
+export const leadValidationMessages = {
+  nameRequired: `Nome deve ter pelo menos ${LEAD_NAME_MIN_LENGTH} caracteres`,
+  nameMax: `Nome deve ter no máximo ${LEAD_NAME_MAX_LENGTH} caracteres`,
+  emailMin: `E-mail deve ter pelo menos ${LEAD_EMAIL_MIN_LENGTH} caracteres`,
+  emailMax: `E-mail deve ter no máximo ${LEAD_EMAIL_MAX_LENGTH} caracteres`,
+  emailInvalid: "E-mail inválido",
+  phoneInvalid: "Telefone móvel deve ter 11 dígitos e fixo deve ter 10 dígitos",
+  cpfInvalid: `CPF deve ter ${LEAD_DOCUMENT_DIGITS_CPF} dígitos`,
+  cnpjInvalid: `CNPJ deve ter ${LEAD_DOCUMENT_DIGITS_CNPJ} dígitos`,
+} as const;

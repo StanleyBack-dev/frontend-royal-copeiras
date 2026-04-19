@@ -3,6 +3,7 @@ import type {
   ListQueryParams,
   PaginationMeta,
 } from "../../api/shared/contracts";
+import { getHttpErrorMessage } from "../../api/shared/http-error";
 import { useSearchParams } from "react-router-dom";
 import {
   type Customer,
@@ -84,10 +85,10 @@ export function useCustomers(userId: string): UseCustomersResult {
         setCustomers(data.items);
         setPagination(data.pagination);
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : customerUiCopy.errors.loadCustomersFallback;
+        const message = getHttpErrorMessage(
+          err,
+          customerUiCopy.errors.loadCustomersFallback,
+        );
         setError(message);
         showError(customerUiCopy.errors.loadCustomersFallback, message);
       } finally {
@@ -208,10 +209,10 @@ export function useCustomers(userId: string): UseCustomersResult {
         );
         await load({ page: pagination.currentPage, limit: pagination.limit });
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : customerUiCopy.errors.saveCustomerFallback;
+        const message = getHttpErrorMessage(
+          err,
+          customerUiCopy.errors.saveCustomerFallback,
+        );
         setError(message);
         showError(customerUiCopy.errors.saveCustomerFallback, message);
       } finally {

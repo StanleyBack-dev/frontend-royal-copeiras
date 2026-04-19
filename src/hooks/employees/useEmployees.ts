@@ -3,6 +3,7 @@ import type {
   ListQueryParams,
   PaginationMeta,
 } from "../../api/shared/contracts";
+import { getHttpErrorMessage } from "../../api/shared/http-error";
 import { useSearchParams } from "react-router-dom";
 import {
   type Employee,
@@ -84,10 +85,10 @@ export function useEmployees(userId: string): UseEmployeesResult {
         setEmployees(data.items);
         setPagination(data.pagination);
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : employeeUiCopy.errors.loadEmployeesFallback;
+        const message = getHttpErrorMessage(
+          err,
+          employeeUiCopy.errors.loadEmployeesFallback,
+        );
         setError(message);
         showError(employeeUiCopy.errors.loadEmployeesFallback, message);
       } finally {
@@ -209,10 +210,10 @@ export function useEmployees(userId: string): UseEmployeesResult {
         );
         await load({ page: pagination.currentPage, limit: pagination.limit });
       } catch (err) {
-        const message =
-          err instanceof Error
-            ? err.message
-            : employeeUiCopy.errors.saveEmployeeFallback;
+        const message = getHttpErrorMessage(
+          err,
+          employeeUiCopy.errors.saveEmployeeFallback,
+        );
         setError(message);
         showError(employeeUiCopy.errors.saveEmployeeFallback, message);
       } finally {

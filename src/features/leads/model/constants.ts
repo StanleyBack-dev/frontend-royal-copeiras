@@ -1,0 +1,13 @@
+export const LEAD_NAME_MIN_LENGTH = 2;
+export const LEAD_NAME_MAX_LENGTH = 120;
+export const LEAD_EMAIL_MIN_LENGTH = 6;
+export const LEAD_EMAIL_MAX_LENGTH = 120;
+export const LEAD_SOURCE_MAX_LENGTH = 60;
+export const LEAD_DOCUMENT_DIGITS_CPF = 11;
+export const LEAD_DOCUMENT_DIGITS_CNPJ = 14;
+export const LEAD_PHONE_LANDLINE_DIGITS = 10;
+export const LEAD_PHONE_MOBILE_DIGITS = 11;
+export const LEAD_CPF_MASK_LENGTH = 14;
+export const LEAD_CNPJ_MASK_LENGTH = 18;
+export const LEAD_PHONE_LANDLINE_MASK_LENGTH = 14;
+export const LEAD_PHONE_MOBILE_MASK_LENGTH = 15;
