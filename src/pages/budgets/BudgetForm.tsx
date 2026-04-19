@@ -1,5 +1,4 @@
 import GenericForm from "@/components/organisms/GenericForm";
-import Button from "@/components/atoms/Button";
 import Input from "@/components/atoms/Input";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
 import {
