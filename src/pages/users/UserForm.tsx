@@ -15,6 +15,7 @@ import { useAuthSession } from "@/features/auth";
 import { useUsersContext } from "@/features/users/context/useUsersContext";
 import { useToast } from "@/shared/toast/useToast";
 import { userRoutePaths } from "@/router";
+import { getHttpErrorMessage } from "@/api/shared/http-error";
 
 export default function UserForm({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams();
@@ -79,10 +80,10 @@ export default function UserForm({ mode }: { mode: "create" | "edit" }) {
       })
       .catch((error) => {
         loadedPermissionsForUserRef.current = null;
-        const message =
-          error instanceof Error
-            ? error.message
-            : userUiCopy.errors.loadPermissionsFallback;
+        const message = getHttpErrorMessage(
+          error,
+          userUiCopy.errors.loadPermissionsFallback,
+        );
         showError(userUiCopy.errors.loadPermissionsFallback, message);
       });
   }, [

@@ -40,6 +40,24 @@ export const userRoutePaths = {
   legacyEdit: (id = ":id") => `/users/${id}/edit`,
 };
 
+export const leadRoutePaths = {
+  list: "/eventos/leads",
+  create: "/eventos/leads/new",
+  edit: (id = ":id") => `/eventos/leads/${id}/edit`,
+  legacyList: "/leads",
+  legacyCreate: "/leads/new",
+  legacyEdit: (id = ":id") => `/leads/${id}/edit`,
+};
+
+export const budgetRoutePaths = {
+  list: "/eventos/orcamentos",
+  create: "/eventos/orcamentos/new",
+  edit: (id = ":id") => `/eventos/orcamentos/${id}/edit`,
+  legacyList: "/budgets",
+  legacyCreate: "/budgets/new",
+  legacyEdit: (id = ":id") => `/budgets/${id}/edit`,
+};
+
 export const authRoutePaths = {
   login: "/",
   firstAccessChangePassword: "/primeiro-acesso/alterar-senha",

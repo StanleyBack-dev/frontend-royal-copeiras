@@ -1,4 +1,4 @@
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, FormEvent, ReactNode } from "react";
 
 export interface FormField {
   name: string;
@@ -30,18 +30,25 @@ export interface GenericFormProps<T> {
   onSubmit: (e: FormEvent) => void;
   errors?: Partial<Record<Extract<keyof T, string>, string>>;
   saving?: boolean;
+  submitDisabled?: boolean;
   onCancel?: () => void;
+  children?: ReactNode;
 }
 
-export default function GenericForm<T extends Record<string, unknown>>({
+export default function GenericForm<T extends object>({
   fields,
   values,
   setValues,
   onSubmit,
   errors,
   saving,
+  submitDisabled,
   onCancel,
+  children,
 }: GenericFormProps<T>) {
+  const valuesRecord = values as Record<string, unknown>;
+  const errorsRecord = (errors ?? {}) as Record<string, string | undefined>;
+
   function handleChange(
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) {
@@ -83,13 +90,15 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 <select
                   className="w-full px-3 py-2.5 rounded-lg text-sm border outline-none"
                   style={{
-                    borderColor: errors?.[field.name] ? "#c2410c" : "#e8d5c9",
+                    borderColor: errorsRecord[field.name]
+                      ? "#c2410c"
+                      : "#e8d5c9",
                     color: "#2C1810",
                     background: field.disabled ? "#f5ede8" : "#fff",
                   }}
                   name={field.name}
                   value={
-                    values[field.name] as
+                    valuesRecord[field.name] as
                       | string
                       | number
                       | readonly string[]
@@ -98,7 +107,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   onChange={handleChange}
                   required={field.required}
                   disabled={field.disabled}
-                  aria-invalid={!!errors?.[field.name]}
+                  aria-invalid={!!errorsRecord[field.name]}
                 >
                   {field.options.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -106,9 +115,9 @@ export default function GenericForm<T extends Record<string, unknown>>({
                     </option>
                   ))}
                 </select>
-                {errors?.[field.name] && (
+                {errorsRecord[field.name] && (
                   <p className="mt-1 text-xs" style={{ color: "#c2410c" }}>
-                    {errors[field.name]}
+                    {errorsRecord[field.name]}
                   </p>
                 )}
               </div>
@@ -132,13 +141,15 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 <textarea
                   className="w-full px-3 py-2.5 rounded-lg text-sm border outline-none resize-none"
                   style={{
-                    borderColor: errors?.[field.name] ? "#c2410c" : "#e8d5c9",
+                    borderColor: errorsRecord[field.name]
+                      ? "#c2410c"
+                      : "#e8d5c9",
                     color: "#2C1810",
                     background: field.disabled ? "#f5ede8" : "#fff",
                   }}
                   name={field.name}
                   value={
-                    values[field.name] as
+                    valuesRecord[field.name] as
                       | string
                       | number
                       | readonly string[]
@@ -150,13 +161,13 @@ export default function GenericForm<T extends Record<string, unknown>>({
                   readOnly={field.readOnly}
                   disabled={field.disabled}
                   maxLength={field.maxLength}
-                  aria-invalid={!!errors?.[field.name]}
+                  aria-invalid={!!errorsRecord[field.name]}
                   aria-readonly={field.readOnly}
                   rows={3}
                 />
-                {errors?.[field.name] && (
+                {errorsRecord[field.name] && (
                   <p className="mt-1 text-xs" style={{ color: "#c2410c" }}>
-                    {errors[field.name]}
+                    {errorsRecord[field.name]}
                   </p>
                 )}
               </div>
@@ -172,10 +183,10 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 <input
                   type="checkbox"
                   name={field.name}
-                  checked={!!values[field.name]}
+                  checked={!!valuesRecord[field.name]}
                   onChange={handleChange}
                   disabled={field.disabled}
-                  aria-invalid={!!errors?.[field.name]}
+                  aria-invalid={!!errorsRecord[field.name]}
                 />
                 <label
                   className="font-medium text-xs"
@@ -183,9 +194,9 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 >
                   {field.label}
                 </label>
-                {errors?.[field.name] && (
+                {errorsRecord[field.name] && (
                   <p className="text-xs" style={{ color: "#c2410c" }}>
-                    {errors[field.name]}
+                    {errorsRecord[field.name]}
                   </p>
                 )}
               </div>
@@ -204,14 +215,14 @@ export default function GenericForm<T extends Record<string, unknown>>({
               <input
                 className="w-full px-3 py-2.5 rounded-lg text-sm border outline-none"
                 style={{
-                  borderColor: errors?.[field.name] ? "#c2410c" : "#e8d5c9",
+                  borderColor: errorsRecord[field.name] ? "#c2410c" : "#e8d5c9",
                   color: "#2C1810",
                   background: field.disabled ? "#f5ede8" : "#fff",
                 }}
                 type={field.type || "text"}
                 name={field.name}
                 value={
-                  values[field.name] as
+                  valuesRecord[field.name] as
                     | string
                     | number
                     | readonly string[]
@@ -224,18 +235,19 @@ export default function GenericForm<T extends Record<string, unknown>>({
                 disabled={field.disabled}
                 maxLength={field.maxLength}
                 inputMode={field.inputMode}
-                aria-invalid={!!errors?.[field.name]}
+                aria-invalid={!!errorsRecord[field.name]}
                 aria-readonly={field.readOnly}
               />
-              {errors?.[field.name] && (
+              {errorsRecord[field.name] && (
                 <p className="mt-1 text-xs" style={{ color: "#c2410c" }}>
-                  {errors[field.name]}
+                  {errorsRecord[field.name]}
                 </p>
               )}
             </div>
           );
         })}
       </div>
+      {children ? <div className="mt-6">{children}</div> : null}
       <div className="mt-8 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         {onCancel && (
           <button
@@ -252,7 +264,7 @@ export default function GenericForm<T extends Record<string, unknown>>({
           type="submit"
           className="rounded-lg px-5 py-2 text-sm font-semibold text-white disabled:opacity-50"
           style={{ background: "linear-gradient(135deg, #C9A227, #a8811a)" }}
-          disabled={saving}
+          disabled={saving || submitDisabled}
         >
           {saving ? "Salvando..." : "Salvar"}
         </button>
