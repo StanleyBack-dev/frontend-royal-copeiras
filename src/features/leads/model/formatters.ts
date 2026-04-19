@@ -35,7 +35,7 @@ export function normalizeLeadFormValues(
     cpf: formatCPF(cpf),
     cnpj: formatCNPJ(cnpj),
     name: nextValues.name.trimStart(),
-    email: nextValues.email.trim(),
-    source: nextValues.source.trimStart(),
+    email: (nextValues.email ?? "").trim(),
+    source: nextValues.source ?? "",
   };
 }

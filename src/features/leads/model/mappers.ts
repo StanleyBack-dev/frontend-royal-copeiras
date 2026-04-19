@@ -44,7 +44,7 @@ export function mapLeadFormToPayload(
 ): CreateLeadPayload {
   return {
     name: values.name.trim(),
-    email: values.email.trim(),
+    email: (values.email ?? "").trim(),
     phone:
       values.contactType === "mobile"
         ? onlyDigits(values.phone ?? "", LEAD_PHONE_MOBILE_DIGITS)
@@ -53,8 +53,8 @@ export function mapLeadFormToPayload(
       values.type === "individual"
         ? onlyDigits(values.cpf ?? "", LEAD_DOCUMENT_DIGITS_CPF)
         : onlyDigits(values.cnpj ?? "", LEAD_DOCUMENT_DIGITS_CNPJ),
-    source: values.source.trim(),
-    notes: values.notes.trim(),
+    source: values.source ?? "",
+    notes: (values.notes ?? "").trim(),
     status: values.status,
     isActive: values.isActive,
   };
@@ -65,7 +65,7 @@ export function mapLeadFormToValidationInput(values: LeadFormValues) {
     name: values.name.trim(),
     type: values.type,
     contactType: values.contactType,
-    email: values.email.trim(),
+    email: (values.email ?? "").trim(),
     phone:
       values.contactType === "mobile"
         ? onlyDigits(values.phone ?? "", LEAD_PHONE_MOBILE_DIGITS)
@@ -78,8 +78,8 @@ export function mapLeadFormToValidationInput(values: LeadFormValues) {
       values.type === "company"
         ? onlyDigits(values.cnpj ?? "", LEAD_DOCUMENT_DIGITS_CNPJ)
         : undefined,
-    source: values.source.trim(),
-    notes: values.notes.trim(),
+    source: values.source ?? "",
+    notes: (values.notes ?? "").trim(),
     status: values.status,
     isActive: values.isActive,
   };
