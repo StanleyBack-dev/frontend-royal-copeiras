@@ -88,7 +88,11 @@ export const CreateBudgetPayloadSchema = z.object({
   items: z.array(CreateBudgetItemPayloadSchema).min(1),
 });
 
-export const UpdateBudgetPayloadSchema = CreateBudgetPayloadSchema.partial();
+export const UpdateBudgetPayloadSchema =
+  CreateBudgetPayloadSchema.partial().extend({
+    sentVia: nullableStringToOptional(),
+    sentAt: nullableStringToOptional(),
+  });
 
 export type Budget = z.infer<typeof BudgetSchema>;
 export type BudgetStatus = (typeof budgetStatusOptions)[number];

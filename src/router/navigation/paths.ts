@@ -58,6 +58,15 @@ export const budgetRoutePaths = {
   legacyEdit: (id = ":id") => `/budgets/${id}/edit`,
 };
 
+export const contractRoutePaths = {
+  list: "/eventos/contratos",
+  create: "/eventos/contratos/new",
+  edit: (id = ":id") => `/eventos/contratos/${id}/edit`,
+  legacyList: "/contracts",
+  legacyCreate: "/contracts/new",
+  legacyEdit: (id = ":id") => `/contracts/${id}/edit`,
+};
+
 export const authRoutePaths = {
   login: "/",
   firstAccessChangePassword: "/primeiro-acesso/alterar-senha",

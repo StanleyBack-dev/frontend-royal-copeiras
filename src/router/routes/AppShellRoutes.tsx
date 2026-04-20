@@ -5,12 +5,14 @@ import AppLayout from "../AppLayout";
 import {
   authRoutePaths,
   budgetRoutePaths,
+  contractRoutePaths,
   leadRoutePaths,
   routePaths,
   utilityRoutePaths,
 } from "../navigation";
 import RequirePageAccessRoute from "../../features/auth/guards/RequirePageAccessRoute";
 import { BudgetsProviderOutlet } from "../../features/budgets";
+import { ContractsProviderOutlet } from "../../features/contracts";
 import { LeadsProviderOutlet } from "../../features/leads";
 import { ManagementRoutes } from "./ManagementRoutes";
 
@@ -19,6 +21,8 @@ const Dashboard = lazy(() => import("../../pages/Dashboard"));
 const Debts = lazy(() => import("../../pages/Debts"));
 const BudgetForm = lazy(() => import("../../pages/budgets/BudgetForm"));
 const Budgets = lazy(() => import("../../pages/budgets/Budgets"));
+const ContractForm = lazy(() => import("../../pages/contracts/ContractForm"));
+const Contracts = lazy(() => import("../../pages/contracts/Contracts"));
 const Events = lazy(() => import("../../pages/Events"));
 const Finance = lazy(() => import("../../pages/Finance"));
 const Investments = lazy(() => import("../../pages/Investments"));
@@ -144,6 +148,42 @@ export function AppShellRoutes({ userId }: AppShellRoutesProps) {
       <Route
         path={budgetRoutePaths.legacyEdit()}
         element={<Navigate to={budgetRoutePaths.edit()} replace />}
+      />
+      <Route element={<RequirePageAccessRoute view="events" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={authRoutePaths.login}
+              ProviderOutlet={ContractsProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={contractRoutePaths.list}
+            element={withPageSuspense(<Contracts />)}
+          />
+          <Route
+            path={contractRoutePaths.create}
+            element={withPageSuspense(<ContractForm mode="create" />)}
+          />
+          <Route
+            path={contractRoutePaths.edit()}
+            element={withPageSuspense(<ContractForm mode="edit" />)}
+          />
+        </Route>
+      </Route>
+      <Route
+        path={contractRoutePaths.legacyList}
+        element={<Navigate to={contractRoutePaths.list} replace />}
+      />
+      <Route
+        path={contractRoutePaths.legacyCreate}
+        element={<Navigate to={contractRoutePaths.create} replace />}
+      />
+      <Route
+        path={contractRoutePaths.legacyEdit()}
+        element={<Navigate to={contractRoutePaths.edit()} replace />}
       />
       <Route element={<RequirePageAccessRoute view="finances" />}>
         <Route
