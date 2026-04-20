@@ -1,86 +1,10 @@
-import {
-  CalendarCheck,
-  Clock3,
-  FileSignature,
-  FileText,
-  MapPin,
-  Users,
-} from "lucide-react";
-import { Link } from "react-router-dom";
+import { CalendarCheck, Clock3, MapPin } from "lucide-react";
 import SectionCard from "@/components/organisms/SectionCard";
 import StatCard from "@/components/molecules/StatCard";
-import { budgetRoutePaths, contractRoutePaths, leadRoutePaths } from "@/router";
 
 export default function Events() {
   return (
     <div className="flex flex-col gap-6 lg:gap-8">
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Link
-          to={leadRoutePaths.list}
-          className="group rounded-2xl border border-[#e8d5c9] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#c9a227]"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a4430]">
-                Comercial
-              </p>
-              <h2 className="mt-2 text-xl font-bold text-[#2c1810]">Leads</h2>
-              <p className="mt-2 text-sm text-[#7a4430]">
-                Cadastre e evolua oportunidades antes da geração do orçamento.
-              </p>
-            </div>
-            <div className="rounded-xl bg-[#faf6f2] p-3 text-[#7a4430] group-hover:bg-[#f5ede8]">
-              <Users size={20} />
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          to={budgetRoutePaths.list}
-          className="group rounded-2xl border border-[#e8d5c9] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#c9a227]"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a4430]">
-                Propostas
-              </p>
-              <h2 className="mt-2 text-xl font-bold text-[#2c1810]">
-                Orçamentos
-              </h2>
-              <p className="mt-2 text-sm text-[#7a4430]">
-                Monte propostas vinculadas aos leads e acompanhe o fechamento.
-              </p>
-            </div>
-            <div className="rounded-xl bg-[#faf6f2] p-3 text-[#7a4430] group-hover:bg-[#f5ede8]">
-              <FileText size={20} />
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          to={contractRoutePaths.list}
-          className="group rounded-2xl border border-[#e8d5c9] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#c9a227]"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a4430]">
-                Juridico
-              </p>
-              <h2 className="mt-2 text-xl font-bold text-[#2c1810]">
-                Contratos
-              </h2>
-              <p className="mt-2 text-sm text-[#7a4430]">
-                Gere contratos a partir de orcamentos aprovados com preview de
-                PDF.
-              </p>
-            </div>
-            <div className="rounded-xl bg-[#faf6f2] p-3 text-[#7a4430] group-hover:bg-[#f5ede8]">
-              <FileSignature size={20} />
-            </div>
-          </div>
-        </Link>
-      </div>
-
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
           icon={<CalendarCheck size={18} />}

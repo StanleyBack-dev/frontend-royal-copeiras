@@ -77,7 +77,7 @@ export function AppShellRoutes({ userId }: AppShellRoutesProps) {
           element={withPageSuspense(<Events />)}
         />
       </Route>
-      <Route element={<RequirePageAccessRoute view="events" />}>
+      <Route element={<RequirePageAccessRoute view="leads" />}>
         <Route
           element={
             <UserScopedProviderRoute
@@ -113,7 +113,7 @@ export function AppShellRoutes({ userId }: AppShellRoutesProps) {
         path={leadRoutePaths.legacyEdit()}
         element={<Navigate to={leadRoutePaths.edit()} replace />}
       />
-      <Route element={<RequirePageAccessRoute view="events" />}>
+      <Route element={<RequirePageAccessRoute view="budgets" />}>
         <Route
           element={
             <UserScopedProviderRoute
@@ -149,7 +149,7 @@ export function AppShellRoutes({ userId }: AppShellRoutesProps) {
         path={budgetRoutePaths.legacyEdit()}
         element={<Navigate to={budgetRoutePaths.edit()} replace />}
       />
-      <Route element={<RequirePageAccessRoute view="events" />}>
+      <Route element={<RequirePageAccessRoute view="contracts" />}>
         <Route
           element={
             <UserScopedProviderRoute
