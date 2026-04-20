@@ -7,6 +7,9 @@ export interface PagePermissionOption {
 
 export const pagePermissionOptions: PagePermissionOption[] = [
   { key: "DASHBOARD", label: "Painel" },
+  { key: "LEADS", label: "Leads" },
+  { key: "BUDGETS", label: "Orçamentos" },
+  { key: "CONTRACTS", label: "Contratos" },
   { key: "CLIENTS", label: "Clientes" },
   { key: "EMPLOYEES", label: "Funcionários" },
   { key: "USERS", label: "Usuários" },
@@ -17,9 +20,21 @@ export const pagePermissionOptions: PagePermissionOption[] = [
 ];
 
 const defaultByGroup: Record<UserGroup, PageAccessKey[]> = {
-  USER: ["DASHBOARD", "EVENTS", "FINANCES", "DEBTS", "INVESTMENTS"],
+  USER: [
+    "DASHBOARD",
+    "LEADS",
+    "BUDGETS",
+    "CONTRACTS",
+    "EVENTS",
+    "FINANCES",
+    "DEBTS",
+    "INVESTMENTS",
+  ],
   ADMIN: [
     "DASHBOARD",
+    "LEADS",
+    "BUDGETS",
+    "CONTRACTS",
     "CLIENTS",
     "EMPLOYEES",
     "USERS",
@@ -30,6 +45,9 @@ const defaultByGroup: Record<UserGroup, PageAccessKey[]> = {
   ],
   ADMIN_MASTER: [
     "DASHBOARD",
+    "LEADS",
+    "BUDGETS",
+    "CONTRACTS",
     "CLIENTS",
     "EMPLOYEES",
     "USERS",

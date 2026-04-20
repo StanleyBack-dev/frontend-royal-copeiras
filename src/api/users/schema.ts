@@ -13,6 +13,9 @@ import { userValidationMessages } from "../../features/users/model/messages";
 export const UserGroupSchema = z.enum(["USER", "ADMIN", "ADMIN_MASTER"]);
 export const PageAccessKeySchema = z.enum([
   "DASHBOARD",
+  "LEADS",
+  "BUDGETS",
+  "CONTRACTS",
   "CLIENTS",
   "EMPLOYEES",
   "USERS",
