@@ -1,17 +1,17 @@
 import { useState } from "react";
-import type { CreateBudgetPayload } from "../../../api/budgets/schema";
 import {
-  generateBudgetPreviewPdf,
-  sendBudgetEmail,
-} from "../../../api/budgets/methods";
+  generateContractPreviewPdf,
+  sendContractEmail,
+} from "../../../api/contracts/methods";
 import { getHttpErrorMessage } from "../../../api/shared/http-error";
 import { useToast } from "../../../shared/toast/useToast";
 import { openBase64FileInNewTab } from "../../../utils/file";
+import { contractUiCopy } from "../model/messages";
 
-interface UseBudgetPdfActionsParams {
+interface UseContractPdfActionsParams {
   userId: string;
-  budgetId?: string;
-  budgetNumber?: string;
+  contractId?: string;
+  contractNumber?: string;
   onEmailSent?: () => void;
 }
 
@@ -28,27 +28,31 @@ function base64ToFile(
   return new File([byteNumbers], fileName, { type: mimeType });
 }
 
-export function useBudgetPdfActions({
+export function useContractPdfActions({
   userId,
-  budgetId,
-  budgetNumber,
+  contractId,
+  contractNumber,
   onEmailSent,
-}: UseBudgetPdfActionsParams) {
+}: UseContractPdfActionsParams) {
   const [previewing, setPreviewing] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [sharingWhatsApp, setSharingWhatsApp] = useState(false);
   const { showError, showSuccess } = useToast();
 
-  async function preview(draft: CreateBudgetPayload) {
+  async function preview() {
+    if (!contractId) {
+      showError(
+        "Salve o contrato antes",
+        "E necessario salvar antes de gerar preview.",
+      );
+      return null;
+    }
+
     setPreviewing(true);
 
     try {
-      const pdf = await generateBudgetPreviewPdf(
-        {
-          idBudgets: budgetId,
-          budgetNumber: budgetNumber || undefined,
-          draft: budgetId ? undefined : draft,
-        },
+      const pdf = await generateContractPreviewPdf(
+        { idContracts: contractId },
         userId,
       );
       const opened = openBase64FileInNewTab(pdf.base64Content, pdf.mimeType);
@@ -60,43 +64,41 @@ export function useBudgetPdfActions({
         );
       }
 
-      showSuccess("Preview do orçamento gerado com sucesso");
+      showSuccess(contractUiCopy.success.previewContract);
       return pdf;
     } catch (error) {
       const message = getHttpErrorMessage(
         error,
-        "Erro ao gerar preview do PDF",
+        contractUiCopy.errors.previewContractFallback,
       );
-      showError("Erro ao gerar preview do PDF", message);
+      showError(contractUiCopy.errors.previewContractFallback, message);
       return null;
     } finally {
       setPreviewing(false);
     }
   }
 
-  async function sendEmail(): Promise<boolean> {
-    if (!budgetId) {
+  async function sendEmail() {
+    if (!contractId) {
       showError(
-        "Salve o orçamento antes",
-        "É necessário salvar o orçamento antes de enviar por e-mail.",
+        "Salve o contrato antes",
+        "E necessario salvar o contrato antes de enviar por e-mail.",
       );
-      return false;
+      return;
     }
 
     setSendingEmail(true);
 
     try {
-      await sendBudgetEmail(budgetId, userId);
-      showSuccess("Orçamento enviado por e-mail com sucesso");
+      await sendContractEmail(contractId, userId);
+      showSuccess("Contrato enviado por e-mail com sucesso");
       onEmailSent?.();
-      return true;
     } catch (error) {
       const message = getHttpErrorMessage(
         error,
-        "Erro ao enviar o orçamento por e-mail",
+        "Erro ao enviar o contrato por e-mail",
       );
       showError("Erro ao enviar por e-mail", message);
-      return false;
     } finally {
       setSendingEmail(false);
     }
@@ -106,10 +108,10 @@ export function useBudgetPdfActions({
     leadName: string,
     phone: string,
   ): Promise<"shared" | "fallback" | null> {
-    if (!budgetId) {
+    if (!contractId) {
       showError(
-        "Salve o orçamento antes",
-        "É necessário salvar o orçamento antes de compartilhar.",
+        "Salve o contrato antes",
+        "E necessario salvar o contrato antes de compartilhar.",
       );
       return null;
     }
@@ -117,22 +119,21 @@ export function useBudgetPdfActions({
     setSharingWhatsApp(true);
 
     try {
-      const pdf = await generateBudgetPreviewPdf(
-        { idBudgets: budgetId, budgetNumber: budgetNumber || undefined },
+      const pdf = await generateContractPreviewPdf(
+        { idContracts: contractId },
         userId,
       );
 
       if (!pdf) return null;
 
-      const fileName = `orcamento-${budgetNumber || budgetId}.pdf`;
+      const fileName = `contrato-${contractNumber || contractId}.pdf`;
       const file = base64ToFile(pdf.base64Content, pdf.mimeType, fileName);
 
       const shareText =
         `Olá, ${leadName}! Tudo bem? 😊\n\n` +
-        `Segue em anexo a sua proposta comercial 📎\n\n` +
-        `📄 *Orçamento:* ${budgetNumber || "Não informado"}\n\n` +
-        `Caso tenha qualquer dúvida ou precise de ajustes, é só me chamar! 💬\n` +
-        `Será um prazer te atender.\n\n` +
+        `Estou enviando em anexo o contrato para sua análise e assinatura 📎\n\n` +
+        `📄 *Contrato:* ${contractNumber}\n\n` +
+        `Se tiver qualquer dúvida, fico à disposição! 💬\n\n` +
         `Atenciosamente,\n` +
         `Royal Copeiras`;
 
@@ -147,20 +148,18 @@ export function useBudgetPdfActions({
         return "shared";
       }
 
-      // Fallback: open WhatsApp with text only
       const digits = phone.replace(/\D/g, "");
       const normalized = digits.startsWith("55") ? digits : `55${digits}`;
       const fallbackText =
-        `Olá, ${leadName}! Temos uma proposta comercial para você.\n` +
-        `Orçamento: ${budgetNumber || ""}\n` +
-        `Acesse seu e-mail para visualizar todos os detalhes da proposta. ` +
-        `Qualquer dúvida, estamos à disposição!\n\nRoyal Copeiras`;
+        `Ola, ${leadName}! Temos um contrato para voce.\n` +
+        `Contrato: ${contractNumber || ""}\n` +
+        `Acesse seu e-mail para visualizar o documento completo.`;
       window.open(
         `https://wa.me/${normalized}?text=${encodeURIComponent(fallbackText)}`,
         "_blank",
       );
       showSuccess(
-        "PDF não pôde ser anexado neste navegador — mensagem enviada via link",
+        "PDF nao pode ser anexado neste navegador. Mensagem enviada via link.",
       );
       return "fallback";
     } catch (error) {
