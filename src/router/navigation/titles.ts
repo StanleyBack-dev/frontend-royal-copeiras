@@ -5,6 +5,9 @@ export const viewTitles: Record<
   { title: string; subtitle: string }
 > = {
   dashboard: { title: "Painel Geral", subtitle: "Visão geral da empresa" },
+  leads: { title: "Leads", subtitle: "Gerenciar oportunidades comerciais" },
+  budgets: { title: "Orçamentos", subtitle: "Gerenciar propostas comerciais" },
+  contracts: { title: "Contratos", subtitle: "Gerenciar contratos jurídicos" },
   clients: { title: "Clientes", subtitle: "Gerenciar clientes" },
   employees: {
     title: "Funcionários",
