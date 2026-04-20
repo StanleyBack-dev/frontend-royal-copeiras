@@ -4,9 +4,33 @@ import {
   employeeRoutePaths,
   routePaths,
   userRoutePaths,
+  leadRoutePaths,
+  budgetRoutePaths,
+  contractRoutePaths,
 } from "./paths";
 
 export function getActiveView(pathname: string): ActiveView {
+  if (
+    pathname.startsWith(leadRoutePaths.list) ||
+    pathname.startsWith(leadRoutePaths.legacyList)
+  ) {
+    return "leads";
+  }
+
+  if (
+    pathname.startsWith(budgetRoutePaths.list) ||
+    pathname.startsWith(budgetRoutePaths.legacyList)
+  ) {
+    return "budgets";
+  }
+
+  if (
+    pathname.startsWith(contractRoutePaths.list) ||
+    pathname.startsWith(contractRoutePaths.legacyList)
+  ) {
+    return "contracts";
+  }
+
   if (
     pathname.startsWith(customerRoutePaths.list) ||
     pathname.startsWith(customerRoutePaths.legacyList)
@@ -41,6 +65,12 @@ export function getPathForView(view: ActiveView) {
   switch (view) {
     case "dashboard":
       return routePaths.dashboard;
+    case "leads":
+      return leadRoutePaths.list;
+    case "budgets":
+      return budgetRoutePaths.list;
+    case "contracts":
+      return contractRoutePaths.list;
     case "clients":
       return routePaths.clients;
     case "employees":

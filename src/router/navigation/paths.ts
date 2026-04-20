@@ -2,6 +2,9 @@ import type { ActiveView } from "../../types/views";
 
 export const routePaths: Record<ActiveView, string> = {
   dashboard: "/dashboard",
+  leads: "/leads",
+  budgets: "/orcamentos",
+  contracts: "/contratos",
   clients: "/clientes",
   employees: "/funcionarios",
   users: "/usuarios",
@@ -41,30 +44,30 @@ export const userRoutePaths = {
 };
 
 export const leadRoutePaths = {
-  list: "/eventos/leads",
-  create: "/eventos/leads/new",
-  edit: (id = ":id") => `/eventos/leads/${id}/edit`,
-  legacyList: "/leads",
-  legacyCreate: "/leads/new",
-  legacyEdit: (id = ":id") => `/leads/${id}/edit`,
+  list: "/leads",
+  create: "/leads/new",
+  edit: (id = ":id") => `/leads/${id}/edit`,
+  legacyList: "/eventos/leads",
+  legacyCreate: "/eventos/leads/new",
+  legacyEdit: (id = ":id") => `/eventos/leads/${id}/edit`,
 };
 
 export const budgetRoutePaths = {
-  list: "/eventos/orcamentos",
-  create: "/eventos/orcamentos/new",
-  edit: (id = ":id") => `/eventos/orcamentos/${id}/edit`,
-  legacyList: "/budgets",
-  legacyCreate: "/budgets/new",
-  legacyEdit: (id = ":id") => `/budgets/${id}/edit`,
+  list: "/orcamentos",
+  create: "/orcamentos/new",
+  edit: (id = ":id") => `/orcamentos/${id}/edit`,
+  legacyList: "/eventos/orcamentos",
+  legacyCreate: "/eventos/orcamentos/new",
+  legacyEdit: (id = ":id") => `/eventos/orcamentos/${id}/edit`,
 };
 
 export const contractRoutePaths = {
-  list: "/eventos/contratos",
-  create: "/eventos/contratos/new",
-  edit: (id = ":id") => `/eventos/contratos/${id}/edit`,
-  legacyList: "/contracts",
-  legacyCreate: "/contracts/new",
-  legacyEdit: (id = ":id") => `/contracts/${id}/edit`,
+  list: "/contratos",
+  create: "/contratos/new",
+  edit: (id = ":id") => `/contratos/${id}/edit`,
+  legacyList: "/eventos/contratos",
+  legacyCreate: "/eventos/contratos/new",
+  legacyEdit: (id = ":id") => `/eventos/contratos/${id}/edit`,
 };
 
 export const authRoutePaths = {
