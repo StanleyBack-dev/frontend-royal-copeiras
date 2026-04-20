@@ -38,7 +38,7 @@ export interface UseBudgetsResult {
   save: (
     formData: CreateBudgetPayload,
     editing?: Budget | null,
-  ) => Promise<void>;
+  ) => Promise<Budget | null>;
   setBudgets: React.Dispatch<React.SetStateAction<Budget[]>>;
 }
 
@@ -284,7 +284,7 @@ export function useBudgets(userId: string): UseBudgetsResult {
       setError(null);
 
       try {
-        await saveBudget({ userId, formData, editing });
+        const savedBudget = await saveBudget({ userId, formData, editing });
         showSuccess(
           editing
             ? budgetUiCopy.success.updateBudget
@@ -295,6 +295,7 @@ export function useBudgets(userId: string): UseBudgetsResult {
           limit: pagination.limit,
           ...filters,
         });
+        return savedBudget;
       } catch (err) {
         const message = getHttpErrorMessage(
           err,
@@ -302,6 +303,7 @@ export function useBudgets(userId: string): UseBudgetsResult {
         );
         setError(message);
         showError(budgetUiCopy.errors.saveBudgetFallback, message);
+        return null;
       } finally {
         setSaving(false);
       }

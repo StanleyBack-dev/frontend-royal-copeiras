@@ -10,34 +10,24 @@ export type BudgetServiceType = (typeof budgetServiceTypeOptions)[number];
 interface ServiceMeta {
   singularLower: string;
   pluralLower: string;
-  singularLabel: string;
-  pluralLabel: string;
 }
 
 const SERVICE_META: Record<BudgetServiceType, ServiceMeta> = {
   Garçom: {
     singularLower: "garçom",
     pluralLower: "garçons",
-    singularLabel: "Garçom",
-    pluralLabel: "Garçons",
   },
   Copeira: {
     singularLower: "copeira",
     pluralLower: "copeiras",
-    singularLabel: "Copeira",
-    pluralLabel: "Copeiras",
   },
   Porteiro: {
     singularLower: "porteiro",
     pluralLower: "porteiros",
-    singularLabel: "Porteiro",
-    pluralLabel: "Porteiros",
   },
   Segurança: {
     singularLower: "segurança",
     pluralLower: "seguranças",
-    singularLabel: "Segurança",
-    pluralLabel: "Seguranças",
   },
 };
 
@@ -129,11 +119,6 @@ function toPtBrNumberWords(value: number): string {
   return `${hundreds[hundred]} e ${toTens(rest)}`;
 }
 
-function serviceLabel(type: BudgetServiceType, quantity: number): string {
-  const meta = SERVICE_META[type];
-  return quantity === 1 ? meta.singularLabel : meta.pluralLabel;
-}
-
 function serviceLower(type: BudgetServiceType, quantity: number): string {
   const meta = SERVICE_META[type];
   return quantity === 1 ? meta.singularLower : meta.pluralLower;
@@ -146,15 +131,33 @@ export function buildBudgetServiceDescription(
   const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
   const quantityWords = toPtBrNumberWords(safeQuantity);
   const lowerService = serviceLower(type, safeQuantity);
-  const labelService = serviceLabel(type, safeQuantity);
 
   return [
     `Prestação de serviço de ${safeQuantity} (${quantityWords}) ${lowerService}`,
     "para atuação durante o evento, com foco na",
     "execução do serviço contratado.",
-    "",
-    `. ${safeQuantity} ${labelService} para o evento`,
   ].join("\n");
+}
+
+export function sanitizeBudgetServiceDescription(description: string): string {
+  const trimmed = description.trim();
+  const canonicalMatch = trimmed.match(
+    /^(Prestação de serviço de[\s\S]*?execução do serviço contratado\.)/i,
+  );
+
+  if (canonicalMatch) {
+    return canonicalMatch[1].trim();
+  }
+
+  const fallbackMatch = trimmed.match(
+    /^(Prestacao de servico de[\s\S]*?execucao do servico contratado\.)/i,
+  );
+
+  if (fallbackMatch) {
+    return fallbackMatch[1].trim();
+  }
+
+  return trimmed;
 }
 
 export function inferBudgetServiceType(
