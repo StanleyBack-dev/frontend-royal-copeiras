@@ -126,9 +126,13 @@ export function useBudgetPdfActions({
       const file = base64ToFile(pdf.base64Content, pdf.mimeType, fileName);
 
       const shareText =
-        `Olá, ${leadName}! Segue em anexo a proposta comercial.\n` +
-        `Orçamento: ${budgetNumber || ""}\n` +
-        `Qualquer dúvida, estamos à disposição!\n\nRoyal Copeiras`;
+        `Olá, ${leadName}! Tudo bem? 😊\n\n` +
+        `Segue em anexo a sua proposta comercial 📎\n\n` +
+        `📄 *Orçamento:* ${budgetNumber || "Não informado"}\n\n` +
+        `Caso tenha qualquer dúvida ou precise de ajustes, é só me chamar! 💬\n` +
+        `Será um prazer te atender.\n\n` +
+        `Atenciosamente,\n` +
+        `Royal Copeiras`;
 
       const canShare =
         typeof navigator.share === "function" &&

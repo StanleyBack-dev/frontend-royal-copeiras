@@ -135,11 +135,23 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
       return;
     }
 
-    await save(result.payload, editing);
+    const savedBudget = await save(result.payload, editing);
+    if (!savedBudget) {
+      return;
+    }
+
     if (mode === "create") {
-      navigate(budgetRoutePaths.list);
-    } else {
-      showSuccess("Orçamento atualizado com sucesso");
+      setBudgets((previous) => {
+        const filtered = previous.filter(
+          (budget) => budget.idBudgets !== savedBudget.idBudgets,
+        );
+
+        return [savedBudget, ...filtered];
+      });
+
+      navigate(budgetRoutePaths.edit(savedBudget.idBudgets), {
+        replace: true,
+      });
     }
   }
 

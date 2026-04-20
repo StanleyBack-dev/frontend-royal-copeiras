@@ -10,6 +10,7 @@ import { formatCurrencyInput, parseCurrencyInput } from "./formatters";
 import {
   buildBudgetServiceDescription,
   inferBudgetServiceType,
+  sanitizeBudgetServiceDescription,
 } from "./service-items";
 
 function toDecimal(value: string): number | undefined {
@@ -61,13 +62,19 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
         : "",
     advancePercentage:
       budget.advancePercentage != null ? String(budget.advancePercentage) : "",
-    items: (budget.items || []).map((item) => ({
-      id: item.idBudgetItems,
-      serviceType: inferBudgetServiceType(item.description),
-      description: item.description,
-      quantity: String(item.quantity),
-      unitPrice: formatCurrencyInput(String(item.unitPrice * 100)),
-    })),
+    items: (budget.items || []).map((item) => {
+      const serviceType = inferBudgetServiceType(item.description);
+
+      return {
+        id: item.idBudgetItems,
+        serviceType,
+        description: serviceType
+          ? buildBudgetServiceDescription(serviceType, item.quantity)
+          : sanitizeBudgetServiceDescription(item.description),
+        quantity: String(item.quantity),
+        unitPrice: formatCurrencyInput(String(item.unitPrice * 100)),
+      };
+    }),
   };
 }
 
