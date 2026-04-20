@@ -1,6 +1,7 @@
 export {
   authRoutePaths,
   budgetRoutePaths,
+  contractRoutePaths,
   customerRoutePaths,
   employeeRoutePaths,
   leadRoutePaths,

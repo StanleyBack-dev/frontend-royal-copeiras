@@ -1,8 +1,15 @@
-import { CalendarCheck, Clock3, FileText, MapPin, Users } from "lucide-react";
+import {
+  CalendarCheck,
+  Clock3,
+  FileSignature,
+  FileText,
+  MapPin,
+  Users,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import SectionCard from "@/components/organisms/SectionCard";
 import StatCard from "@/components/molecules/StatCard";
-import { budgetRoutePaths, leadRoutePaths } from "@/router";
+import { budgetRoutePaths, contractRoutePaths, leadRoutePaths } from "@/router";
 
 export default function Events() {
   return (
@@ -46,6 +53,29 @@ export default function Events() {
             </div>
             <div className="rounded-xl bg-[#faf6f2] p-3 text-[#7a4430] group-hover:bg-[#f5ede8]">
               <FileText size={20} />
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          to={contractRoutePaths.list}
+          className="group rounded-2xl border border-[#e8d5c9] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#c9a227]"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a4430]">
+                Juridico
+              </p>
+              <h2 className="mt-2 text-xl font-bold text-[#2c1810]">
+                Contratos
+              </h2>
+              <p className="mt-2 text-sm text-[#7a4430]">
+                Gere contratos a partir de orcamentos aprovados com preview de
+                PDF.
+              </p>
+            </div>
+            <div className="rounded-xl bg-[#faf6f2] p-3 text-[#7a4430] group-hover:bg-[#f5ede8]">
+              <FileSignature size={20} />
             </div>
           </div>
         </Link>

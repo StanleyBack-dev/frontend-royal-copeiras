@@ -1,3 +1,5 @@
+import Button from "@/components/atoms/Button";
+import ConfirmDialog from "@/components/molecules/ConfirmDialog";
 import GenericForm from "@/components/organisms/GenericForm";
 import Input from "@/components/atoms/Input";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
@@ -15,7 +17,7 @@ import { useAuthSession } from "@/features/auth";
 import BudgetItemsEditor from "@/features/budgets/components/BudgetItemsEditor";
 import { useBudgetsContext } from "@/features/budgets/context/useBudgetsContext";
 import { useToast } from "@/shared/toast/useToast";
-import { budgetRoutePaths } from "@/router";
+import { budgetRoutePaths, contractRoutePaths } from "@/router";
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { updateBudget } from "@/api/budgets/methods";
@@ -26,6 +28,7 @@ import {
   Mail,
   RotateCcw,
   FileSignature,
+  Save,
 } from "lucide-react";
 
 function formatCurrency(value: number) {
@@ -61,10 +64,16 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   });
 
   const [emailSent, setEmailSent] = useState(false);
+  const [confirmApprove, setConfirmApprove] = useState(false);
+  const [confirmContract, setConfirmContract] = useState(false);
 
   const isNonDraftLocked =
     mode === "edit" && Boolean(editing && editing.status !== "draft");
   const isGenerated = editing?.status === "generated";
+  const isSent = editing?.status === "sent";
+  const isSentByAny =
+    isNonDraftLocked &&
+    (editing?.sentVia === "email" || editing?.sentVia === "whatsapp");
 
   const selectedLead = leads.find((l) => l.idLeads === form.idLeads) ?? null;
   const isSelectedLeadInactive = selectedLead?.isActive === false;
@@ -187,7 +196,21 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     );
 
     if (outcome === null) return;
-    // Orçamento mantém status "generated" para continuar permitindo envios
+    // Orcamento mantem status "generated" para continuar permitindo envios
+    const now = new Date().toISOString();
+    try {
+      await updateBudget(
+        editing.idBudgets,
+        { status: "sent", sentVia: "whatsapp", sentAt: now },
+        session?.user.idUsers || "",
+      );
+    } catch {
+      // ignora erro de persistencia, estado local ja foi atualizado
+    }
+    updateLocalStatus("sent", {
+      sentVia: "whatsapp",
+      sentAt: now,
+    });
   }
 
   async function handleSendEmail() {
@@ -202,7 +225,25 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
       return;
     }
 
-    await pdfActions.sendEmail();
+    const sent = await pdfActions.sendEmail();
+    if (!sent) {
+      return;
+    }
+
+    const now = new Date().toISOString();
+    try {
+      await updateBudget(
+        editing.idBudgets,
+        { sentVia: "email", sentAt: now },
+        session?.user.idUsers || "",
+      );
+    } catch {
+      // ignora erro de persistencia, estado local ja foi atualizado
+    }
+    updateLocalStatus("sent", {
+      sentVia: "email",
+      sentAt: now,
+    });
   }
 
   async function handleGenerateBudget() {
@@ -254,6 +295,23 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     } catch (error) {
       const message = getHttpErrorMessage(error, "Erro ao reverter status");
       showError("Erro ao reverter para rascunho", message);
+    }
+  }
+
+  async function handleApproveBudget() {
+    if (!editing?.idBudgets) return;
+
+    try {
+      await updateBudget(
+        editing.idBudgets,
+        { status: "approved" },
+        session?.user.idUsers || "",
+      );
+      updateLocalStatus("approved");
+      showSuccess("Orçamento aprovado com sucesso");
+    } catch (error) {
+      const message = getHttpErrorMessage(error, "Erro ao aprovar orçamento");
+      showError("Erro ao aprovar orçamento", message);
     }
   }
 
@@ -334,239 +392,334 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     ) : null;
 
   return (
-    <ManagementPanelTemplate
-      title={
-        mode === "edit"
-          ? budgetUiCopy.form.editTitle
-          : budgetUiCopy.form.createTitle
-      }
-      description="Crie propostas comerciais com composição de itens e vínculo direto ao lead responsável pela oportunidade."
-    >
-      <div className="flex justify-center mb-6">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
-          {/* Preview PDF */}
-          <button
-            type="button"
-            onClick={() => {
-              void handlePreview();
-            }}
-            disabled={saving || !session?.user.idUsers || pdfActions.previewing}
-            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Visualizar prévia do orçamento"
-          >
-            <FileText size={32} className="text-[#C9A227]" />
-            <span className="text-xs font-semibold text-center text-[#2C1810]">
-              {pdfActions.previewing ? "Carregando..." : "Preview"}
-            </span>
-          </button>
-
-          {/* Gerar Orçamento */}
-          {!isNonDraftLocked && editing?.idBudgets ? (
-            <button
+    <>
+      <ManagementPanelTemplate
+        title={
+          mode === "edit"
+            ? budgetUiCopy.form.editTitle
+            : budgetUiCopy.form.createTitle
+        }
+        description="Crie propostas comerciais com composição de itens e vínculo direto ao lead responsável pela oportunidade."
+        actions={
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+            <Button
               type="button"
-              onClick={() => {
-                void handleGenerateBudget();
-              }}
+              variant="outline"
+              onClick={() => navigate(budgetRoutePaths.list)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              leftIcon={<Save size={16} />}
+              onClick={() => void handleSave(form)}
               disabled={
                 saving ||
-                !editing?.idBudgets ||
-                isSelectedLeadInactive ||
-                !isFormReadyToSend ||
+                isNonDraftLocked ||
+                (mode === "create" && isSelectedLeadInactive) ||
+                isChangingToInactiveLead ||
                 !session?.user.idUsers
               }
-              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title={
-                isSelectedLeadInactive
-                  ? "Nao e possivel gerar para lead inativo"
-                  : !isFormReadyToSend
-                    ? "Preencha todos os campos obrigatórios para gerar"
-                    : "Gerar orçamento"
-              }
             >
-              <FileSignature size={32} className="text-[#C9A227]" />
-              <span className="text-xs font-semibold text-center text-[#2C1810]">
-                Gerar
-              </span>
-            </button>
-          ) : null}
-
-          {/* Gerar Contrato */}
-          <button
-            type="button"
-            disabled={true}
-            className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Gerar contrato (em breve)"
-          >
-            <FileSignature size={32} className="text-[#999]" />
-            <span className="text-xs font-semibold text-center text-[#999]">
-              Contrato
-            </span>
-          </button>
-
-          {/* Enviar Email */}
-          {isNonDraftLocked && isGenerated && !emailSent ? (
-            <button
-              type="button"
-              onClick={() => {
-                void handleSendEmail();
-              }}
-              disabled={
-                saving ||
-                !editing?.idBudgets ||
-                !leadHasEmail ||
-                !session?.user.idUsers ||
-                pdfActions.sendingEmail
-              }
-              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title={
-                !leadHasEmail
-                  ? "O lead selecionado não possui e-mail cadastrado"
-                  : "Enviar por e-mail"
-              }
-            >
-              <Mail size={32} className="text-[#C9A227]" />
-              <span className="text-xs font-semibold text-center text-[#2C1810]">
-                {pdfActions.sendingEmail ? "Enviando" : "Email"}
-              </span>
-            </button>
-          ) : null}
-
-          {/* Enviar WhatsApp */}
-          {isNonDraftLocked && isGenerated ? (
-            <button
-              type="button"
-              onClick={() => {
-                void handleSendWhatsApp();
-              }}
-              disabled={
-                saving ||
-                !editing?.idBudgets ||
-                !leadHasPhone ||
-                !session?.user.idUsers ||
-                pdfActions.sharingWhatsApp
-              }
-              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title={
-                !leadHasPhone
-                  ? "O lead selecionado não possui telefone cadastrado"
-                  : "Enviar por WhatsApp"
-              }
-            >
-              <MessageCircle size={32} className="text-[#C9A227]" />
-              <span className="text-xs font-semibold text-center text-[#2C1810]">
-                {pdfActions.sharingWhatsApp ? "Enviando" : "WhatsApp"}
-              </span>
-            </button>
-          ) : null}
-
-          {/* Voltar ao Rascunho */}
-          {isNonDraftLocked ? (
-            <button
-              type="button"
-              onClick={() => {
-                void handleRevertToDraft();
-              }}
-              disabled={saving}
-              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Voltar ao rascunho"
-            >
-              <RotateCcw size={32} className="text-[#C9A227]" />
-              <span className="text-xs font-semibold text-center text-[#2C1810]">
-                Voltar
-              </span>
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      <GenericForm<BudgetFormValues>
-        fields={getBudgetFormFields(form, {
-          isEditing: mode === "edit",
-          leads,
-          disableAll: isNonDraftLocked,
-          currentLeadId: editing?.idLeads,
-        })}
-        contentAfterFieldName={mode === "edit" ? "createdAt" : "idLeads"}
-        contentAfterField={formGuidanceContent}
-        values={form}
-        setValues={setForm}
-        onSubmit={(event) => {
-          event.preventDefault();
-          void handleSave(form);
-        }}
-        errors={errors}
-        saving={saving}
-        submitDisabled={
-          isNonDraftLocked ||
-          (mode === "create" && isSelectedLeadInactive) ||
-          isChangingToInactiveLead
+              {saving ? "Salvando..." : "Salvar"}
+            </Button>
+          </div>
         }
-        onCancel={() => navigate(budgetRoutePaths.list)}
       >
-        <div className="mb-6 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
-          <div className="mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#7a4430]">
-              {budgetUiCopy.form.labels.eventDates}
-            </h3>
-            <p className="mt-1 text-sm text-[#7a4430]">
-              Defina as datas reais do evento conforme o período selecionado.
-            </p>
-          </div>
+        <div className="flex justify-center mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
+            {/* Preview PDF */}
+            <button
+              type="button"
+              onClick={() => {
+                void handlePreview();
+              }}
+              disabled={
+                saving || !session?.user.idUsers || pdfActions.previewing
+              }
+              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Visualizar prévia do orçamento"
+            >
+              <FileText size={32} className="text-[#C9A227]" />
+              <span className="text-xs font-semibold text-center text-[#2C1810]">
+                {pdfActions.previewing ? "Carregando..." : "Preview"}
+              </span>
+            </button>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {buildEventDates(
-              form.eventDateMode === "multiple"
-                ? Number(form.eventDaysCount)
-                : 1,
-              form.eventDates,
-            ).map((eventDate: string, index: number) => (
-              <Input
-                key={`event-date-${index}`}
-                label={`Data ${index + 1} *`}
-                type="date"
-                value={eventDate}
-                disabled={isNonDraftLocked}
-                onChange={(event) => {
-                  const nextEventDates = [...form.eventDates];
-                  nextEventDates[index] = event.target.value;
-                  setForm({
-                    ...form,
-                    eventDates: nextEventDates,
-                  });
+            {/* Gerar Orçamento */}
+            {!isNonDraftLocked && editing?.idBudgets ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void handleGenerateBudget();
                 }}
-                error={index === 0 ? errors.eventDates : undefined}
-              />
-            ))}
+                disabled={
+                  saving ||
+                  !editing?.idBudgets ||
+                  isSelectedLeadInactive ||
+                  !isFormReadyToSend ||
+                  !session?.user.idUsers
+                }
+                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title={
+                  isSelectedLeadInactive
+                    ? "Nao e possivel gerar para lead inativo"
+                    : !isFormReadyToSend
+                      ? "Preencha todos os campos obrigatórios para gerar"
+                      : "Gerar orçamento"
+                }
+              >
+                <FileSignature size={32} className="text-[#C9A227]" />
+                <span className="text-xs font-semibold text-center text-[#2C1810]">
+                  Gerar
+                </span>
+              </button>
+            ) : null}
+
+            {/* Gerar Contrato */}
+            {editing?.status === "approved" ? (
+              <button
+                type="button"
+                onClick={() => setConfirmContract(true)}
+                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] transition-colors"
+                title="Gerar contrato"
+              >
+                <FileSignature size={32} className="text-[#C9A227]" />
+                <span className="text-xs font-semibold text-center text-[#2C1810]">
+                  Contrato
+                </span>
+              </button>
+            ) : null}
+
+            {/* Enviar Email */}
+            {isNonDraftLocked && isGenerated && !emailSent ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSendEmail();
+                }}
+                disabled={
+                  saving ||
+                  !editing?.idBudgets ||
+                  !leadHasEmail ||
+                  !session?.user.idUsers ||
+                  pdfActions.sendingEmail
+                }
+                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title={
+                  !leadHasEmail
+                    ? "O lead selecionado não possui e-mail cadastrado"
+                    : "Enviar por e-mail"
+                }
+              >
+                <Mail size={32} className="text-[#C9A227]" />
+                <span className="text-xs font-semibold text-center text-[#2C1810]">
+                  {pdfActions.sendingEmail ? "Enviando" : "Email"}
+                </span>
+              </button>
+            ) : null}
+
+            {/* Enviar WhatsApp */}
+            {isNonDraftLocked ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSendWhatsApp();
+                }}
+                disabled={
+                  saving ||
+                  !editing?.idBudgets ||
+                  !leadHasPhone ||
+                  !session?.user.idUsers ||
+                  pdfActions.sharingWhatsApp
+                }
+                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title={
+                  !leadHasPhone
+                    ? "O lead selecionado não possui telefone cadastrado"
+                    : "Enviar por WhatsApp"
+                }
+              >
+                <MessageCircle size={32} className="text-[#C9A227]" />
+                <span className="text-xs font-semibold text-center text-[#2C1810]">
+                  {pdfActions.sharingWhatsApp ? "Enviando" : "WhatsApp"}
+                </span>
+              </button>
+            ) : null}
+
+            {/* Aprovar orçamento */}
+            {isSentByAny && editing?.status !== "approved" ? (
+              <button
+                type="button"
+                onClick={() => setConfirmApprove(true)}
+                disabled={saving || !session?.user.idUsers}
+                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Aprovar orçamento"
+              >
+                <FileSignature size={32} className="text-[#C9A227]" />
+                <span className="text-xs font-semibold text-center text-[#2C1810]">
+                  Aprovar
+                </span>
+              </button>
+            ) : null}
+
+            {/* Voltar ao Rascunho */}
+            {isNonDraftLocked && (isGenerated || isSent) ? (
+              <button
+                type="button"
+                onClick={() => {
+                  void handleRevertToDraft();
+                }}
+                disabled={saving}
+                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Voltar ao rascunho"
+              >
+                <RotateCcw size={32} className="text-[#C9A227]" />
+                <span className="text-xs font-semibold text-center text-[#2C1810]">
+                  Voltar
+                </span>
+              </button>
+            ) : null}
           </div>
         </div>
 
-        <BudgetItemsEditor
-          items={form.items}
-          onAddItem={addItem}
-          onRemoveItem={removeItem}
-          onUpdateItem={updateItem}
-          disabled={isNonDraftLocked}
-        />
+        <GenericForm<BudgetFormValues>
+          fields={getBudgetFormFields(form, {
+            isEditing: mode === "edit",
+            leads,
+            disableAll: isNonDraftLocked,
+            currentLeadId: editing?.idLeads,
+          })}
+          contentAfterFieldName={mode === "edit" ? "createdAt" : "idLeads"}
+          contentAfterField={formGuidanceContent}
+          values={form}
+          setValues={setForm}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSave(form);
+          }}
+          errors={errors}
+          saving={saving}
+          submitDisabled={
+            isNonDraftLocked ||
+            (mode === "create" && isSelectedLeadInactive) ||
+            isChangingToInactiveLead
+          }
+          onCancel={() => navigate(budgetRoutePaths.list)}
+        >
+          <div className="mb-6 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#7a4430]">
+                {budgetUiCopy.form.labels.eventDates}
+              </h3>
+              <p className="mt-1 text-sm text-[#7a4430]">
+                Defina as datas reais do evento conforme o período selecionado.
+              </p>
+            </div>
 
-        <div className="mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 md:grid-cols-2">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-              {budgetUiCopy.form.summary.subtotal}
-            </p>
-            <p className="mt-1 text-lg font-bold text-[#2c1810]">
-              {formatCurrency(totals.subtotal)}
-            </p>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {buildEventDates(
+                form.eventDateMode === "multiple"
+                  ? Number(form.eventDaysCount)
+                  : 1,
+                form.eventDates,
+              ).map((eventDate: string, index: number) => (
+                <Input
+                  key={`event-date-${index}`}
+                  label={`Data ${index + 1} *`}
+                  type="date"
+                  value={eventDate}
+                  disabled={isNonDraftLocked}
+                  onChange={(event) => {
+                    const nextEventDates = [...form.eventDates];
+                    nextEventDates[index] = event.target.value;
+                    setForm({
+                      ...form,
+                      eventDates: nextEventDates,
+                    });
+                  }}
+                  error={index === 0 ? errors.eventDates : undefined}
+                />
+              ))}
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-              {budgetUiCopy.form.summary.total}
-            </p>
-            <p className="mt-1 text-lg font-bold text-[#2c1810]">
-              {formatCurrency(totals.total)}
-            </p>
+
+          <BudgetItemsEditor
+            items={form.items}
+            onAddItem={addItem}
+            onRemoveItem={removeItem}
+            onUpdateItem={updateItem}
+            disabled={isNonDraftLocked}
+          />
+
+          <div className="mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 md:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                {budgetUiCopy.form.summary.subtotal}
+              </p>
+              <p className="mt-1 text-lg font-bold text-[#2c1810]">
+                {formatCurrency(totals.subtotal)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                {budgetUiCopy.form.summary.total}
+              </p>
+              <p className="mt-1 text-lg font-bold text-[#2c1810]">
+                {formatCurrency(totals.total)}
+              </p>
+            </div>
           </div>
-        </div>
-      </GenericForm>
-    </ManagementPanelTemplate>
+        </GenericForm>
+      </ManagementPanelTemplate>
+
+      <ConfirmDialog
+        open={confirmApprove}
+        variant="warning"
+        title="Aprovar orçamento"
+        description={
+          <p>
+            Ao aprovar este orçamento, ele{" "}
+            <strong>não poderá mais ser editado</strong>. A partir daí será
+            possível gerar o contrato com o cliente.
+            <br />
+            <br />
+            Tem certeza que deseja aprovar?
+          </p>
+        }
+        confirmLabel="Sim, aprovar"
+        cancelLabel="Voltar"
+        onConfirm={() => {
+          setConfirmApprove(false);
+          void handleApproveBudget();
+        }}
+        onCancel={() => setConfirmApprove(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmContract}
+        title="Gerar contrato"
+        description={
+          <p>
+            Você está prestes a criar um contrato baseado neste orçamento
+            aprovado.
+            <br />
+            <br />
+            Deseja continuar?
+          </p>
+        }
+        confirmLabel="Sim, gerar contrato"
+        cancelLabel="Voltar"
+        onConfirm={() => {
+          setConfirmContract(false);
+          if (!editing?.idBudgets) return;
+          navigate(
+            `${contractRoutePaths.create}?budgetId=${encodeURIComponent(editing.idBudgets)}`,
+          );
+        }}
+        onCancel={() => setConfirmContract(false)}
+      />
+    </>
   );
 }
