@@ -6,9 +6,9 @@ import Select from "@/components/atoms/Select";
 import SearchIcon from "@/components/atoms/icons/SearchIcon";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
 import { colors } from "@/config";
-import { ArrowLeft, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { contractRoutePaths, routePaths } from "@/router";
+import { contractRoutePaths } from "@/router";
 import { contractUiCopy, useContractsList } from "@/features/contracts";
 import { useContractsContext } from "@/features/contracts/context/useContractsContext";
 

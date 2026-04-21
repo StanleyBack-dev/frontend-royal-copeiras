@@ -1,36 +1,4 @@
-import { Link } from "react-router-dom";
-import type { DataTableColumn } from "../../../components/organisms/DataTable";
-import EditIcon from "../../../components/atoms/icons/EditIcon";
-import { colors } from "../../../config";
-import type { Contract } from "../../../api/contracts/schema";
-import { contractRoutePaths } from "../../../router";
-import { formatDateTimeDisplay } from "../../../utils/format";
-import { contractUiCopy } from "./messages";
 
-function getContractStatusLabel(status: Contract["status"]) {
-  return contractUiCopy.form.options[status];
-}
-
-function getSignatureStatusLabel(signatureStatus?: string) {
-  if (!signatureStatus) {
-    return "-";
-  }
-
-  const normalizedStatus = signatureStatus.trim().toLowerCase();
-  const statusLabels: Record<string, string> = {
-    pending: "Pendente",
-    sent: "Enviado",
-    viewed: "Visualizado",
-    signed: "Assinado",
-    completed: "Concluido",
-    rejected: "Rejeitado",
-    canceled: "Cancelado",
-    expired: "Expirado",
-    failed: "Falhou",
-  };
-
-  return statusLabels[normalizedStatus] || signatureStatus;
-}
 
 export function filterContractsBySearch(contracts: Contract[], search: string) {
   const normalizedSearch = search.trim().toLowerCase();
