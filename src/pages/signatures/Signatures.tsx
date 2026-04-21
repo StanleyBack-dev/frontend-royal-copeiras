@@ -1,116 +1,94 @@
-import DataTable from "@/components/organisms/DataTable";
+import Button from "@/components/atoms/Button";
 import FilterBar from "@/components/molecules/FilterBar";
 import ListFiltersPanel from "@/components/molecules/ListFiltersPanel";
-import Button from "@/components/atoms/Button";
-import Select from "@/components/atoms/Select";
-import SearchIcon from "@/components/atoms/icons/SearchIcon";
+import DataTable from "@/components/organisms/DataTable";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
+import { useSignaturesContext, signatureUiCopy } from "@/features/signatures";
+import SearchIcon from "@/components/atoms/icons/SearchIcon";
 import { colors } from "@/config";
-import { Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { contractRoutePaths } from "@/router";
-import { contractUiCopy, useContractsList } from "@/features/contracts";
-import { useContractsContext } from "@/features/contracts/context/useContractsContext";
+import { RotateCcw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import Select from "@/components/atoms/Select";
 
-export default function Contracts() {
+export default function Signatures() {
+  const navigate = useNavigate();
   const {
-    contracts,
-    budgets,
+    items,
+    columns,
     loading,
-    pagination,
+    updatingRowId,
+    search,
+    setSearch,
     filters,
+    pagination,
     setLimit,
     setFilters,
     clearFilters,
     nextPage,
     prevPage,
-  } = useContractsContext();
-  const navigate = useNavigate();
-  const { search, setSearch, filteredContracts, columns } = useContractsList({
-    contracts,
-  });
-
-  const statusOptions = [
-    { value: "", label: "Todos os status" },
-    { value: "draft", label: contractUiCopy.form.options.draft },
-    { value: "generated", label: contractUiCopy.form.options.generated },
-    {
-      value: "pending_signature",
-      label: contractUiCopy.form.options.pending_signature,
-    },
-    { value: "signed", label: contractUiCopy.form.options.signed },
-    { value: "rejected", label: contractUiCopy.form.options.rejected },
-    { value: "expired", label: contractUiCopy.form.options.expired },
-    { value: "canceled", label: contractUiCopy.form.options.canceled },
-  ];
+    statusOptions,
+    providerOptions,
+    refreshStatus,
+    cancelRequest,
+  } = useSignaturesContext();
 
   return (
     <ManagementPanelTemplate
-      title={contractUiCopy.list.title}
-      description={contractUiCopy.list.description}
+      title={signatureUiCopy.list.title}
+      description={signatureUiCopy.list.description}
     >
       <FilterBar
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder={contractUiCopy.list.searchPlaceholder}
+        searchPlaceholder={signatureUiCopy.list.searchPlaceholder}
         searchIcon={
           <SearchIcon size={16} style={{ color: colors.brown[300] }} />
-        }
-        actions={
-          <div className="flex w-full gap-2 sm:w-auto">
-            {/* Botão Voltar removido */}
-            <Button
-              type="button"
-              variant="primary"
-              leftIcon={<Plus size={16} />}
-              className="flex-1 sm:flex-none"
-              onClick={() => navigate(contractRoutePaths.create)}
-            >
-              {contractUiCopy.list.newAction}
-            </Button>
-          </div>
         }
       />
 
       <ListFiltersPanel
         statusValue={filters.status}
-        statusOptions={statusOptions}
+        statusOptions={[
+          { value: "", label: signatureUiCopy.filters.allStatuses },
+          ...statusOptions.map((status) => ({ value: status, label: status })),
+        ]}
         onStatusChange={(value) => {
-          void setFilters({ status: value });
+          setFilters({ status: value });
         }}
         startDateValue={filters.startDate}
         endDateValue={filters.endDate}
         onStartDateChange={(value) => {
-          void setFilters({ startDate: value });
+          setFilters({ startDate: value });
         }}
         onEndDateChange={(value) => {
-          void setFilters({ endDate: value });
+          setFilters({ endDate: value });
         }}
         extraFilters={
           <div className="min-w-[240px]">
             <Select
-              value={filters.idBudgets}
+              value={filters.provider}
               onChange={(event) => {
-                void setFilters({ idBudgets: event.target.value });
+                setFilters({ provider: event.target.value });
               }}
             >
-              <option value="">Todos os orçamentos</option>
-              {budgets.map((budget) => (
-                <option key={budget.idBudgets} value={budget.idBudgets}>
-                  {budget.budgetNumber}
+              <option value="">{signatureUiCopy.filters.allProviders}</option>
+              {providerOptions.map((provider) => (
+                <option key={provider} value={provider}>
+                  {provider}
                 </option>
               ))}
             </Select>
           </div>
         }
         onClear={() => {
-          void clearFilters();
+          clearFilters();
         }}
         hasActiveFilters={Boolean(
           filters.status ||
           filters.startDate ||
           filters.endDate ||
-          filters.idBudgets,
+          filters.provider,
         )}
       />
 
@@ -124,14 +102,54 @@ export default function Contracts() {
       ) : (
         <>
           <DataTable
-            data={filteredContracts}
-            columns={columns}
-            emptyMessage={contractUiCopy.list.emptyMessage}
-            getId={(contract) => contract.idContracts}
+            data={items}
+            columns={[
+              ...columns,
+              {
+                key: "quickActions",
+                label: "Ações rápidas",
+                render: (item) => (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      leftIcon={<RotateCcw size={14} />}
+                      onClick={() => {
+                        void refreshStatus(item);
+                      }}
+                      disabled={updatingRowId === item.idContracts}
+                    >
+                      Atualizar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        void cancelRequest(item);
+                      }}
+                      disabled={updatingRowId === item.idContracts}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() =>
+                        navigate(contractRoutePaths.edit(item.idContracts))
+                      }
+                    >
+                      Contrato
+                    </Button>
+                  </div>
+                ),
+              },
+            ]}
+            emptyMessage={signatureUiCopy.list.emptyMessage}
+            getId={(item) => item.idContracts}
           />
           <div className="mt-4 flex items-center justify-between text-sm text-brown-700">
             <span>
-              Pagina {pagination.currentPage} de{" "}
+              Página {pagination.currentPage} de{" "}
               {Math.max(pagination.totalPages, 1)}
               {" - "}
               {pagination.total} registros
@@ -143,7 +161,7 @@ export default function Contracts() {
                   className="rounded border border-brown-300 bg-white px-2 py-1"
                   value={pagination.limit}
                   onChange={(event) => {
-                    void setLimit(Number(event.target.value));
+                    setLimit(Number(event.target.value));
                   }}
                   disabled={loading}
                 >
@@ -157,7 +175,7 @@ export default function Contracts() {
                 type="button"
                 className="rounded border border-brown-300 px-3 py-1 disabled:opacity-50"
                 onClick={() => {
-                  void prevPage();
+                  prevPage();
                 }}
                 disabled={loading || pagination.currentPage <= 1}
               >
@@ -167,11 +185,11 @@ export default function Contracts() {
                 type="button"
                 className="rounded border border-brown-300 px-3 py-1 disabled:opacity-50"
                 onClick={() => {
-                  void nextPage();
+                  nextPage();
                 }}
                 disabled={loading || !pagination.hasNextPage}
               >
-                Proxima
+                Próxima
               </button>
             </div>
           </div>

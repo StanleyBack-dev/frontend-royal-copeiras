@@ -6,6 +6,7 @@ import {
   authRoutePaths,
   budgetRoutePaths,
   contractRoutePaths,
+  signatureRoutePaths,
   leadRoutePaths,
   routePaths,
   utilityRoutePaths,
@@ -13,6 +14,7 @@ import {
 import RequirePageAccessRoute from "../../features/auth/guards/RequirePageAccessRoute";
 import { BudgetsProviderOutlet } from "../../features/budgets";
 import { ContractsProviderOutlet } from "../../features/contracts";
+import { SignaturesProviderOutlet } from "../../features/signatures";
 import { LeadsProviderOutlet } from "../../features/leads";
 import { ManagementRoutes } from "./ManagementRoutes";
 
@@ -23,6 +25,7 @@ const BudgetForm = lazy(() => import("../../pages/budgets/BudgetForm"));
 const Budgets = lazy(() => import("../../pages/budgets/Budgets"));
 const ContractForm = lazy(() => import("../../pages/contracts/ContractForm"));
 const Contracts = lazy(() => import("../../pages/contracts/Contracts"));
+const Signatures = lazy(() => import("../../pages/signatures/Signatures"));
 const Events = lazy(() => import("../../pages/Events"));
 const Finance = lazy(() => import("../../pages/Finance"));
 const Investments = lazy(() => import("../../pages/Investments"));
@@ -185,6 +188,22 @@ export function AppShellRoutes({ userId }: AppShellRoutesProps) {
         path={contractRoutePaths.legacyEdit()}
         element={<Navigate to={contractRoutePaths.edit()} replace />}
       />
+      <Route element={<RequirePageAccessRoute view="signatures" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={authRoutePaths.login}
+              ProviderOutlet={SignaturesProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={signatureRoutePaths.list}
+            element={withPageSuspense(<Signatures />)}
+          />
+        </Route>
+      </Route>
       <Route element={<RequirePageAccessRoute view="finances" />}>
         <Route
           path={routePaths.finances}

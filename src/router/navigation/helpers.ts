@@ -7,6 +7,7 @@ import {
   leadRoutePaths,
   budgetRoutePaths,
   contractRoutePaths,
+  signatureRoutePaths,
 } from "./paths";
 
 export function getActiveView(pathname: string): ActiveView {
@@ -29,6 +30,10 @@ export function getActiveView(pathname: string): ActiveView {
     pathname.startsWith(contractRoutePaths.legacyList)
   ) {
     return "contracts";
+  }
+
+  if (pathname.startsWith(signatureRoutePaths.list)) {
+    return "signatures";
   }
 
   if (
@@ -71,6 +76,8 @@ export function getPathForView(view: ActiveView) {
       return budgetRoutePaths.list;
     case "contracts":
       return contractRoutePaths.list;
+    case "signatures":
+      return signatureRoutePaths.list;
     case "clients":
       return routePaths.clients;
     case "employees":

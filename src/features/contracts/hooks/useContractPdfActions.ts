@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   generateContractPreviewPdf,
   sendContractEmail,
+  sendContractSignatureRequest,
 } from "../../../api/contracts/methods";
 import { getHttpErrorMessage } from "../../../api/shared/http-error";
 import { useToast } from "../../../shared/toast/useToast";
@@ -13,6 +14,7 @@ interface UseContractPdfActionsParams {
   contractId?: string;
   contractNumber?: string;
   onEmailSent?: () => void;
+  onSignatureRequested?: () => void;
 }
 
 function base64ToFile(
@@ -33,9 +35,11 @@ export function useContractPdfActions({
   contractId,
   contractNumber,
   onEmailSent,
+  onSignatureRequested,
 }: UseContractPdfActionsParams) {
   const [previewing, setPreviewing] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendingSignatureRequest, setSendingSignatureRequest] = useState(false);
   const [sharingWhatsApp, setSharingWhatsApp] = useState(false);
   const { showError, showSuccess } = useToast();
 
@@ -91,7 +95,7 @@ export function useContractPdfActions({
 
     try {
       await sendContractEmail(contractId, userId);
-      showSuccess("Contrato enviado por e-mail com sucesso");
+      showSuccess("Prévia do contrato enviada por e-mail com sucesso");
       onEmailSent?.();
     } catch (error) {
       const message = getHttpErrorMessage(
@@ -101,6 +105,31 @@ export function useContractPdfActions({
       showError("Erro ao enviar por e-mail", message);
     } finally {
       setSendingEmail(false);
+    }
+  }
+
+  async function sendSignatureRequest() {
+    if (!contractId) {
+      showError(
+        "Salve o contrato antes",
+        "E necessario salvar o contrato antes de enviar para assinatura.",
+      );
+      return;
+    }
+
+    setSendingSignatureRequest(true);
+    try {
+      await sendContractSignatureRequest(contractId, userId);
+      showSuccess("Contrato enviado para assinatura com sucesso");
+      onSignatureRequested?.();
+    } catch (error) {
+      const message = getHttpErrorMessage(
+        error,
+        "Erro ao enviar o contrato para assinatura",
+      );
+      showError("Erro ao enviar para assinatura", message);
+    } finally {
+      setSendingSignatureRequest(false);
     }
   }
 
@@ -131,7 +160,7 @@ export function useContractPdfActions({
 
       const shareText =
         `Olá, ${leadName}! Tudo bem? 😊\n\n` +
-        `Estou enviando em anexo o contrato para sua análise e assinatura 📎\n\n` +
+        `Estou enviando em anexo o contrato para sua análise 📎\n\n` +
         `📄 *Contrato:* ${contractNumber}\n\n` +
         `Se tiver qualquer dúvida, fico à disposição! 💬\n\n` +
         `Atenciosamente,\n` +
@@ -177,9 +206,11 @@ export function useContractPdfActions({
   return {
     preview,
     sendEmail,
+    sendSignatureRequest,
     shareWhatsApp,
     previewing,
     sendingEmail,
+    sendingSignatureRequest,
     sharingWhatsApp,
   };
 }

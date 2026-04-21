@@ -1,14 +1,14 @@
 import { Link } from "react-router-dom";
-import type { DataTableColumn } from "../../../components/organisms/DataTable";
-import EditIcon from "../../../components/atoms/icons/EditIcon";
-import { colors } from "../../../config";
-import type { Contract } from "../../../api/contracts/schema";
-import { contractRoutePaths } from "../../../router";
-import { formatDateTimeDisplay } from "../../../utils/format";
+import type { DataTableColumn } from "@/components/organisms/DataTable";
+import EditIcon from "@/components/atoms/icons/EditIcon";
+import { colors } from "@/config";
+import type { Contract } from "@/api/contracts/schema";
+import { contractRoutePaths } from "@/router";
+import { formatDateTimeDisplay } from "@/utils/format";
 import { contractUiCopy } from "./messages";
 
 function getContractStatusLabel(status: Contract["status"]) {
-  return contractUiCopy.form.options[status];
+  return contractUiCopy.form.options[status] || status;
 }
 
 export function filterContractsBySearch(contracts: Contract[], search: string) {
