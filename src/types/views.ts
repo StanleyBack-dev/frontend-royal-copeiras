@@ -3,6 +3,7 @@ export type ActiveView =
   | "leads"
   | "budgets"
   | "contracts"
+  | "signatures"
   | "clients"
   | "employees"
   | "users"

@@ -5,6 +5,7 @@ export const routePaths: Record<ActiveView, string> = {
   leads: "/leads",
   budgets: "/orcamentos",
   contracts: "/contratos",
+  signatures: "/assinaturas",
   clients: "/clientes",
   employees: "/funcionarios",
   users: "/usuarios",
@@ -68,6 +69,10 @@ export const contractRoutePaths = {
   legacyList: "/eventos/contratos",
   legacyCreate: "/eventos/contratos/new",
   legacyEdit: (id = ":id") => `/eventos/contratos/${id}/edit`,
+};
+
+export const signatureRoutePaths = {
+  list: "/assinaturas",
 };
 
 export const authRoutePaths = {

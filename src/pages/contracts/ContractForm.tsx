@@ -17,6 +17,7 @@ import {
   FileText,
   Mail,
   MessageCircle,
+  RefreshCcw,
   RotateCcw,
   Save,
 } from "lucide-react";
@@ -74,6 +75,8 @@ function formatEventDatesText(eventDates: string[]) {
     })
     .join(", ");
 }
+
+// Todos os campos de assinatura migrados para SignatureEntity
 
 function buildServicesAndQuantities(items: BudgetItem[]) {
   if (!items.length) {
@@ -204,7 +207,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const navigate = useNavigate();
   const { session } = useAuthSession();
   const { showError, showSuccess } = useToast();
-  const { contracts, budgets, leads, save, saving, setContracts } =
+  const { contracts, budgets, leads, save, saving, setContracts, load } =
     useContractsContext();
 
   const initialBudgetId = searchParams.get("budgetId") || undefined;
@@ -246,7 +249,20 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       editing?.status === "pending_signature");
   const leadHasEmail = Boolean(selectedLead?.email);
   const leadHasPhone = Boolean(selectedLead?.phone);
-  const [emailSent, setEmailSent] = useState(false);
+
+  useEffect(() => {
+    if (!session?.user.idUsers || editing?.status !== "pending_signature") {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void load();
+    }, 30000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [editing?.status, load, session?.user.idUsers]);
 
   useEffect(() => {
     if (mode === "edit" && editing) {
@@ -269,11 +285,8 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     userId: session?.user.idUsers || "",
     contractId: editing?.idContracts,
     contractNumber: editing?.contractNumber,
-    onEmailSent: () => {
-      setEmailSent(true);
-    },
+    onEmailSent: () => {},
   });
-
   function updateField<K extends keyof ContractFormValues>(
     key: K,
     value: ContractFormValues[K],
@@ -335,7 +348,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
 
   function updateLocalStatus(
     status: string,
-    extra?: { sentVia?: string; sentAt?: string },
+    extra?: Record<string, string | undefined>,
   ) {
     if (!editing) {
       return;
@@ -347,9 +360,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
           ? {
               ...contract,
               status: status as typeof contract.status,
-              ...(extra !== undefined
-                ? { sentVia: extra.sentVia, sentAt: extra.sentAt }
-                : {}),
+              ...(extra !== undefined ? extra : {}),
             }
           : contract,
       ),
@@ -387,7 +398,6 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
         session?.user.idUsers || "",
       );
       updateLocalStatus("draft", { sentVia: undefined, sentAt: undefined });
-      setEmailSent(false);
       showSuccess("Contrato voltou para rascunho");
     } catch (error) {
       const message = getHttpErrorMessage(error, "Erro ao reverter status");
@@ -405,14 +415,36 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     try {
       await updateContract(
         editing.idContracts,
-        { sentVia: "email", sentAt: now },
+        { sentVia: "email_preview", sentAt: now },
+        session?.user.idUsers || "",
+      );
+    } catch {
+      // ignora erro de persistencia, estado local ja foi atualizado
+    }
+    updateLocalStatus(editing.status, {
+      sentVia: "email_preview",
+      sentAt: now,
+    });
+  }
+
+  async function handleSendSignatureRequest() {
+    if (!editing?.idContracts) {
+      return;
+    }
+
+    await pdfActions.sendSignatureRequest();
+    const now = new Date().toISOString();
+    try {
+      await updateContract(
+        editing.idContracts,
+        { sentVia: "signature_provider", sentAt: now },
         session?.user.idUsers || "",
       );
     } catch {
       // ignora erro de persistencia, estado local ja foi atualizado
     }
     updateLocalStatus("pending_signature", {
-      sentVia: "email",
+      sentVia: "signature_provider",
       sentAt: now,
     });
   }
@@ -471,9 +503,13 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
               <span className="font-semibold">
                 {editing.sentVia === "email"
                   ? "E-mail"
-                  : editing.sentVia === "whatsapp"
-                    ? "WhatsApp"
-                    : editing.sentVia}
+                  : editing.sentVia === "email_preview"
+                    ? "E-mail (prévia)"
+                    : editing.sentVia === "whatsapp"
+                      ? "WhatsApp"
+                      : editing.sentVia === "signature_provider"
+                        ? "Plataforma de assinatura"
+                        : editing.sentVia}
               </span>{" "}
               em{" "}
               <span className="font-semibold">
@@ -488,6 +524,27 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
             </p>
           </div>
         ) : null}
+      </div>
+    ) : null;
+
+  const signatureDetailsContent =
+    mode === "edit" && editing ? (
+      <div className="mt-4 rounded-xl border border-[#e8d5c9] bg-white px-4 py-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-sm font-semibold text-[#2c1810]">
+            {contractUiCopy.form.signature.title}
+          </p>
+          {editing.status === "pending_signature" ? (
+            <span className="inline-flex items-center gap-2 text-xs text-[#7a4430]">
+              <RefreshCcw size={14} />
+              Atualizacao automatica a cada 30s
+            </span>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 text-sm text-[#2c1810] md:grid-cols-2">
+          {/* Todos os campos de assinatura migrados para SignatureEntity */}
+        </div>
       </div>
     ) : null;
 
@@ -562,7 +619,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
             </button>
           ) : null}
 
-          {isNonDraftLocked && isGenerated && !emailSent ? (
+          {isNonDraftLocked && isGenerated ? (
             <button
               type="button"
               onClick={() => {
@@ -577,13 +634,41 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
               className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
               title={
                 leadHasEmail
-                  ? "Enviar por e-mail"
+                  ? "Enviar prévia por e-mail"
                   : "Lead sem e-mail cadastrado"
               }
             >
               <Mail size={32} className="text-[#C9A227]" />
               <span className="text-center text-xs font-semibold text-[#2C1810]">
-                {pdfActions.sendingEmail ? "Enviando..." : "E-mail"}
+                {pdfActions.sendingEmail ? "Enviando..." : "Prévia"}
+              </span>
+            </button>
+          ) : null}
+
+          {isNonDraftLocked && isGenerated ? (
+            <button
+              type="button"
+              onClick={() => {
+                void handleSendSignatureRequest();
+              }}
+              disabled={
+                !editing?.idContracts ||
+                !leadHasEmail ||
+                !session?.user.idUsers ||
+                pdfActions.sendingSignatureRequest
+              }
+              className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
+              title={
+                leadHasEmail
+                  ? "Enviar para assinatura online"
+                  : "Lead sem e-mail cadastrado"
+              }
+            >
+              <FileSignature size={32} className="text-[#C9A227]" />
+              <span className="text-center text-xs font-semibold text-[#2C1810]">
+                {pdfActions.sendingSignatureRequest
+                  ? "Enviando..."
+                  : "Assinatura"}
               </span>
             </button>
           ) : null}
@@ -681,12 +766,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
           })}
         </Select>
 
-        <Select
-          label="Status"
-          value={form.status}
-          onChange={(event) => updateField("status", event.target.value)}
-          disabled={isNonDraftLocked}
-        >
+        <Select label="Status" value={form.status} onChange={() => {}} disabled>
           <option value="draft">{contractUiCopy.form.options.draft}</option>
           <option value="generated">
             {contractUiCopy.form.options.generated}
@@ -731,6 +811,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
           disabled={isNonDraftLocked}
         />
       </div>
+      {signatureDetailsContent}
     </ManagementPanelTemplate>
   );
 }
