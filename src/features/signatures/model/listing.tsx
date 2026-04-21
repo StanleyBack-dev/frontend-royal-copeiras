@@ -9,8 +9,13 @@ export interface SignatureItem {
   idContracts: string;
   contractNumber: string;
   contractStatus: Contract["status"];
-  // Todos os campos de assinatura migrados para SignatureEntity
   updatedAt: string;
+  signatureStatus?: string;
+  signatureProvider?: string;
+  signatureEnvelopeId?: string;
+  signedAt?: string;
+  signedByName?: string;
+  signedByEmail?: string;
 }
 
 function formatSignatureStatus(status?: string) {
