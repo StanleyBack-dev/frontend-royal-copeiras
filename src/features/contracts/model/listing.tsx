@@ -11,6 +11,27 @@ function getContractStatusLabel(status: Contract["status"]) {
   return contractUiCopy.form.options[status];
 }
 
+function getSignatureStatusLabel(signatureStatus?: string) {
+  if (!signatureStatus) {
+    return "-";
+  }
+
+  const normalizedStatus = signatureStatus.trim().toLowerCase();
+  const statusLabels: Record<string, string> = {
+    pending: "Pendente",
+    sent: "Enviado",
+    viewed: "Visualizado",
+    signed: "Assinado",
+    completed: "Concluido",
+    rejected: "Rejeitado",
+    canceled: "Cancelado",
+    expired: "Expirado",
+    failed: "Falhou",
+  };
+
+  return statusLabels[normalizedStatus] || signatureStatus;
+}
+
 export function filterContractsBySearch(contracts: Contract[], search: string) {
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -47,6 +68,7 @@ export function getContractTableColumns(): DataTableColumn<Contract>[] {
       label: contractUiCopy.list.columns.status,
       render: (contract) => getContractStatusLabel(contract.status),
     },
+    // Todos os campos de assinatura migrados para SignatureEntity
     {
       key: "issueDate",
       label: contractUiCopy.list.columns.issueDate,

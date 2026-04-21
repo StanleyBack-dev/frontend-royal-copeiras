@@ -31,16 +31,6 @@ export class GetContractsService {
             body
             templateVersion
             retentionUntil
-            signatureProvider
-            signatureEnvelopeId
-            signatureStatus
-            signedByName
-            signedByDocument
-            signedByEmail
-            signerIp
-            signerUserAgent
-            signedAt
-            consentAt
             sentVia
             sentAt
             notes

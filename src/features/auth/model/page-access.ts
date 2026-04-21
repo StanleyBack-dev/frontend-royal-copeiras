@@ -27,6 +27,7 @@ const groupDefaults: Record<UserGroup, PageAccessKey[]> = {
 
 const pageAccessByView: Partial<Record<ActiveView, PageAccessKey>> = {
   dashboard: "DASHBOARD",
+  signatures: "CONTRACTS",
   clients: "CLIENTS",
   employees: "EMPLOYEES",
   users: "USERS",

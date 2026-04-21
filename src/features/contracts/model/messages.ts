@@ -10,6 +10,8 @@ export const contractUiCopy = {
       contractNumber: "Contrato",
       budgetNumber: "Orçamento",
       status: "Status",
+      signatureStatus: "Assinatura",
+      signedAt: "Assinado em",
       issueDate: "Emissão",
       validUntil: "Validade",
       actions: "Ações",
@@ -21,6 +23,23 @@ export const contractUiCopy = {
     notices: {
       nonDraftLocked:
         "Este contrato não pode ser editado pois já foi processado. Apenas contratos em rascunho podem ser alterados.",
+    },
+    signature: {
+      title: "Dados da assinatura",
+      provider: "Provedor",
+      envelope: "Envelope",
+      status: "Status da assinatura",
+      signedAt: "Assinado em",
+      signerName: "Nome do signatário",
+      signerEmail: "E-mail do signatário",
+      signerDocument: "Documento do signatário",
+      signerIp: "IP do signatário",
+      unknown: "Nao informado",
+      actions: {
+        request: "Solicitar assinatura",
+        refresh: "Atualizar status",
+        cancel: "Cancelar assinatura",
+      },
     },
     options: {
       draft: "Rascunho",

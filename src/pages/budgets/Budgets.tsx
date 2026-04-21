@@ -55,15 +55,7 @@ export default function Budgets() {
         }
         actions={
           <div className="flex w-full gap-2 sm:w-auto">
-            <Button
-              type="button"
-              variant="outline"
-              leftIcon={<ArrowLeft size={16} />}
-              className="flex-1 sm:flex-none"
-              onClick={() => navigate(routePaths.events)}
-            >
-              Voltar
-            </Button>
+            {/* Botão Voltar removido */}
             <Button
               type="button"
               variant="primary"
