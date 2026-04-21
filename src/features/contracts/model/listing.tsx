@@ -11,7 +11,6 @@ function getContractStatusLabel(status: Contract["status"]) {
   return contractUiCopy.form.options[status] || status;
 }
 
-
 export function filterContractsBySearch(contracts: Contract[], search: string) {
   const normalizedSearch = search.trim().toLowerCase();
 
