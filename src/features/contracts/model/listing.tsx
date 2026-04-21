@@ -48,7 +48,6 @@ export function getContractTableColumns(): DataTableColumn<Contract>[] {
       label: contractUiCopy.list.columns.status,
       render: (contract) => getContractStatusLabel(contract.status),
     },
-    // Todos os campos de assinatura migrados para SignatureEntity
     {
       key: "issueDate",
       label: contractUiCopy.list.columns.issueDate,
