@@ -85,9 +85,9 @@ export function useSignatures(userId: string) {
         signatureProvider: entry.provider,
         signatureEnvelopeId: entry.envelopeId,
         signatureStatus: entry.status.toLowerCase(),
-        signedByName: entry.signedByName,
-        signedByEmail: entry.signedByEmail,
-        signedAt: entry.signedAt,
+        signedByName: entry.signedByName ?? undefined,
+        signedByEmail: entry.signedByEmail ?? undefined,
+        signedAt: entry.signedAt ?? undefined,
         updatedAt: entry.updatedAt,
       }));
 
