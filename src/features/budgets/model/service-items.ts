@@ -3,6 +3,9 @@ export const budgetServiceTypeOptions = [
   "Copeira",
   "Porteiro",
   "Segurança",
+  "Monitor",
+  "Recepcionista",
+  "Deslocamento",
 ] as const;
 
 export type BudgetServiceType = (typeof budgetServiceTypeOptions)[number];
@@ -28,6 +31,18 @@ const SERVICE_META: Record<BudgetServiceType, ServiceMeta> = {
   Segurança: {
     singularLower: "segurança",
     pluralLower: "seguranças",
+  },
+  Monitor: {
+    singularLower: "monitor",
+    pluralLower: "monitores",
+  },
+  Recepcionista: {
+    singularLower: "recepcionista",
+    pluralLower: "recepcionistas",
+  },
+  Deslocamento: {
+    singularLower: "deslocamento",
+    pluralLower: "deslocamentos",
   },
 };
 
