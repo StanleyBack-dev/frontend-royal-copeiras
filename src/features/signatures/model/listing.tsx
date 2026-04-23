@@ -1,9 +1,8 @@
-import { Link } from "react-router-dom";
 import type { DataTableColumn } from "../../../components/organisms/DataTable";
 import type { Contract } from "../../../api/contracts/schema";
-import { contractRoutePaths } from "../../../router";
 import { formatDateTimeDisplay } from "../../../utils/format";
 import { signatureUiCopy } from "./messages";
+import CopyIcon from "../../../components/atoms/icons/CopyIcon";
 
 export interface SignatureItem {
   idContracts: string;
@@ -16,6 +15,8 @@ export interface SignatureItem {
   signedAt?: string;
   signedByName?: string;
   signedByEmail?: string;
+  signedByDocument?: string;
+  signatureUrl?: string | null;
 }
 
 function formatSignatureStatus(status?: string) {
@@ -74,24 +75,34 @@ export function getSignatureTableColumns(): DataTableColumn<SignatureItem>[] {
       render: (item) => item.contractNumber,
     },
     {
-      key: "signer",
-      label: signatureUiCopy.list.columns.signer,
-      render: (item) => item.signedByName || item.signedByEmail || "-",
-    },
-    {
       key: "provider",
       label: signatureUiCopy.list.columns.provider,
       render: (item) => item.signatureProvider || "-",
     },
     {
-      key: "envelope",
-      label: signatureUiCopy.list.columns.envelope,
-      render: (item) => item.signatureEnvelopeId || "-",
+      key: "signer",
+      label: signatureUiCopy.list.columns.signer,
+      render: (item) => item.signedByName || item.signedByEmail || "-",
+    },
+    {
+      key: "signedByDocument",
+      label: signatureUiCopy.list.columns.signedByDocument,
+      render: (item) => item.signedByDocument || "-",
+    },
+    {
+      key: "signedByEmail",
+      label: signatureUiCopy.list.columns.signedByEmail,
+      render: (item) => item.signedByEmail || "-",
     },
     {
       key: "signatureStatus",
       label: signatureUiCopy.list.columns.signatureStatus,
       render: (item) => formatSignatureStatus(item.signatureStatus),
+    },
+    {
+      key: "signedAt",
+      label: signatureUiCopy.list.columns.signedAt,
+      render: (item) => formatDateTimeDisplay(item.signedAt || item.updatedAt),
     },
     {
       key: "contractStatus",
@@ -101,20 +112,38 @@ export function getSignatureTableColumns(): DataTableColumn<SignatureItem>[] {
     {
       key: "updatedAt",
       label: signatureUiCopy.list.columns.updatedAt,
-      render: (item) => formatDateTimeDisplay(item.signedAt || item.updatedAt),
+      render: (item) => formatDateTimeDisplay(item.updatedAt),
     },
     {
-      key: "actions",
-      label: signatureUiCopy.list.columns.actions,
-      render: (item) => (
-        <Link
-          to={contractRoutePaths.edit(item.idContracts)}
-          className="text-[#7a4430] hover:text-[#2c1810]"
-          title={signatureUiCopy.actions.openContract}
-        >
-          Abrir
-        </Link>
-      ),
+      key: "signatureUrl",
+      label: signatureUiCopy.list.columns.signatureUrl,
+      render: (item) => {
+        if (!item.signatureUrl) return "-";
+
+        return (
+          <div className="w-full flex justify-center">
+            <button
+              type="button"
+              title="Copiar URL"
+              aria-label="Copiar URL da assinatura"
+              className="text-blue-400 hover:text-blue-600 flex items-center justify-center p-1"
+              onClick={async (e) => {
+                try {
+                  await navigator.clipboard.writeText(item.signatureUrl || "");
+                  const btn = e.currentTarget as HTMLButtonElement;
+                  const prev = btn.getAttribute("title") || "";
+                  btn.setAttribute("title", "Copiado!");
+                  setTimeout(() => btn.setAttribute("title", prev), 1500);
+                } catch (err) {
+                  // fallback: do nothing
+                }
+              }}
+            >
+              <CopyIcon className="w-5 h-5" />
+            </button>
+          </div>
+        );
+      },
     },
   ];
 }

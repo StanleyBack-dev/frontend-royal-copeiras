@@ -11,7 +11,10 @@ import { useContractsContext } from "@/features/contracts/context/useContractsCo
 import { contractRoutePaths } from "@/router";
 import { useToast } from "@/shared/toast/useToast";
 import { type Budget, type BudgetItem } from "@/api/budgets/schema";
-import { inferBudgetServiceType } from "@/features/budgets/model/service-items";
+import {
+  inferBudgetServiceType,
+  getServiceLabels,
+} from "@/features/budgets/model/service-items";
 import {
   FileSignature,
   FileText,
@@ -76,19 +79,10 @@ function formatEventDatesText(eventDates: string[]) {
     .join(", ");
 }
 
-// Todos os campos de assinatura migrados para SignatureEntity
-
 function buildServicesAndQuantities(items: BudgetItem[]) {
   if (!items.length) {
     return "1 - servico";
   }
-
-  const typeLabels: Record<string, { singular: string; plural: string }> = {
-    Garçom: { singular: "garçom", plural: "garçons" },
-    Copeira: { singular: "copeira", plural: "copeiras" },
-    Porteiro: { singular: "porteiro", plural: "porteiros" },
-    Segurança: { singular: "segurança", plural: "seguranças" },
-  };
 
   const grouped = new Map<
     string,
@@ -100,7 +94,7 @@ function buildServicesAndQuantities(items: BudgetItem[]) {
       Number.isFinite(item.quantity) && item.quantity > 0 ? item.quantity : 1;
     const inferredType = inferBudgetServiceType(item.description);
     const labels = inferredType
-      ? typeLabels[inferredType]
+      ? getServiceLabels(inferredType)
       : { singular: "servico", plural: "servicos" };
     const groupKey = inferredType || "servico";
 

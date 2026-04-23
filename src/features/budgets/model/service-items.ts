@@ -192,3 +192,11 @@ export function inferBudgetServiceType(
 
   return "";
 }
+
+export function getServiceLabels(type: BudgetServiceType): {
+  singular: string;
+  plural: string;
+} {
+  const meta = SERVICE_META[type];
+  return { singular: meta.singularLower, plural: meta.pluralLower };
+}

@@ -87,6 +87,8 @@ export function useSignatures(userId: string) {
         signatureStatus: entry.status.toLowerCase(),
         signedByName: entry.signedByName ?? undefined,
         signedByEmail: entry.signedByEmail ?? undefined,
+        signedByDocument: entry.signedByDocument ?? undefined,
+        signatureUrl: entry.signatureUrl ?? undefined,
         signedAt: entry.signedAt ?? undefined,
         updatedAt: entry.updatedAt,
       }));
@@ -131,6 +133,8 @@ export function useSignatures(userId: string) {
         ? (item.signatureProvider || "").toLowerCase() ===
           filters.provider.toLowerCase()
         : true;
+      const bySigner = true;
+      const bySignerDocument = true;
       const eventDateRaw = item.signedAt || item.updatedAt;
       const byStartDate = filters.startDate
         ? eventDateRaw.slice(0, 10) >= filters.startDate
@@ -138,11 +142,19 @@ export function useSignatures(userId: string) {
       const byEndDate = filters.endDate
         ? eventDateRaw.slice(0, 10) <= filters.endDate
         : true;
-      return byStatus && byProvider && byStartDate && byEndDate;
+      return (
+        byStatus &&
+        byProvider &&
+        byStartDate &&
+        byEndDate &&
+        bySigner &&
+        bySignerDocument
+      );
     });
   }, [
     filters.endDate,
     filters.provider,
+
     filters.startDate,
     filters.status,
     items,
@@ -187,6 +199,8 @@ export function useSignatures(userId: string) {
       startDate: "",
       endDate: "",
       provider: "",
+      signer: "",
+      signerDocument: "",
     });
     setPagination((previous) => ({ ...previous, currentPage: 1 }));
   }, []);
