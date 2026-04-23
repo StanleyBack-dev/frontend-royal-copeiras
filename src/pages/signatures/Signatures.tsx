@@ -1,23 +1,16 @@
-import Button from "@/components/atoms/Button";
 import FilterBar from "@/components/molecules/FilterBar";
-import ListFiltersPanel from "@/components/molecules/ListFiltersPanel";
 import DataTable from "@/components/organisms/DataTable";
+import ListFiltersPanel from "@/components/molecules/ListFiltersPanel";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
 import { useSignaturesContext, signatureUiCopy } from "@/features/signatures";
 import SearchIcon from "@/components/atoms/icons/SearchIcon";
 import { colors } from "@/config";
-import { contractRoutePaths } from "@/router";
-import { RotateCcw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import Select from "@/components/atoms/Select";
 
 export default function Signatures() {
-  const navigate = useNavigate();
   const {
     items,
     columns,
     loading,
-    updatingRowId,
     search,
     setSearch,
     filters,
@@ -28,9 +21,6 @@ export default function Signatures() {
     nextPage,
     prevPage,
     statusOptions,
-    providerOptions,
-    refreshStatus,
-    cancelRequest,
   } = useSignaturesContext();
 
   return (
@@ -64,23 +54,7 @@ export default function Signatures() {
         onEndDateChange={(value) => {
           setFilters({ endDate: value });
         }}
-        extraFilters={
-          <div className="min-w-[240px]">
-            <Select
-              value={filters.provider}
-              onChange={(event) => {
-                setFilters({ provider: event.target.value });
-              }}
-            >
-              <option value="">{signatureUiCopy.filters.allProviders}</option>
-              {providerOptions.map((provider) => (
-                <option key={provider} value={provider}>
-                  {provider}
-                </option>
-              ))}
-            </Select>
-          </div>
-        }
+        extraFilters={<div className="xl:col-span-1" />}
         onClear={() => {
           clearFilters();
         }}
@@ -103,47 +77,7 @@ export default function Signatures() {
         <>
           <DataTable
             data={items}
-            columns={[
-              ...columns,
-              {
-                key: "quickActions",
-                label: "Ações rápidas",
-                render: (item) => (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      leftIcon={<RotateCcw size={14} />}
-                      onClick={() => {
-                        void refreshStatus(item);
-                      }}
-                      disabled={updatingRowId === item.idContracts}
-                    >
-                      Atualizar
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        void cancelRequest(item);
-                      }}
-                      disabled={updatingRowId === item.idContracts}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="primary"
-                      onClick={() =>
-                        navigate(contractRoutePaths.edit(item.idContracts))
-                      }
-                    >
-                      Contrato
-                    </Button>
-                  </div>
-                ),
-              },
-            ]}
+            columns={columns}
             emptyMessage={signatureUiCopy.list.emptyMessage}
             getId={(item) => item.idContracts}
           />
