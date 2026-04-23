@@ -59,7 +59,10 @@ export default function Signatures() {
           clearFilters();
         }}
         hasActiveFilters={Boolean(
-          filters.status || filters.startDate || filters.endDate || filters.provider,
+          filters.status ||
+          filters.startDate ||
+          filters.endDate ||
+          filters.provider,
         )}
       />
 
