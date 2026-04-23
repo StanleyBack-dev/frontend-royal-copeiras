@@ -127,12 +127,12 @@ export function getSignatureTableColumns(): DataTableColumn<SignatureItem>[] {
               title="Copiar URL"
               aria-label="Copiar URL da assinatura"
               className="text-blue-400 hover:text-blue-600 flex items-center justify-center p-1"
-              onClick={async (e) => {          
-                  await navigator.clipboard.writeText(item.signatureUrl || "");
-                  const btn = e.currentTarget as HTMLButtonElement;
-                  const prev = btn.getAttribute("title") || "";
-                  btn.setAttribute("title", "Copiado!");
-                  setTimeout(() => btn.setAttribute("title", prev), 1500);
+              onClick={async (e) => {
+                await navigator.clipboard.writeText(item.signatureUrl || "");
+                const btn = e.currentTarget as HTMLButtonElement;
+                const prev = btn.getAttribute("title") || "";
+                btn.setAttribute("title", "Copiado!");
+                setTimeout(() => btn.setAttribute("title", prev), 1500);
               }}
             >
               <CopyIcon className="w-5 h-5" />

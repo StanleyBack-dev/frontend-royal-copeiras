@@ -199,8 +199,6 @@ export function useSignatures(userId: string) {
       startDate: "",
       endDate: "",
       provider: "",
-      signer: "",
-      signerDocument: "",
     });
     setPagination((previous) => ({ ...previous, currentPage: 1 }));
   }, []);
