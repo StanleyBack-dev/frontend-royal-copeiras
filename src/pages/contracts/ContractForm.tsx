@@ -11,7 +11,10 @@ import { useContractsContext } from "@/features/contracts/context/useContractsCo
 import { contractRoutePaths } from "@/router";
 import { useToast } from "@/shared/toast/useToast";
 import { type Budget, type BudgetItem } from "@/api/budgets/schema";
-import { inferBudgetServiceType } from "@/features/budgets/model/service-items";
+import {
+  inferBudgetServiceType,
+  getServiceLabels,
+} from "@/features/budgets/model/service-items";
 import {
   FileSignature,
   FileText,
@@ -22,7 +25,85 @@ import {
   Save,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { getSignatures } from "@/api/signature/methods";
+import type { SignatureListItem } from "@/api/signature/schema";
+import CopyIcon from "@/components/atoms/icons/CopyIcon";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+
+function ContractSignatures({
+  contractId,
+  userId,
+}: {
+  contractId?: string;
+  userId: string;
+}) {
+  const [signatures, setSignatures] = useState<SignatureListItem[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!contractId || !userId) return;
+    void (async () => {
+      try {
+        const res = await getSignatures(userId, {
+          idContracts: contractId,
+          limit: 10,
+        });
+        if (!mounted) return;
+        setSignatures(res.items || []);
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [contractId, userId]);
+
+  if (!signatures || signatures.length === 0) {
+    return (
+      <div className="col-span-2 text-sm text-[#6b4b3a]">
+        Nenhuma assinatura registrada.
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {signatures.map((sig) => (
+        <div
+          key={sig.idSignatures}
+          className="flex items-center justify-between gap-4"
+        >
+          <div>
+            <div className="font-semibold">{sig.signedByName || "—"}</div>
+            <div className="text-xs text-[#7a4430]">
+              {sig.signedByEmail || sig.signedByDocument || ""}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="text-xs font-semibold">
+              {String(sig.status).toLowerCase()}
+            </div>
+            {sig.signatureUrl ? (
+              <button
+                type="button"
+                title="Copiar link"
+                onClick={() =>
+                  void navigator.clipboard.writeText(sig.signatureUrl || "")
+                }
+                className="text-sky-500"
+              >
+                <CopyIcon size={16} />
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
 
 type ContractFormValues = {
   idBudgets: string;
@@ -76,19 +157,10 @@ function formatEventDatesText(eventDates: string[]) {
     .join(", ");
 }
 
-// Todos os campos de assinatura migrados para SignatureEntity
-
 function buildServicesAndQuantities(items: BudgetItem[]) {
   if (!items.length) {
     return "1 - servico";
   }
-
-  const typeLabels: Record<string, { singular: string; plural: string }> = {
-    Garçom: { singular: "garçom", plural: "garçons" },
-    Copeira: { singular: "copeira", plural: "copeiras" },
-    Porteiro: { singular: "porteiro", plural: "porteiros" },
-    Segurança: { singular: "segurança", plural: "seguranças" },
-  };
 
   const grouped = new Map<
     string,
@@ -100,7 +172,7 @@ function buildServicesAndQuantities(items: BudgetItem[]) {
       Number.isFinite(item.quantity) && item.quantity > 0 ? item.quantity : 1;
     const inferredType = inferBudgetServiceType(item.description);
     const labels = inferredType
-      ? typeLabels[inferredType]
+      ? getServiceLabels(inferredType)
       : { singular: "servico", plural: "servicos" };
     const groupKey = inferredType || "servico";
 
@@ -543,7 +615,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
         </div>
 
         <div className="grid grid-cols-1 gap-3 text-sm text-[#2c1810] md:grid-cols-2">
-          {/* Todos os campos de assinatura migrados para SignatureEntity */}
+          <ContractSignatures
+            contractId={editing.idContracts}
+            userId={session?.user.idUsers || ""}
+          />
         </div>
       </div>
     ) : null;

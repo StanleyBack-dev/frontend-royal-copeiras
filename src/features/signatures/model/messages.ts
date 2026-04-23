@@ -3,17 +3,19 @@ export const signatureUiCopy = {
     title: "Assinaturas",
     description:
       "Acompanhe solicitações de assinatura digital vinculadas aos contratos.",
-    searchPlaceholder: "Buscar por contrato, envelope ou signatário",
+    searchPlaceholder: "Buscar por contrato ou signatário",
     emptyMessage: "Nenhuma assinatura encontrada.",
     columns: {
       contractNumber: "Contrato",
       signer: "Signatario",
       provider: "Provedor",
-      envelope: "Envelope",
+      signedByDocument: "Documento",
+      signedByEmail: "E-mail do signatário",
       signatureStatus: "Status da assinatura",
+      signedAt: "Assinado em",
+      signatureUrl: "URL da assinatura",
       contractStatus: "Status do contrato",
       updatedAt: "Última atualização",
-      actions: "Ações",
     },
   },
   filters: {
