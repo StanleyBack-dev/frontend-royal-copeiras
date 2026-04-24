@@ -14,6 +14,7 @@ import { type Budget, type BudgetItem } from "@/api/budgets/schema";
 import {
   inferBudgetServiceType,
   getServiceLabels,
+  buildBudgetServiceDescription,
 } from "@/features/budgets/model/service-items";
 import {
   FileSignature,
@@ -212,52 +213,46 @@ function buildDefaultContractBody(budget: Budget | null) {
       ? budget.advancePercentage
       : 30;
 
-  return `CLAUSULA 1a - SERVIÇOS CONTRATADOS:
+  // build services block: one line per item with quantity, service label and description
+  const items = budget?.items || [];
 
-1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada consistentes na disponibilização de ${servicesAndQuantities}, cuja função será zelar pela organização e limpeza de todo o salão, auditório e toaletes do evento, pelo período de ${eventHours} horas consecutivas.
-1.2. O evento está previsto para ocorrer ${eventDatesText}.
+  const buildItemLine = (it: BudgetItem) => {
+    const qty =
+      Number.isFinite(it.quantity) && it.quantity > 0 ? it.quantity : 1;
 
-CLAUSULA 2a - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:
+    const inferred = inferBudgetServiceType(it.description);
 
-2.1. O valor dos serviços prestados é de ${totalAmountLabel}.
-2.2. O pagamento deverá ser realizado à vista, via pix (CNPJ 64.062.038/0001-71) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.
+    const rawDesc =
+      it.description ||
+      (inferred
+        ? buildBudgetServiceDescription(
+            inferred as import("@/features/budgets/model/service-items").BudgetServiceType,
+            qty,
+          )
+        : "Execução do serviço contratado");
 
-CLAUSULA 3a - RESPONSABILIDADES DO CONTRATANTE:
+    const desc = String(rawDesc)
+      .replace(/\r?\n+/g, " ")
+      .trim();
 
-3.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.
-3.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.
+    return desc;
+  };
 
-CLAUSULA 4a - RESPONSABILIDADES DA CONTRATADA:
+  const servicesBlock = items.length
+    ? items
+        .map((it, index) => {
+          const line = buildItemLine(it);
+          return `1.1.${index + 1}. ${line}`;
+        })
+        .join("\n")
+    : `1.1.1. ${servicesAndQuantities}`;
 
-4.1. A Royal Copeiras compromete-se a prestar os serviços contratados com profissional qualificada e devidamente treinada para atender as necessidades do evento.
-4.2. A contratada se compromete a garantir a pontualidade e a boa apresentação da equipe durante todo o evento.
-4.3. A contratada se responsabiliza pela supervisão e acompanhamento da equipe para assegurar o cumprimento das atividades conforme o acordado neste contrato.
+  return `CLÁUSULA 1ª - SERVIÇOS CONTRATADOS:
 
-CLAUSULA 5a - CANCELAMENTO E REEMBOLSO:
-
-5.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.
-5.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.
-5.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.
-
-CLAUSULA 6a - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):
-
-6.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.
-6.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da Royal Copeiras.
-6.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.
-
-CLAUSULA 7a - VIGÊNCIA:
-
-7.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.
-
-CLAUSULA 8a - CONDIÇÕES GERAIS:
-
-8.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.
-
-DISPOSIÇÕES FINAIS:
-
-Para quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.
-Atenciosamente,
-Equipe Royal Copeiras`;
+1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada, consistentes na disponibilização de:
+${servicesBlock}  
+1.2. Pelo período de ${eventHours} horas consecutivas.
+1.3. O evento está previsto para ocorrer ${eventDatesText}.\n\nCLAUSULA 2a - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}.\n2.2. O pagamento deverá ser realizado à vista, via pix (CNPJ 64.062.038/0001-71) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n\nCLAUSULA 3a - RESPONSABILIDADES DO CONTRATANTE:\n\n3.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n3.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLAUSULA 4a - RESPONSABILIDADES DA CONTRATADA:\n\n4.1. A Royal Copeiras compromete-se a prestar os serviços contratados com profissional qualificada e devidamente treinada para atender as necessidades do evento.\n4.2. A contratada se compromete a garantir a pontualidade e a boa apresentação da equipe durante todo o evento.\n4.3. A contratada se responsabiliza pela supervisão e acompanhamento da equipe para assegurar o cumprimento das atividades conforme o acordado neste contrato.\n\nCLAUSULA 5a - CANCELAMENTO E REEMBOLSO:\n\n5.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n5.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n5.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLAUSULA 6a - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n6.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n6.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da Royal Copeiras.\n6.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLAUSULA 7a - VIGÊNCIA:\n\n7.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLAUSULA 8a - CONDIÇÕES GERAIS:\n\n8.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe Royal Copeiras`;
 }
 
 function buildDefaultFormValues(initialBudgetId?: string): ContractFormValues {
