@@ -133,7 +133,7 @@ export function createEmptyBudgetFormValues(
     guestCount: "",
     durationHours: "",
     paymentMethod: "",
-    advancePercentage: "",
+    advancePercentage: "30",
     items: [{ ...emptyBudgetItemFormValues }],
   };
 }

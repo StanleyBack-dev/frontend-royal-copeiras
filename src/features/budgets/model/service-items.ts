@@ -147,10 +147,32 @@ export function buildBudgetServiceDescription(
   const quantityWords = toPtBrNumberWords(safeQuantity);
   const lowerService = serviceLower(type, safeQuantity);
 
+  const FRAGMENTS: Record<string, string> = {
+    copeira:
+      "manter o ambiente limpo e organizado, incluindo salão, auditório e banheiros, com reposição de materiais e higienização",
+    garcom:
+      "atender mesas, servir alimentos e bebidas, anotar pedidos e retirar utensílios",
+    garçom:
+      "atender mesas, servir alimentos e bebidas, anotar pedidos e retirar utensílios",
+    seguranca:
+      "controlar acessos, patrulhar áreas e zelar pela segurança de pessoas e bens",
+    porteiro:
+      "controlar entradas e saídas, orientar visitantes e supervisionar a guarda de acessos",
+    deslocamento:
+      "realizar transporte de equipe e/ou material entre endereços conforme cronograma",
+    recepcionista:
+      "realizar credenciamento, acolhimento e orientação aos convidados",
+    monitor:
+      "supervisionar atividades e apoiar a operação em áreas ou públicos específicos",
+  };
+
+  const fragment =
+    FRAGMENTS[normalizeText(String(type))] ||
+    "atuar durante o evento, com foco na execucao do servico contratado";
+
   return [
     `Prestação de serviço de ${safeQuantity} (${quantityWords}) ${lowerService}`,
-    "para atuação durante o evento, com foco na",
-    "execução do serviço contratado.",
+    `para atuação durante o evento, com foco em ${fragment}.`,
   ].join("\n");
 }
 
