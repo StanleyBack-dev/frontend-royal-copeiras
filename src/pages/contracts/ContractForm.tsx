@@ -222,11 +222,14 @@ function buildDefaultContractBody(budget: Budget | null) {
 
     const inferred = inferBudgetServiceType(it.description);
 
-      const rawDesc =
-        it.description ||
-        (inferred
-          ? buildBudgetServiceDescription(inferred as import("@/features/budgets/model/service-items").BudgetServiceType, qty)
-          : "Execução do serviço contratado");
+    const rawDesc =
+      it.description ||
+      (inferred
+        ? buildBudgetServiceDescription(
+            inferred as import("@/features/budgets/model/service-items").BudgetServiceType,
+            qty,
+          )
+        : "Execução do serviço contratado");
 
     const desc = String(rawDesc)
       .replace(/\r?\n+/g, " ")
