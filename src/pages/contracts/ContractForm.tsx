@@ -310,10 +310,6 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const isNonDraftLocked =
     mode === "edit" && Boolean(editing && editing.status !== "draft");
   const isGenerated = editing?.status === "generated";
-  const canSendWhatsApp =
-    isNonDraftLocked &&
-    (editing?.status === "generated" ||
-      editing?.status === "pending_signature");
   const leadHasEmail = Boolean(selectedLead?.email);
   const leadHasPhone = Boolean(selectedLead?.phone);
 
@@ -514,6 +510,47 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       sentVia: "signature_provider",
       sentAt: now,
     });
+
+    // after requesting signature via email, try to obtain signature link and open WhatsApp
+    try {
+      let signatureUrl: string | undefined;
+      // poll for the signature entry (small retries)
+      for (let i = 0; i < 6; i++) {
+        const res = await getSignatures(session?.user.idUsers || "", {
+          idContracts: editing.idContracts,
+          limit: 10,
+        });
+        const items = res.items || [];
+        const match = items.find((s) => {
+          if (selectedLead?.email && s.signedByEmail) {
+            return (
+              String(s.signedByEmail).toLowerCase() ===
+              String(selectedLead.email).toLowerCase()
+            );
+          }
+          const name = (s.signedByName || "").toLowerCase().trim();
+          return name && selectedLead?.name
+            ? selectedLead.name.toLowerCase().includes(name)
+            : false;
+        });
+        signatureUrl = match?.signatureUrl || undefined;
+        if (signatureUrl) break;
+        // wait 1s before retry
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+
+      if (signatureUrl && selectedLead?.phone) {
+        const digits = selectedLead.phone.replace(/\D/g, "");
+        const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+        const text = `Olá, ${selectedLead.name}! Enviamos a solicitação de assinatura. Assine aqui: ${signatureUrl}`;
+        window.open(
+          `https://wa.me/${normalized}?text=${encodeURIComponent(text)}`,
+          "_blank",
+        );
+      }
+    } catch {
+      // ignore errors on redirect attempt
+    }
   }
 
   async function handleSendWhatsApp() {
@@ -540,11 +577,13 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     } catch {
       // ignora erro de persistencia, estado local ja foi atualizado
     }
-    updateLocalStatus("pending_signature", {
+    updateLocalStatus(editing.status, {
       sentVia: "whatsapp",
       sentAt: now,
     });
   }
+
+  // WhatsApp-specific function removed — WhatsApp now only used as redirect after signature request
 
   const formGuidanceContent =
     isNonDraftLocked || editing?.sentAt ? (
@@ -690,83 +729,81 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
           ) : null}
 
           {isNonDraftLocked && isGenerated ? (
-            <button
-              type="button"
-              onClick={() => {
-                void handleSendEmail();
-              }}
-              disabled={
-                !editing?.idContracts ||
-                !leadHasEmail ||
-                !session?.user.idUsers ||
-                pdfActions.sendingEmail
-              }
-              className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-              title={
-                leadHasEmail
-                  ? "Enviar prévia por e-mail"
-                  : "Lead sem e-mail cadastrado"
-              }
-            >
-              <Mail size={32} className="text-[#C9A227]" />
-              <span className="text-center text-xs font-semibold text-[#2C1810]">
-                {pdfActions.sendingEmail ? "Enviando..." : "Prévia"}
-              </span>
-            </button>
-          ) : null}
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSendEmail();
+                }}
+                disabled={
+                  !editing?.idContracts ||
+                  !leadHasEmail ||
+                  !session?.user.idUsers ||
+                  pdfActions.sendingEmail
+                }
+                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
+                title={
+                  leadHasEmail
+                    ? "Enviar prévia por e-mail"
+                    : "Lead sem e-mail cadastrado"
+                }
+              >
+                <Mail size={32} className="text-[#C9A227]" />
+                <span className="text-center text-xs font-semibold text-[#2C1810]">
+                  {pdfActions.sendingEmail ? "Enviando..." : "Email"}
+                </span>
+              </button>
 
-          {isNonDraftLocked && isGenerated ? (
-            <button
-              type="button"
-              onClick={() => {
-                void handleSendSignatureRequest();
-              }}
-              disabled={
-                !editing?.idContracts ||
-                !leadHasEmail ||
-                !session?.user.idUsers ||
-                pdfActions.sendingSignatureRequest
-              }
-              className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-              title={
-                leadHasEmail
-                  ? "Enviar para assinatura online"
-                  : "Lead sem e-mail cadastrado"
-              }
-            >
-              <FileSignature size={32} className="text-[#C9A227]" />
-              <span className="text-center text-xs font-semibold text-[#2C1810]">
-                {pdfActions.sendingSignatureRequest
-                  ? "Enviando..."
-                  : "Assinatura"}
-              </span>
-            </button>
-          ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSendWhatsApp();
+                }}
+                disabled={
+                  !editing?.idContracts ||
+                  !leadHasPhone ||
+                  !session?.user.idUsers ||
+                  pdfActions.sharingWhatsApp
+                }
+                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
+                title={
+                  leadHasPhone
+                    ? "Compartilhar via WhatsApp"
+                    : "Lead sem telefone cadastrado"
+                }
+              >
+                <MessageCircle size={32} className="text-[#25D366]" />
+                <span className="text-center text-xs font-semibold text-[#2C1810]">
+                  {pdfActions.sharingWhatsApp ? "Compart..." : "WhatsApp"}
+                </span>
+              </button>
 
-          {canSendWhatsApp ? (
-            <button
-              type="button"
-              onClick={() => {
-                void handleSendWhatsApp();
-              }}
-              disabled={
-                !editing?.idContracts ||
-                !leadHasPhone ||
-                !session?.user.idUsers ||
-                pdfActions.sharingWhatsApp
-              }
-              className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-              title={
-                leadHasPhone
-                  ? "Compartilhar via WhatsApp"
-                  : "Lead sem telefone cadastrado"
-              }
-            >
-              <MessageCircle size={32} className="text-[#C9A227]" />
-              <span className="text-center text-xs font-semibold text-[#2C1810]">
-                {pdfActions.sharingWhatsApp ? "Compart..." : "WhatsApp"}
-              </span>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSendSignatureRequest();
+                }}
+                disabled={
+                  !editing?.idContracts ||
+                  !leadHasEmail ||
+                  !session?.user.idUsers ||
+                  pdfActions.sendingSignatureRequest
+                }
+                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
+                title={
+                  leadHasEmail
+                    ? "Enviar para assinatura online"
+                    : "Lead sem e-mail cadastrado"
+                }
+              >
+                <FileSignature size={32} className="text-[#C9A227]" />
+                <span className="text-center text-xs font-semibold text-[#2C1810]">
+                  {pdfActions.sendingSignatureRequest
+                    ? "Enviando..."
+                    : "Assinatura"}
+                </span>
+              </button>
+            </>
           ) : null}
 
           {isNonDraftLocked && isGenerated ? (
