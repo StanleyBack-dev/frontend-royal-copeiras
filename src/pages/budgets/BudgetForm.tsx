@@ -66,6 +66,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   const [emailSent, setEmailSent] = useState(false);
   const [confirmApprove, setConfirmApprove] = useState(false);
   const [confirmContract, setConfirmContract] = useState(false);
+  const [confirmSendEmail, setConfirmSendEmail] = useState(false);
 
   const isNonDraftLocked =
     mode === "edit" && Boolean(editing && editing.status !== "draft");
@@ -429,7 +430,6 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
       >
         <div className="flex justify-center mb-6">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
-            {/* Preview PDF */}
             <button
               type="button"
               onClick={() => {
@@ -447,7 +447,6 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </span>
             </button>
 
-            {/* Gerar Orçamento */}
             {!isNonDraftLocked && editing?.idBudgets ? (
               <button
                 type="button"
@@ -477,7 +476,6 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </button>
             ) : null}
 
-            {/* Gerar Contrato */}
             {editing?.status === "approved" ? (
               <button
                 type="button"
@@ -492,12 +490,11 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </button>
             ) : null}
 
-            {/* Enviar Email */}
             {isNonDraftLocked && isGenerated && !emailSent ? (
               <button
                 type="button"
                 onClick={() => {
-                  void handleSendEmail();
+                  setConfirmSendEmail(true);
                 }}
                 disabled={
                   saving ||
@@ -520,7 +517,6 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </button>
             ) : null}
 
-            {/* Enviar WhatsApp */}
             {isNonDraftLocked ? (
               <button
                 type="button"
@@ -719,6 +715,26 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
           );
         }}
         onCancel={() => setConfirmContract(false)}
+      />
+      <ConfirmDialog
+        open={confirmSendEmail}
+        title="Enviar por e-mail"
+        description={
+          <p>
+            Você está prestes a enviar este orçamento por e-mail para o lead
+            selecionado.
+            <br />
+            <br />
+            Deseja continuar?
+          </p>
+        }
+        confirmLabel="Sim, enviar"
+        cancelLabel="Voltar"
+        onConfirm={() => {
+          setConfirmSendEmail(false);
+          void handleSendEmail();
+        }}
+        onCancel={() => setConfirmSendEmail(false)}
       />
     </>
   );

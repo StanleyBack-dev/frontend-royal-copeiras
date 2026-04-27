@@ -1,6 +1,7 @@
 import { updateContract } from "@/api/contracts/methods";
 import { getHttpErrorMessage } from "@/api/shared/http-error";
 import Button from "@/components/atoms/Button";
+import ConfirmDialog from "@/components/molecules/ConfirmDialog";
 import Input from "@/components/atoms/Input";
 import Select from "@/components/atoms/Select";
 import Textarea from "@/components/atoms/Textarea";
@@ -312,6 +313,8 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const isGenerated = editing?.status === "generated";
   const leadHasEmail = Boolean(selectedLead?.email);
   const leadHasPhone = Boolean(selectedLead?.phone);
+  const [confirmSendEmail, setConfirmSendEmail] = useState(false);
+  const [confirmSendSignature, setConfirmSendSignature] = useState(false);
 
   useEffect(() => {
     if (!session?.user.idUsers || editing?.status !== "pending_signature") {
@@ -733,7 +736,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
               <button
                 type="button"
                 onClick={() => {
-                  void handleSendEmail();
+                  setConfirmSendEmail(true);
                 }}
                 disabled={
                   !editing?.idContracts ||
@@ -753,6 +756,26 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
                   {pdfActions.sendingEmail ? "Enviando..." : "Email"}
                 </span>
               </button>
+              <ConfirmDialog
+                open={confirmSendEmail}
+                title="Enviar por e-mail"
+                description={
+                  <p>
+                    Você está prestes a enviar a prévia deste contrato por
+                    e-mail para o lead selecionado.
+                    <br />
+                    <br />
+                    Deseja continuar?
+                  </p>
+                }
+                confirmLabel="Sim, enviar"
+                cancelLabel="Voltar"
+                onConfirm={() => {
+                  setConfirmSendEmail(false);
+                  void handleSendEmail();
+                }}
+                onCancel={() => setConfirmSendEmail(false)}
+              />
 
               <button
                 type="button"
@@ -781,7 +804,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
               <button
                 type="button"
                 onClick={() => {
-                  void handleSendSignatureRequest();
+                  setConfirmSendSignature(true);
                 }}
                 disabled={
                   !editing?.idContracts ||
@@ -803,6 +826,26 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
                     : "Assinatura"}
                 </span>
               </button>
+              <ConfirmDialog
+                open={confirmSendSignature}
+                title="Enviar para assinatura"
+                description={
+                  <p>
+                    Você está prestes a enviar este contrato para assinatura
+                    online. O lead receberá um e-mail com o link para assinar.
+                    <br />
+                    <br />
+                    Deseja continuar?
+                  </p>
+                }
+                confirmLabel="Sim, enviar"
+                cancelLabel="Voltar"
+                onConfirm={() => {
+                  setConfirmSendSignature(false);
+                  void handleSendSignatureRequest();
+                }}
+                onCancel={() => setConfirmSendSignature(false)}
+              />
             </>
           ) : null}
 
