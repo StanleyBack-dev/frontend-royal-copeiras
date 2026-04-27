@@ -4,6 +4,7 @@ import {
   sendContractEmail,
   sendContractSignatureRequest,
 } from "../../../api/contracts/methods";
+// keep shareWhatsApp simple: no signature creation here
 import { getHttpErrorMessage } from "../../../api/shared/http-error";
 import { useToast } from "../../../shared/toast/useToast";
 import { openBase64FileInNewTab } from "../../../utils/file";
