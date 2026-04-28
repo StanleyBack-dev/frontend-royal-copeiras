@@ -31,6 +31,7 @@ import { getSignatures } from "@/api/signature/methods";
 import type { SignatureListItem } from "@/api/signature/schema";
 import CopyIcon from "@/components/atoms/icons/CopyIcon";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import LoadingOverlay from "@/components/molecules/LoadingOverlay";
 
 function ContractSignatures({
   contractId,
@@ -693,6 +694,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
         </div>
       }
     >
+      <LoadingOverlay
+        open={pdfActions.sendingSignatureRequest}
+        label="Enviando para assinatura..."
+      />
       <div className="mb-6 flex justify-center">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5 sm:gap-6">
           <button
