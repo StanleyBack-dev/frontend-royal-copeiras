@@ -8,8 +8,12 @@ import ManagementPanelTemplate from "@/components/templates/management/Managemen
 import { colors } from "@/config";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { budgetRoutePaths } from "@/router";
 import { budgetUiCopy, useBudgetsList } from "@/features/budgets";
+import { fetchContracts } from "@/features/contracts/services/contract.service";
+import type { Contract } from "@/api/contracts/schema";
+import { useAuthSession } from "@/features/auth";
 import { useBudgetsContext } from "@/features/budgets/context/useBudgetsContext";
 
 export default function Budgets() {
@@ -26,9 +30,37 @@ export default function Budgets() {
     prevPage,
   } = useBudgetsContext();
   const navigate = useNavigate();
+
+  const { session } = useAuthSession();
+  const [contracts, setContracts] = useState<Contract[] | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadContracts() {
+      if (!session?.user.idUsers) return;
+      try {
+        const result = await fetchContracts(session.user.idUsers, {
+          page: 1,
+          limit: 100,
+        });
+        if (!cancelled) setContracts(result.items);
+      } catch {
+        // best-effort; keep contracts undefined
+      }
+    }
+
+    void loadContracts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user.idUsers]);
+
   const { search, setSearch, filteredBudgets, columns } = useBudgetsList({
     budgets,
     leads,
+    contracts,
   });
 
   const statusOptions = [

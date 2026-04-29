@@ -3,7 +3,7 @@ import type { DataTableColumn } from "@/components/organisms/DataTable";
 import EditIcon from "@/components/atoms/icons/EditIcon";
 import { colors } from "@/config";
 import type { Contract } from "@/api/contracts/schema";
-import { contractRoutePaths } from "@/router";
+import { contractRoutePaths, budgetRoutePaths } from "@/router";
 import { formatDateTimeDisplay } from "@/utils/format";
 import { contractUiCopy } from "./messages";
 
@@ -40,7 +40,16 @@ export function getContractTableColumns(): DataTableColumn<Contract>[] {
     {
       key: "budgetNumber",
       label: contractUiCopy.list.columns.budgetNumber,
-      render: (contract) => contract.budgetNumber,
+      render: (contract) => (
+        <Link
+          to={budgetRoutePaths.edit(contract.idBudgets)}
+          title="Ver orçamento vinculado"
+          className="text-blue-400 hover:text-blue-600 underline"
+          style={{ display: "flex", alignItems: "center" }}
+        >
+          {contract.budgetNumber}
+        </Link>
+      ),
     },
     {
       key: "status",
