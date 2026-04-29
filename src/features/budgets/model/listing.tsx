@@ -1,11 +1,15 @@
 import { Link } from "react-router-dom";
 import type { DataTableColumn } from "../../../components/organisms/DataTable";
 import EditIcon from "../../../components/atoms/icons/EditIcon";
+import FileTextIcon from "../../../components/atoms/icons/FileTextIcon";
 import { colors } from "../../../config";
 import type { Budget } from "../../../api/budgets/schema";
 import { budgetRoutePaths } from "../../../router";
+import { contractRoutePaths } from "../../../router";
 import { formatDateTimeDisplay } from "../../../utils/format";
 import { budgetUiCopy } from "./messages";
+import { useAuthSession } from "../../../features/auth";
+import { useBudgetPdfActions } from "../hooks/useBudgetPdfActions";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -41,6 +45,11 @@ export function filterBudgetsBySearch(
 
 export function getBudgetTableColumns(
   resolveLeadName: (idLeads?: string) => string,
+  resolveContract?:
+    | ((
+        idBudgets?: string,
+      ) => { idContracts?: string; contractNumber?: string } | undefined)
+    | undefined,
 ): DataTableColumn<Budget>[] {
   return [
     {
@@ -51,6 +60,29 @@ export function getBudgetTableColumns(
           {budget.budgetNumber}
         </span>
       ),
+    },
+    {
+      key: "contract",
+      label: budgetUiCopy.list.columns.contract,
+      render: (budget) => {
+        if (!resolveContract) return "-";
+
+        const resolved = resolveContract(budget.idBudgets);
+
+        if (!resolved || !resolved.contractNumber || !resolved.idContracts)
+          return "-";
+
+        return (
+          <Link
+            to={contractRoutePaths.edit(resolved.idContracts)}
+            title="Ver contrato vinculado"
+            className="text-blue-400 hover:text-blue-600 underline"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            {resolved.contractNumber}
+          </Link>
+        );
+      },
     },
     {
       key: "lead",
@@ -76,6 +108,37 @@ export function getBudgetTableColumns(
       key: "validUntil",
       label: budgetUiCopy.list.columns.validUntil,
       render: (budget) => formatDateTimeDisplay(budget.validUntil),
+    },
+    {
+      key: "preview",
+      label: budgetUiCopy.list.columns.preview,
+      render: (budget) => {
+        function PreviewAction() {
+          const { session } = useAuthSession();
+          const { preview, previewing } = useBudgetPdfActions({
+            userId: session?.user.idUsers || "",
+            budgetId: budget.idBudgets,
+            budgetNumber: budget.budgetNumber,
+          });
+
+          return (
+            <button
+              type="button"
+              title="Visualizar preview"
+              onClick={async () => {
+                void preview();
+              }}
+              disabled={previewing}
+              className="hover:text-yellow-700"
+              style={{ display: "flex", alignItems: "center" }}
+            >
+              <FileTextIcon size={18} />
+            </button>
+          );
+        }
+
+        return <PreviewAction />;
+      },
     },
     {
       key: "actions",

@@ -39,7 +39,7 @@ export function useBudgetPdfActions({
   const [sharingWhatsApp, setSharingWhatsApp] = useState(false);
   const { showError, showSuccess } = useToast();
 
-  async function preview(draft: CreateBudgetPayload) {
+  async function preview(draft?: CreateBudgetPayload) {
     setPreviewing(true);
 
     try {

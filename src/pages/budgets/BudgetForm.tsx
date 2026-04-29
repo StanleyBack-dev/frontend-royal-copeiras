@@ -18,7 +18,8 @@ import BudgetItemsEditor from "@/features/budgets/components/BudgetItemsEditor";
 import { useBudgetsContext } from "@/features/budgets/context/useBudgetsContext";
 import { useToast } from "@/shared/toast/useToast";
 import { budgetRoutePaths, contractRoutePaths } from "@/router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
+import { fetchContracts } from "@/features/contracts/services/contract.service";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { updateBudget } from "@/api/budgets/methods";
 import { getHttpErrorMessage } from "@/api/shared/http-error";
@@ -67,6 +68,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   const [confirmApprove, setConfirmApprove] = useState(false);
   const [confirmContract, setConfirmContract] = useState(false);
   const [confirmSendEmail, setConfirmSendEmail] = useState(false);
+  const [hasContract, setHasContract] = useState(false);
 
   const isNonDraftLocked =
     mode === "edit" && Boolean(editing && editing.status !== "draft");
@@ -120,6 +122,32 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
       setEmailSent(true);
     },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkContract() {
+      if (!editing?.idBudgets || !session?.user.idUsers)
+        return setHasContract(false);
+
+      try {
+        const result = await fetchContracts(session.user.idUsers, {
+          page: 1,
+          limit: 1,
+          idBudgets: editing.idBudgets,
+        });
+        if (!cancelled) setHasContract(result.items.length > 0);
+      } catch {
+        if (!cancelled) setHasContract(false);
+      }
+    }
+
+    void checkContract();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editing?.idBudgets, session?.user.idUsers]);
 
   async function handleSave(values: BudgetFormValues) {
     if (isNonDraftLocked) return;
@@ -476,7 +504,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </button>
             ) : null}
 
-            {editing?.status === "approved" ? (
+            {editing?.status === "approved" && !hasContract ? (
               <button
                 type="button"
                 onClick={() => setConfirmContract(true)}
