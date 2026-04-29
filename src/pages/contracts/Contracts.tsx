@@ -87,21 +87,21 @@ export default function Contracts() {
           void setFilters({ endDate: value });
         }}
         extraFilters={
-          <div className="min-w-[240px]">
-            <Select
-              value={filters.idBudgets}
-              onChange={(event) => {
-                void setFilters({ idBudgets: event.target.value });
-              }}
-            >
-              <option value="">Todos os orçamentos</option>
-              {budgets.map((budget) => (
-                <option key={budget.idBudgets} value={budget.idBudgets}>
-                  {budget.budgetNumber}
-                </option>
-              ))}
-            </Select>
-          </div>
+          <Select
+            label="Orçamento"
+            value={filters.idBudgets}
+            onChange={(event) => {
+              void setFilters({ idBudgets: event.target.value });
+            }}
+            wrapperClassName="xl:col-span-1"
+          >
+            <option value="">Todos os orçamentos</option>
+            {budgets.map((budget) => (
+              <option key={budget.idBudgets} value={budget.idBudgets}>
+                {budget.budgetNumber}
+              </option>
+            ))}
+          </Select>
         }
         onClear={() => {
           void clearFilters();
