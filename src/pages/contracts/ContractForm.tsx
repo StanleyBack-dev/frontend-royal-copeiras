@@ -22,91 +22,13 @@ import {
   FileText,
   Mail,
   MessageCircle,
-  RefreshCcw,
   RotateCcw,
   Save,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getSignatures } from "@/api/signature/methods";
-import type { SignatureListItem } from "@/api/signature/schema";
-import CopyIcon from "@/components/atoms/icons/CopyIcon";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import LoadingOverlay from "@/components/molecules/LoadingOverlay";
-
-function ContractSignatures({
-  contractId,
-  userId,
-}: {
-  contractId?: string;
-  userId: string;
-}) {
-  const [signatures, setSignatures] = useState<SignatureListItem[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-    if (!contractId || !userId) return;
-    void (async () => {
-      try {
-        const res = await getSignatures(userId, {
-          idContracts: contractId,
-          limit: 10,
-        });
-        if (!mounted) return;
-        setSignatures(res.items || []);
-      } catch {
-        // ignore
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [contractId, userId]);
-
-  if (!signatures || signatures.length === 0) {
-    return (
-      <div className="col-span-2 text-sm text-[#6b4b3a]">
-        Nenhuma assinatura registrada.
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {signatures.map((sig) => (
-        <div
-          key={sig.idSignatures}
-          className="flex items-center justify-between gap-4"
-        >
-          <div>
-            <div className="font-semibold">{sig.signedByName || "—"}</div>
-            <div className="text-xs text-[#7a4430]">
-              {sig.signedByEmail || sig.signedByDocument || ""}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="text-xs font-semibold">
-              {String(sig.status).toLowerCase()}
-            </div>
-            {sig.signatureUrl ? (
-              <button
-                type="button"
-                title="Copiar link"
-                onClick={() =>
-                  void navigator.clipboard.writeText(sig.signatureUrl || "")
-                }
-                className="text-sky-500"
-              >
-                <CopyIcon size={16} />
-              </button>
-            ) : null}
-          </div>
-        </div>
-      ))}
-    </>
-  );
-}
 
 type ContractFormValues = {
   idBudgets: string;
@@ -276,7 +198,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const navigate = useNavigate();
   const { session } = useAuthSession();
   const { showError, showSuccess } = useToast();
-  const { contracts, budgets, leads, save, saving, setContracts, load } =
+  const { contracts, budgets, leads, save, saving, setContracts } =
     useContractsContext();
 
   const initialBudgetId = searchParams.get("budgetId") || undefined;
@@ -316,20 +238,6 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const leadHasPhone = Boolean(selectedLead?.phone);
   const [confirmSendEmail, setConfirmSendEmail] = useState(false);
   const [confirmSendSignature, setConfirmSendSignature] = useState(false);
-
-  useEffect(() => {
-    if (!session?.user.idUsers || editing?.status !== "pending_signature") {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      void load();
-    }, 30000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [editing?.status, load, session?.user.idUsers]);
 
   useEffect(() => {
     if (mode === "edit" && editing) {
@@ -634,30 +542,6 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
             </p>
           </div>
         ) : null}
-      </div>
-    ) : null;
-
-  const signatureDetailsContent =
-    mode === "edit" && editing ? (
-      <div className="mt-4 rounded-xl border border-[#e8d5c9] bg-white px-4 py-4">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-semibold text-[#2c1810]">
-            {contractUiCopy.form.signature.title}
-          </p>
-          {editing.status === "pending_signature" ? (
-            <span className="inline-flex items-center gap-2 text-xs text-[#7a4430]">
-              <RefreshCcw size={14} />
-              Atualizacao automatica a cada 30s
-            </span>
-          ) : null}
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 text-sm text-[#2c1810] md:grid-cols-2">
-          <ContractSignatures
-            contractId={editing.idContracts}
-            userId={session?.user.idUsers || ""}
-          />
-        </div>
       </div>
     ) : null;
 
@@ -966,7 +850,6 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
           disabled={isNonDraftLocked}
         />
       </div>
-      {signatureDetailsContent}
     </ManagementPanelTemplate>
   );
 }
