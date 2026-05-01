@@ -451,8 +451,9 @@ export default function EventDetail() {
                   assignmentDrafts[assignment.idEventAssignments]?.payment ?? ""
                 }
                 chargedAmount={
-                  serviceUnitPriceByItemId.get(assignment.idBudgetItems ?? "") ??
-                  0
+                  serviceUnitPriceByItemId.get(
+                    assignment.idBudgetItems ?? "",
+                  ) ?? 0
                 }
                 selectedEmployeeIds={selectedEmployeeIds}
                 onSelectedEmployeeChange={(value) => {
