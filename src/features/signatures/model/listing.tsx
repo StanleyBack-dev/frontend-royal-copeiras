@@ -20,23 +20,43 @@ export interface SignatureItem {
   signatureUrl?: string | null;
 }
 
-function formatSignatureStatus(status?: string) {
+export function getSignatureStatusLabel(status?: string) {
   if (!status) return "-";
 
+  const normalized = status.trim().toLowerCase();
   const map: Record<string, string> = {
     draft: "Rascunho",
     pending: "Pendente",
+    in_progress: "Pendente",
+    pending_signature: "Pendente",
+    pending_signatures: "Pendente",
     signed: "Assinado",
+    completed: "Assinado",
     rejected: "Rejeitado",
+    declined: "Rejeitado",
     cancelled: "Cancelado",
     canceled: "Cancelado",
     expired: "Expirado",
     unknown: "Desconhecido",
   };
-  return map[status.toLowerCase()] || status;
+  return map[normalized] || status;
 }
 
-function formatContractStatus(status: Contract["status"]) {
+export function getContractStatusLabel(status: Contract["status"] | string) {
+  const normalized = status.trim().toLowerCase();
+  const aliases: Record<string, Contract["status"]> = {
+    draft: "draft",
+    generated: "generated",
+    pending_signature: "pending_signature",
+    pendingsignature: "pending_signature",
+    signed: "signed",
+    rejected: "rejected",
+    expired: "expired",
+    canceled: "canceled",
+    cancelled: "canceled",
+  };
+
+  const resolved = aliases[normalized] || (status as Contract["status"]);
   const map: Record<Contract["status"], string> = {
     draft: "Rascunho",
     generated: "Gerado",
@@ -46,7 +66,14 @@ function formatContractStatus(status: Contract["status"]) {
     expired: "Expirado",
     canceled: "Cancelado",
   };
-  return map[status] || status;
+  return map[resolved] || status;
+}
+
+function formatSignedAt(value?: string) {
+  if (!value) return "-";
+
+  const formatted = formatDateTimeDisplay(value);
+  return formatted || "-";
 }
 
 export function filterSignaturesBySearch(
@@ -98,17 +125,17 @@ export function getSignatureTableColumns(): DataTableColumn<SignatureItem>[] {
     {
       key: "signatureStatus",
       label: signatureUiCopy.list.columns.signatureStatus,
-      render: (item) => formatSignatureStatus(item.signatureStatus),
+      render: (item) => getSignatureStatusLabel(item.signatureStatus),
     },
     {
       key: "signedAt",
       label: signatureUiCopy.list.columns.signedAt,
-      render: (item) => formatDateTimeDisplay(item.signedAt || item.updatedAt),
+      render: (item) => formatSignedAt(item.signedAt),
     },
     {
       key: "contractStatus",
       label: signatureUiCopy.list.columns.contractStatus,
-      render: (item) => formatContractStatus(item.contractStatus),
+      render: (item) => getContractStatusLabel(item.contractStatus),
     },
     {
       key: "updatedAt",

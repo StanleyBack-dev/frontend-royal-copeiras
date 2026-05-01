@@ -130,12 +130,12 @@ export function useSignatures() {
         : true;
       const bySigner = true;
       const bySignerDocument = true;
-      const eventDateRaw = item.signedAt || item.updatedAt;
+      const signedDate = item.signedAt?.slice(0, 10);
       const byStartDate = filters.startDate
-        ? eventDateRaw.slice(0, 10) >= filters.startDate
+        ? Boolean(signedDate && signedDate >= filters.startDate)
         : true;
       const byEndDate = filters.endDate
-        ? eventDateRaw.slice(0, 10) <= filters.endDate
+        ? Boolean(signedDate && signedDate <= filters.endDate)
         : true;
       return (
         byStatus &&

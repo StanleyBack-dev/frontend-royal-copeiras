@@ -3,6 +3,7 @@ export {
   budgetRoutePaths,
   contractRoutePaths,
   signatureRoutePaths,
+  eventRoutePaths,
   customerRoutePaths,
   employeeRoutePaths,
   leadRoutePaths,
