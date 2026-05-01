@@ -348,11 +348,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     }
 
     try {
-      await updateContract(
-        editing.idContracts,
-        { status: "generated" },
-        session?.user.idUsers || "",
-      );
+      await updateContract(editing.idContracts, { status: "generated" });
       updateLocalStatus("generated");
       showSuccess("Contrato gerado com sucesso");
     } catch (error) {
@@ -367,11 +363,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     }
 
     try {
-      await updateContract(
-        editing.idContracts,
-        { status: "draft" },
-        session?.user.idUsers || "",
-      );
+      await updateContract(editing.idContracts, { status: "draft" });
       updateLocalStatus("draft", { sentVia: undefined, sentAt: undefined });
       showSuccess("Contrato voltou para rascunho");
     } catch (error) {
@@ -388,11 +380,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     await pdfActions.sendEmail();
     const now = new Date().toISOString();
     try {
-      await updateContract(
-        editing.idContracts,
-        { sentVia: "email_preview", sentAt: now },
-        session?.user.idUsers || "",
-      );
+      await updateContract(editing.idContracts, {
+        sentVia: "email_preview",
+        sentAt: now,
+      });
     } catch {
       // ignora erro de persistencia, estado local ja foi atualizado
     }
@@ -410,11 +401,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     await pdfActions.sendSignatureRequest();
     const now = new Date().toISOString();
     try {
-      await updateContract(
-        editing.idContracts,
-        { sentVia: "signature_provider", sentAt: now },
-        session?.user.idUsers || "",
-      );
+      await updateContract(editing.idContracts, {
+        sentVia: "signature_provider",
+        sentAt: now,
+      });
     } catch {
       // ignora erro de persistencia, estado local ja foi atualizado
     }
@@ -423,10 +413,8 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       sentAt: now,
     });
 
-    // after requesting signature via email, try to obtain signature link and open WhatsApp
     try {
       let signatureUrl: string | undefined;
-      // poll for the signature entry (small retries)
       for (let i = 0; i < 6; i++) {
         const res = await getSignatures({
           idContracts: editing.idContracts,
@@ -481,11 +469,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
 
     const now = new Date().toISOString();
     try {
-      await updateContract(
-        editing.idContracts,
-        { sentVia: "whatsapp", sentAt: now },
-        session?.user.idUsers || "",
-      );
+      await updateContract(editing.idContracts, {
+        sentVia: "whatsapp",
+        sentAt: now,
+      });
     } catch {
       // ignora erro de persistencia, estado local ja foi atualizado
     }
@@ -494,8 +481,6 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       sentAt: now,
     });
   }
-
-  // WhatsApp-specific function removed — WhatsApp now only used as redirect after signature request
 
   const formGuidanceContent =
     isNonDraftLocked || editing?.sentAt ? (

@@ -70,17 +70,15 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
 
           setSessionState(refreshedSession);
 
-          // Start with empty permissions until backend returns effectivePermissions
           setPagePermissions([]);
 
-          void loadMyPagePermissions(refreshedSession.user.idUsers)
+          void loadMyPagePermissions()
             .then((permissions) => {
               if (cancelled) return;
               setPagePermissions(permissions);
             })
             .catch(() => {
               if (cancelled) return;
-              // On failure, fall back to group defaults
               setPagePermissions(defaultPermissions);
             })
             .finally(() => {
@@ -103,9 +101,7 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
     };
   }, []);
 
-  useEffect(() => {
-    // debug hook removed for security
-  }, [pagePermissions]);
+  useEffect(() => {}, [pagePermissions]);
 
   const setSession = useCallback((nextSession: AuthSessionResponse) => {
     setSessionState(nextSession);
@@ -114,16 +110,14 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
       nextSession.user.group,
     );
 
-    // Do not apply defaults immediately; start empty until backend responds
     setPagePermissions([]);
     setIsInitializing(true);
 
-    void loadMyPagePermissions(nextSession.user.idUsers)
+    void loadMyPagePermissions()
       .then((permissions) => {
         setPagePermissions(permissions);
       })
       .catch(() => {
-        // On failure, fall back to group defaults
         setPagePermissions(defaultPermissions);
       })
       .finally(() => {
