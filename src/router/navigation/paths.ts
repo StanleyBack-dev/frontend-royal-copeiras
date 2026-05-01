@@ -75,6 +75,11 @@ export const signatureRoutePaths = {
   list: "/assinaturas",
 };
 
+export const eventRoutePaths = {
+  list: "/eventos",
+  detail: (id = ":id") => `/eventos/${id}`,
+};
+
 export const authRoutePaths = {
   login: "/",
   firstAccessChangePassword: "/primeiro-acesso/alterar-senha",

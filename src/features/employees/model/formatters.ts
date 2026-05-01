@@ -6,7 +6,9 @@ import {
 } from "../../../utils/format";
 import type { EmployeeFormValues } from "./form";
 
-export function formatEmployeeDocument(value: string): string {
+export function formatEmployeeDocument(value?: string | null): string {
+  if (!value) return "-";
+
   const digits = value.replace(/\D/g, "");
 
   return digits.length > 11 ? formatCNPJ(value) : formatCPF(value);

@@ -1,4 +1,5 @@
 import type { FormField } from "../../../components/organisms/GenericForm";
+import { budgetServiceTypeOptions } from "../../budgets/model/service-items";
 import {
   EMPLOYEE_CNPJ_MASK_LENGTH,
   EMPLOYEE_CPF_MASK_LENGTH,
@@ -15,6 +16,19 @@ export function getEmployeeFormFields(
   values: EmployeeFormValues,
   options?: { isEditing?: boolean },
 ): FormField[] {
+  const positionOptions = budgetServiceTypeOptions.map((serviceType) => ({
+    value: serviceType,
+    label: serviceType,
+  }));
+
+  if (
+    values.position.trim() &&
+    !positionOptions.some((option) => option.value === values.position)
+  ) {
+    // Keeps compatibility for employees created before service-type standardization.
+    positionOptions.push({ value: values.position, label: values.position });
+  }
+
   return [
     ...(options?.isEditing
       ? [
@@ -89,8 +103,8 @@ export function getEmployeeFormFields(
       name: "position",
       label: employeeUiCopy.form.labels.position,
       required: true,
-      placeholder: employeeUiCopy.form.placeholders.position,
-      maxLength: EMPLOYEE_POSITION_MAX_LENGTH,
+      as: "select",
+      options: [{ value: "", label: "Selecione" }, ...positionOptions],
     },
     {
       name: "email",

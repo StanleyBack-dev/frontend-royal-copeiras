@@ -34,11 +34,13 @@ export function getCustomerFormFields(
       placeholder: customerUiCopy.form.placeholders.name,
       maxLength: CUSTOMER_NAME_MAX_LENGTH,
       colSpan: 2,
+      disabled: options?.isEditing,
     },
     {
       name: "type",
       label: customerUiCopy.form.labels.type,
       as: "select",
+      disabled: options?.isEditing,
       options: [
         { value: "individual", label: customerUiCopy.form.options.person },
         { value: "company", label: customerUiCopy.form.options.company },
@@ -52,6 +54,7 @@ export function getCustomerFormFields(
             placeholder: customerUiCopy.form.placeholders.cpf,
             maxLength: CUSTOMER_CPF_MASK_LENGTH,
             inputMode: "numeric" as const,
+            disabled: options?.isEditing,
           },
         ]
       : [
@@ -61,6 +64,7 @@ export function getCustomerFormFields(
             placeholder: customerUiCopy.form.placeholders.cnpj,
             maxLength: CUSTOMER_CNPJ_MASK_LENGTH,
             inputMode: "numeric" as const,
+            disabled: options?.isEditing,
           },
         ]),
     {

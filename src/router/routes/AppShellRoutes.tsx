@@ -8,6 +8,7 @@ import {
   budgetRoutePaths,
   contractRoutePaths,
   signatureRoutePaths,
+  eventRoutePaths,
   leadRoutePaths,
   routePaths,
   utilityRoutePaths,
@@ -17,6 +18,7 @@ import { BudgetsProviderOutlet } from "../../features/budgets";
 import { ContractsProviderOutlet } from "../../features/contracts";
 import { SignaturesProviderOutlet } from "../../features/signatures";
 import { LeadsProviderOutlet } from "../../features/leads";
+import { EventsProviderOutlet } from "../../features/events";
 import { ManagementRoutes } from "./ManagementRoutes";
 
 const AccessDenied = lazy(() => import("../../pages/AccessDenied"));
@@ -27,7 +29,8 @@ const Budgets = lazy(() => import("../../pages/budgets/Budgets"));
 const ContractForm = lazy(() => import("../../pages/contracts/ContractForm"));
 const Contracts = lazy(() => import("../../pages/contracts/Contracts"));
 const Signatures = lazy(() => import("../../pages/signatures/Signatures"));
-const Events = lazy(() => import("../../pages/Events"));
+const Events = lazy(() => import("../../pages/events/Events"));
+const EventDetail = lazy(() => import("../../pages/events/EventDetail"));
 const Finance = lazy(() => import("../../pages/Finance"));
 const Investments = lazy(() => import("../../pages/Investments"));
 const LeadForm = lazy(() => import("../../pages/leads/LeadForm"));
@@ -81,9 +84,23 @@ export function AppShellRoutes({ userId }: AppShellRoutesProps) {
       {ManagementRoutes({ userId, loginPath: authRoutePaths.login })}
       <Route element={<RequirePageAccessRoute view="events" />}>
         <Route
-          path={routePaths.events}
-          element={withPageSuspense(<Events />)}
-        />
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={authRoutePaths.login}
+              ProviderOutlet={EventsProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={eventRoutePaths.list}
+            element={withPageSuspense(<Events />)}
+          />
+          <Route
+            path={eventRoutePaths.detail()}
+            element={withPageSuspense(<EventDetail />)}
+          />
+        </Route>
       </Route>
       <Route element={<RequirePageAccessRoute view="leads" />}>
         <Route

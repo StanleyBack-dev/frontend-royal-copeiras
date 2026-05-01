@@ -1,18 +1,14 @@
 import DataTable from "@/components/organisms/DataTable";
 import FilterBar from "@/components/molecules/FilterBar";
-import { Plus } from "lucide-react";
 import SearchIcon from "@/components/atoms/icons/SearchIcon";
 import { colors } from "@/config";
-import { useNavigate } from "react-router-dom";
 import CustomerHistoryTemplate from "@/components/templates/customers/CustomerHistoryTemplate";
 import { customerUiCopy, useCustomersList } from "@/features/customers";
 import { useCustomersContext } from "@/features/customers/context/useCustomersContext";
-import { customerRoutePaths } from "@/router";
 
 export default function Customers() {
   const { customers, loading, pagination, setLimit, nextPage, prevPage } =
     useCustomersContext();
-  const navigate = useNavigate();
   const { search, setSearch, filteredCustomers, columns } = useCustomersList({
     customers,
   });
@@ -26,11 +22,6 @@ export default function Customers() {
         searchIcon={
           <SearchIcon size={16} style={{ color: colors.brown[300] }} />
         }
-        action={{
-          label: customerUiCopy.listing.newAction,
-          onClick: () => navigate(customerRoutePaths.create),
-          leftIcon: <Plus size={16} />,
-        }}
       />
       {loading ? (
         <div className="flex items-center justify-center h-64">

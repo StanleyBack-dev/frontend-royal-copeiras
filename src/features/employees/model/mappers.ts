@@ -68,12 +68,14 @@ export function mapEmployeeFormToValidationInput(values: EmployeeFormValues) {
 export function mapEmployeeFormToPayload(
   values: EmployeeFormValues,
 ): CreateEmployeePayload {
+  const document =
+    values.type === "individual"
+      ? onlyDigits(values.cpf ?? "", EMPLOYEE_DOCUMENT_CPF_DIGITS)
+      : onlyDigits(values.cnpj ?? "", EMPLOYEE_DOCUMENT_CNPJ_DIGITS);
+
   return {
     name: values.name,
-    document:
-      values.type === "individual"
-        ? onlyDigits(values.cpf ?? "", EMPLOYEE_DOCUMENT_CPF_DIGITS)
-        : onlyDigits(values.cnpj ?? "", EMPLOYEE_DOCUMENT_CNPJ_DIGITS),
+    document: document || undefined,
     email: values.email,
     phone:
       values.contactType === "mobile"

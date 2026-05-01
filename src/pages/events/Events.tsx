@@ -1,83 +1,78 @@
-import FilterBar from "@/components/molecules/FilterBar";
 import DataTable from "@/components/organisms/DataTable";
-import ListFiltersPanel from "@/components/molecules/ListFiltersPanel";
+import FilterBar from "@/components/molecules/FilterBar";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
-import {
-  useSignaturesContext,
-  signatureUiCopy,
-  getSignatureStatusLabel,
-} from "@/features/signatures";
 import SearchIcon from "@/components/atoms/icons/SearchIcon";
 import { colors } from "@/config";
+import {
+  useEventsContext,
+  eventUiCopy,
+  ALL_EVENT_STATUSES,
+  EVENT_STATUS_LABELS,
+} from "@/features/events";
+import type { EventStatus } from "@/api/events/schema";
 
-export default function Signatures() {
+export default function Events() {
   const {
     items,
     columns,
     loading,
     search,
     setSearch,
-    filters,
     pagination,
     setLimit,
-    setFilters,
-    clearFilters,
     nextPage,
     prevPage,
-    statusOptions,
-  } = useSignaturesContext();
+    activeStatusTab,
+    setActiveStatusTab,
+  } = useEventsContext();
+
+  const tabs: { value: EventStatus | ""; label: string }[] = [
+    { value: "", label: "Todos" },
+    ...ALL_EVENT_STATUSES.map((status) => ({
+      value: status,
+      label: EVENT_STATUS_LABELS[status],
+    })),
+  ];
 
   return (
     <ManagementPanelTemplate
-      title={signatureUiCopy.list.title}
-      description={signatureUiCopy.list.description}
+      title={eventUiCopy.list.title}
+      description={eventUiCopy.list.description}
     >
       <FilterBar
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder={signatureUiCopy.list.searchPlaceholder}
+        searchPlaceholder={eventUiCopy.list.searchPlaceholder}
         searchIcon={
           <SearchIcon size={16} style={{ color: colors.brown[300] }} />
         }
       />
 
-      <ListFiltersPanel
-        statusValue={filters.status}
-        statusOptions={[
-          { value: "", label: signatureUiCopy.filters.allStatuses },
-          ...statusOptions.map((status) => ({
-            value: status,
-            label: getSignatureStatusLabel(status),
-          })),
-        ]}
-        onStatusChange={(value) => {
-          setFilters({ status: value });
-        }}
-        startDateValue={filters.startDate}
-        endDateValue={filters.endDate}
-        onStartDateChange={(value) => {
-          setFilters({ startDate: value });
-        }}
-        onEndDateChange={(value) => {
-          setFilters({ endDate: value });
-        }}
-        extraFilters={<div className="xl:col-span-1" />}
-        onClear={() => {
-          clearFilters();
-        }}
-        hasActiveFilters={Boolean(
-          filters.status ||
-          filters.startDate ||
-          filters.endDate ||
-          filters.provider,
-        )}
-      />
+      <div className="mb-4 flex flex-wrap gap-2">
+        {tabs.map((tab) => {
+          const isActive = activeStatusTab === tab.value;
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => setActiveStatusTab(tab.value as EventStatus | "")}
+              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? "border-[#7a4430] bg-[#7a4430] text-white"
+                  : "border-[#e8d5c9] bg-[#faf6f2] text-[#7a4430] hover:border-[#7a4430]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
       {loading ? (
         <div className="flex h-64 items-center justify-center">
           <div
             className="h-8 w-8 animate-spin rounded-full border-2"
-            style={{ borderColor: "#C9A227", borderTopColor: "transparent" }}
+            style={{ borderColor: "#7a4430", borderTopColor: "transparent" }}
           />
         </div>
       ) : (
@@ -85,8 +80,8 @@ export default function Signatures() {
           <DataTable
             data={items}
             columns={columns}
-            emptyMessage={signatureUiCopy.list.emptyMessage}
-            getId={(item) => item.idSignatures}
+            emptyMessage={eventUiCopy.list.emptyMessage}
+            getId={(item) => item.idEvents}
           />
           <div className="mt-4 flex items-center justify-between text-sm text-brown-700">
             <span>
