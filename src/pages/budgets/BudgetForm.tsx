@@ -15,6 +15,7 @@ import {
 } from "@/features/budgets";
 import { useAuthSession } from "@/features/auth";
 import BudgetItemsEditor from "@/features/budgets/components/BudgetItemsEditor";
+import BudgetDisplacementFeeCard from "@/features/budgets/components/BudgetDisplacementFeeCard";
 import { useBudgetsContext } from "@/features/budgets/context/useBudgetsContext";
 import { useToast } from "@/shared/toast/useToast";
 import { budgetRoutePaths, contractRoutePaths } from "@/router";
@@ -656,6 +657,13 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
             </div>
           </div>
 
+          <BudgetDisplacementFeeCard
+            value={form.displacementFee}
+            onChange={(value) => setForm({ ...form, displacementFee: value })}
+            error={errors.displacementFee}
+            disabled={isNonDraftLocked}
+          />
+
           <BudgetItemsEditor
             items={form.items}
             onAddItem={addItem}
@@ -664,13 +672,21 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
             disabled={isNonDraftLocked}
           />
 
-          <div className="mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 md:grid-cols-2">
+          <div className="mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 md:grid-cols-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
                 {budgetUiCopy.form.summary.subtotal}
               </p>
               <p className="mt-1 text-lg font-bold text-[#2c1810]">
                 {formatCurrency(totals.subtotal)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                {budgetUiCopy.form.labels.displacementFee}
+              </p>
+              <p className="mt-1 text-lg font-bold text-[#2c1810]">
+                {formatCurrency(totals.displacementFee)}
               </p>
             </div>
             <div>

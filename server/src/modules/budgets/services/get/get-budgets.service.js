@@ -30,6 +30,7 @@ export class GetBudgetsService {
             durationHours
             paymentMethod
             advancePercentage
+            displacementFee
             subtotal
             totalAmount
             sentVia

@@ -5,7 +5,6 @@ export const budgetServiceTypeOptions = [
   "Segurança",
   "Monitor",
   "Recepcionista",
-  "Deslocamento",
 ] as const;
 
 export type BudgetServiceType = (typeof budgetServiceTypeOptions)[number];
@@ -39,10 +38,6 @@ const SERVICE_META: Record<BudgetServiceType, ServiceMeta> = {
   Recepcionista: {
     singularLower: "recepcionista",
     pluralLower: "recepcionistas",
-  },
-  Deslocamento: {
-    singularLower: "deslocamento",
-    pluralLower: "deslocamentos",
   },
 };
 
@@ -158,8 +153,6 @@ export function buildBudgetServiceDescription(
       "controlar acessos, patrulhar áreas e zelar pela segurança de pessoas e bens",
     porteiro:
       "controlar entradas e saídas, orientar visitantes e supervisionar a guarda de acessos",
-    deslocamento:
-      "realizar transporte de equipe e/ou material entre endereços conforme cronograma",
     recepcionista:
       "realizar credenciamento, acolhimento e orientação aos convidados",
     monitor:

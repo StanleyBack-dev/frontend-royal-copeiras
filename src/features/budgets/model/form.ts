@@ -104,6 +104,7 @@ export interface BudgetFormValues {
   durationHours: string;
   paymentMethod: string;
   advancePercentage: string;
+  displacementFee: string;
   items: BudgetItemFormValues[];
 }
 
@@ -134,6 +135,7 @@ export function createEmptyBudgetFormValues(
     durationHours: "",
     paymentMethod: "",
     advancePercentage: "30",
+    displacementFee: "0,00",
     items: [{ ...emptyBudgetItemFormValues }],
   };
 }
@@ -177,6 +179,7 @@ const budgetFormSchemaBase = z.object({
     .string()
     .trim()
     .min(1, budgetValidationMessages.advancePercentageRequired),
+  displacementFee: z.string().trim(),
   items: z.array(
     z.object({
       id: z.string().optional(),
@@ -308,6 +311,19 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
         code: z.ZodIssueCode.custom,
         path: ["items"],
         message: budgetValidationMessages.itemUnitPriceInvalid,
+      });
+    }
+
+    const displacementFeeDigits = data.displacementFee.replace(/[^\d]/g, "");
+    const displacementFeeValue = displacementFeeDigits
+      ? Number(displacementFeeDigits) / 100
+      : 0;
+
+    if (!Number.isFinite(displacementFeeValue) || displacementFeeValue < 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["displacementFee"],
+        message: budgetValidationMessages.displacementFeeInvalid,
       });
     }
   },

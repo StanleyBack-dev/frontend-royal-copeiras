@@ -62,6 +62,10 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
         : "",
     advancePercentage:
       budget.advancePercentage != null ? String(budget.advancePercentage) : "",
+    displacementFee:
+      budget.displacementFee != null && budget.displacementFee >= 0
+        ? formatCurrencyInput(String(Math.round(budget.displacementFee * 100)))
+        : "0,00",
     items: (budget.items || []).map((item) => {
       const serviceType = inferBudgetServiceType(item.description);
 
@@ -102,20 +106,27 @@ export function mapBudgetFormToPayload(
     advancePercentage: values.advancePercentage
       ? Number(values.advancePercentage)
       : undefined,
-    totalAmount,
+    displacementFee: toDecimal(values.displacementFee) ?? 0,
+    totalAmount: totalAmount + (toDecimal(values.displacementFee) ?? 0),
     items,
   };
 }
 
-export function calculateBudgetTotals(items: BudgetItemFormValues[]) {
+export function calculateBudgetTotals(
+  items: BudgetItemFormValues[],
+  displacementFee = "",
+) {
   const subtotal = items.reduce((sum, item) => {
     const quantity = Number(item.quantity || 0);
     const unitPrice = toDecimal(item.unitPrice) ?? 0;
     return sum + quantity * unitPrice;
   }, 0);
 
+  const displacementFeeValue = toDecimal(displacementFee) ?? 0;
+
   return {
     subtotal,
-    total: subtotal,
+    displacementFee: displacementFeeValue,
+    total: subtotal + displacementFeeValue,
   };
 }
