@@ -7,7 +7,6 @@ import {
   EMPLOYEE_NAME_MAX_LENGTH,
   EMPLOYEE_PHONE_LANDLINE_MASK_LENGTH,
   EMPLOYEE_PHONE_MOBILE_MASK_LENGTH,
-  EMPLOYEE_POSITION_MAX_LENGTH,
 } from "./constants";
 import type { EmployeeFormValues } from "./form";
 import { employeeUiCopy } from "./messages";
@@ -16,10 +15,11 @@ export function getEmployeeFormFields(
   values: EmployeeFormValues,
   options?: { isEditing?: boolean },
 ): FormField[] {
-  const positionOptions = budgetServiceTypeOptions.map((serviceType) => ({
+  const positionOptions: NonNullable<FormField["options"]> =
+    budgetServiceTypeOptions.map((serviceType) => ({
     value: serviceType,
     label: serviceType,
-  }));
+    }));
 
   if (
     values.position.trim() &&

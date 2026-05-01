@@ -3,7 +3,7 @@ import type { Event } from "../../../api/events/schema";
 import { eventUiCopy } from "./messages";
 import { getEventStatusColors, getEventStatusLabel } from "./constants";
 
-export interface EventItem extends Event {}
+export type EventItem = Event;
 
 function formatCurrencyBRL(value: number) {
   return new Intl.NumberFormat("pt-BR", {
