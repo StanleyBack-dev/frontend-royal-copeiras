@@ -17,7 +17,6 @@ import type { Lead } from "../../../api/leads/schema";
 import { budgetUiCopy } from "../model/messages";
 
 interface SaveBudgetParams {
-  userId: string;
   formData: CreateBudgetPayload;
   editing?: Budget | null;
 }
@@ -30,7 +29,6 @@ export interface BudgetsCollectionResult {
 }
 
 export async function fetchBudgets(
-  userId: string,
   params: BudgetListQueryParams = {},
 ): Promise<BudgetsCollectionResult> {
   const response = await getBudgets(params);
@@ -52,13 +50,12 @@ export async function fetchBudgets(
   };
 }
 
-export async function fetchBudgetLeadOptions(userId: string): Promise<Lead[]> {
-  const response = await fetchLeads(userId, { page: 1, limit: 100 });
+export async function fetchBudgetLeadOptions(): Promise<Lead[]> {
+  const response = await fetchLeads({ page: 1, limit: 100 });
   return response.items;
 }
 
 export async function saveBudget({
-  userId,
   formData,
   editing,
 }: SaveBudgetParams): Promise<Budget> {

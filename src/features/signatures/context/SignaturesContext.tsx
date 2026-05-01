@@ -8,15 +8,11 @@ export const SignaturesContext = createContext<UseSignaturesResult | null>(
 );
 
 interface SignaturesProviderProps {
-  userId: string;
   children: ReactNode;
 }
 
-export function SignaturesProvider({
-  userId,
-  children,
-}: SignaturesProviderProps) {
-  const signaturesState = useSignatures(userId);
+export function SignaturesProvider({ children }: SignaturesProviderProps) {
+  const signaturesState = useSignatures();
 
   return (
     <SignaturesContext.Provider value={signaturesState}>
@@ -25,7 +21,7 @@ export function SignaturesProvider({
   );
 }
 
-export function SignaturesProviderOutlet({ userId }: { userId: string }) {
+export function SignaturesProviderOutlet({ userId }: { userId?: string } = {}) {
   return (
     <SignaturesProvider userId={userId}>
       <Outlet />

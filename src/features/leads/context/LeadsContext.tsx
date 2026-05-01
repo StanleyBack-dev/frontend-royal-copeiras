@@ -5,21 +5,21 @@ import { useLeads, type UseLeadsResult } from "../../../hooks/leads/useLeads";
 export const LeadsContext = createContext<UseLeadsResult | null>(null);
 
 interface LeadsProviderProps {
-  userId: string;
   children: ReactNode;
 }
 
-export function LeadsProvider({ userId, children }: LeadsProviderProps) {
-  const leadsState = useLeads(userId);
+export function LeadsProvider({ children }: LeadsProviderProps) {
+  const leadsState = useLeads();
 
   return (
     <LeadsContext.Provider value={leadsState}>{children}</LeadsContext.Provider>
   );
 }
 
-export function LeadsProviderOutlet({ userId }: { userId: string }) {
+export function LeadsProviderOutlet({ userId }: { userId?: string } = {}) {
+  void userId;
   return (
-    <LeadsProvider userId={userId}>
+    <LeadsProvider>
       <Outlet />
     </LeadsProvider>
   );

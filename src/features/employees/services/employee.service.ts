@@ -15,7 +15,6 @@ import {
 import { employeeUiCopy } from "../model/messages";
 
 interface SaveEmployeeParams {
-  userId: string;
   formData: CreateEmployeePayload;
   editing?: Employee | null;
 }
@@ -26,7 +25,6 @@ export interface EmployeesCollectionResult {
 }
 
 export async function fetchEmployees(
-  userId: string,
   params: ListQueryParams = {},
 ): Promise<EmployeesCollectionResult> {
   const response = await getEmployees(params);
@@ -49,7 +47,6 @@ export async function fetchEmployees(
 }
 
 export async function saveEmployee({
-  userId,
   formData,
   editing,
 }: SaveEmployeeParams): Promise<Employee> {

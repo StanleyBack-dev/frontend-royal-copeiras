@@ -32,7 +32,6 @@ function base64ToFile(
 }
 
 export function useContractPdfActions({
-  userId,
   contractId,
   contractNumber,
   onEmailSent,

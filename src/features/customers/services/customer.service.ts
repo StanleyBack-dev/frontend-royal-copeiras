@@ -15,7 +15,6 @@ import {
 import { customerUiCopy } from "../model/messages";
 
 interface SaveCustomerParams {
-  userId: string;
   formData: CreateCustomerPayload;
   editing?: Customer | null;
 }
@@ -26,7 +25,6 @@ export interface CustomersCollectionResult {
 }
 
 export async function fetchCustomers(
-  userId: string,
   params: ListQueryParams = {},
 ): Promise<CustomersCollectionResult> {
   const response = await getCustomers(params);
@@ -49,7 +47,6 @@ export async function fetchCustomers(
 }
 
 export async function saveCustomer({
-  userId,
   formData,
   editing,
 }: SaveCustomerParams): Promise<Customer> {

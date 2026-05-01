@@ -5,6 +5,7 @@ import { signatureUiCopy } from "./messages";
 import CopyIcon from "../../../components/atoms/icons/CopyIcon";
 
 export interface SignatureItem {
+  idSignatures: string;
   idContracts: string;
   contractNumber: string;
   contractStatus: Contract["status"];

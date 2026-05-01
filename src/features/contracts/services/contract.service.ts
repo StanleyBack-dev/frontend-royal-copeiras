@@ -17,7 +17,6 @@ import {
 import { contractUiCopy } from "../model/messages";
 
 interface SaveContractParams {
-  userId: string;
   formData: CreateContractPayload;
   editing?: Contract | null;
 }
@@ -30,7 +29,6 @@ export interface ContractsCollectionResult {
 }
 
 export async function fetchContracts(
-  userId: string,
   params: ContractListQueryParams = {},
 ): Promise<ContractsCollectionResult> {
   const response = await getContracts(params);
@@ -52,7 +50,7 @@ export async function fetchContracts(
   };
 }
 
-export async function fetchApprovedBudgets(userId: string): Promise<Budget[]> {
+export async function fetchApprovedBudgets(): Promise<Budget[]> {
   const response = await getBudgets({
     page: 1,
     limit: 100,
@@ -68,7 +66,6 @@ export async function fetchApprovedBudgets(userId: string): Promise<Budget[]> {
 }
 
 export async function saveContract({
-  userId,
   formData,
   editing,
 }: SaveContractParams): Promise<Contract> {

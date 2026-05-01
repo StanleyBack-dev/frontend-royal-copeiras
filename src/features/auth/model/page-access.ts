@@ -27,11 +27,6 @@ export function hasPageAccess(
   view: ActiveView,
   pagePermissions: PageAccessKey[],
 ): boolean {
-  // DEBUG: log page access checks (temporary)
-  try {
-    // eslint-disable-next-line no-console
-    console.debug("hasPageAccess", { view, pagePermissions });
-  } catch {}
   if (view === "profile" || view === "settings") {
     return true;
   }

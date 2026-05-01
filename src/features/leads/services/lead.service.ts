@@ -15,7 +15,6 @@ import {
 import { leadUiCopy } from "../model/messages";
 
 interface SaveLeadParams {
-  userId: string;
   formData: CreateLeadPayload;
   editing?: Lead | null;
 }
@@ -28,7 +27,6 @@ export interface LeadsCollectionResult {
 }
 
 export async function fetchLeads(
-  userId: string,
   params: LeadListQueryParams = {},
 ): Promise<LeadsCollectionResult> {
   const response = await getLeads(params);
@@ -51,7 +49,6 @@ export async function fetchLeads(
 }
 
 export async function saveLead({
-  userId,
   formData,
   editing,
 }: SaveLeadParams): Promise<Lead> {

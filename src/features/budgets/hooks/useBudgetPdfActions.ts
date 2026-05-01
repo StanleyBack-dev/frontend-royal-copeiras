@@ -29,7 +29,6 @@ function base64ToFile(
 }
 
 export function useBudgetPdfActions({
-  userId,
   budgetId,
   budgetNumber,
   onEmailSent,

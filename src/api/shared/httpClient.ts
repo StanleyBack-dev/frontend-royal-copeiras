@@ -15,11 +15,12 @@ export const httpClient = axios.create({
 httpClient.interceptors.request.use((config) => {
   try {
     if (config && config.headers) {
-      // delete both camelCase and header-case variants
       delete config.headers["x-user-id"];
       delete config.headers["X-User-Id"];
     }
-  } catch {}
+  } catch (e) {
+    void e;
+  }
 
   return config;
 });

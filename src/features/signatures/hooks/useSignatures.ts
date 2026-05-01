@@ -44,7 +44,7 @@ function mapSignatureStatusToContractStatus(
   }
 }
 
-export function useSignatures(userId: string) {
+export function useSignatures() {
   const [items, setItems] = useState<SignatureItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [updatingRowId, setUpdatingRowId] = useState<string | null>(null);
@@ -78,6 +78,7 @@ export function useSignatures(userId: string) {
       }
 
       const mapped: SignatureItem[] = parsed.data.map((entry) => ({
+        idSignatures: entry.idSignatures,
         idContracts: entry.idContracts,
         contractNumber: entry.contractNumber || "-",
         contractStatus: (entry.contractStatus?.toLowerCase() ||
@@ -110,13 +111,7 @@ export function useSignatures(userId: string) {
     } finally {
       setLoading(false);
     }
-  }, [
-    filters.status,
-    pagination.currentPage,
-    pagination.limit,
-    showError,
-    userId,
-  ]);
+  }, [filters.status, pagination.currentPage, pagination.limit, showError]);
 
   useEffect(() => {
     void load();
@@ -255,7 +250,7 @@ export function useSignatures(userId: string) {
         setUpdatingRowId(null);
       }
     },
-    [showError, showSuccess, userId],
+    [showError, showSuccess],
   );
 
   const cancelRequest = useCallback(
@@ -289,7 +284,7 @@ export function useSignatures(userId: string) {
         setUpdatingRowId(null);
       }
     },
-    [showError, showSuccess, userId],
+    [showError, showSuccess],
   );
 
   return {

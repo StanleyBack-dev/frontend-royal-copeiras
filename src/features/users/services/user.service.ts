@@ -23,7 +23,6 @@ import {
 import { userUiCopy } from "../model/messages";
 
 interface SaveUserParams {
-  userId: string;
   formData: CreateUserPayload | UpdateUserPayload;
   editing?: User | null;
 }
@@ -34,7 +33,6 @@ export interface UsersCollectionResult {
 }
 
 export async function fetchUsers(
-  userId: string,
   params: ListQueryParams = {},
 ): Promise<UsersCollectionResult> {
   const response = await getUsers(params);
@@ -56,7 +54,7 @@ export async function fetchUsers(
   };
 }
 
-export async function saveUser({ userId, formData, editing }: SaveUserParams) {
+export async function saveUser({ formData, editing }: SaveUserParams) {
   if (editing) {
     const parsedPayload = UpdateUserPayloadSchema.safeParse(formData);
 
@@ -97,7 +95,6 @@ export async function saveUser({ userId, formData, editing }: SaveUserParams) {
 }
 
 export async function fetchUserPagePermissions(
-  userId: string,
   idUsers: string,
 ): Promise<UserPagePermissionsResponse> {
   const response = await getUserPagePermissions(idUsers);
@@ -107,17 +104,13 @@ export async function fetchUserPagePermissions(
     throw new Error(userUiCopy.errors.invalidPermissionsData);
   }
 
-  // normalize optional useGroupDefaults to a strict boolean to match form expectations
   return {
     ...parsed.data,
     useGroupDefaults: !!parsed.data.useGroupDefaults,
   };
 }
 
-export async function unlockUserCredential(
-  userId: string,
-  idUsers: string,
-): Promise<void> {
+export async function unlockUserCredential(idUsers: string): Promise<void> {
   const response = await unlockUser(idUsers);
   const parsed = UnlockUserResponseSchema.safeParse(response);
 

@@ -53,7 +53,7 @@ function toPositiveInt(value: string | null, fallback: number): number {
   return parsed;
 }
 
-export function useCustomers(userId: string): UseCustomersResult {
+export function useCustomers(): UseCustomersResult {
   const [searchParams, setSearchParams] = useSearchParams();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,7 +78,7 @@ export function useCustomers(userId: string): UseCustomersResult {
       const requestedLimit = params.limit ?? paginationRef.current.limit;
 
       try {
-        const data = await fetchCustomers(userId, {
+        const data = await fetchCustomers({
           page: requestedPage,
           limit: requestedLimit,
         });
@@ -95,7 +95,7 @@ export function useCustomers(userId: string): UseCustomersResult {
         setLoading(false);
       }
     },
-    [showError, userId],
+    [showError],
   );
 
   const currentPage = toPositiveInt(searchParams.get("page"), 1);
@@ -122,7 +122,7 @@ export function useCustomers(userId: string): UseCustomersResult {
     inFlightPrefetches.add(key);
     let isActive = true;
 
-    void fetchCustomers(userId, {
+    void fetchCustomers({
       page: nextPageNumber,
       limit: pagination.limit,
     })
@@ -139,12 +139,7 @@ export function useCustomers(userId: string): UseCustomersResult {
       isActive = false;
       inFlightPrefetches.delete(key);
     };
-  }, [
-    pagination.currentPage,
-    pagination.hasNextPage,
-    pagination.limit,
-    userId,
-  ]);
+  }, [pagination.currentPage, pagination.hasNextPage, pagination.limit]);
 
   useEffect(() => {
     const inFlightPrefetches = prefetchInFlightRef.current;
@@ -201,7 +196,7 @@ export function useCustomers(userId: string): UseCustomersResult {
       setSaving(true);
       setError(null);
       try {
-        await saveCustomer({ userId, formData, editing });
+        await saveCustomer({ formData, editing });
         showSuccess(
           editing
             ? customerUiCopy.success.updateCustomer
@@ -219,14 +214,7 @@ export function useCustomers(userId: string): UseCustomersResult {
         setSaving(false);
       }
     },
-    [
-      userId,
-      load,
-      showError,
-      showSuccess,
-      pagination.currentPage,
-      pagination.limit,
-    ],
+    [load, showError, showSuccess, pagination.currentPage, pagination.limit],
   );
 
   return {
