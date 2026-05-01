@@ -5,3 +5,4 @@ export {
 } from "./context/SignaturesContext";
 export { useSignaturesContext } from "./context/useSignaturesContext";
 export { signatureUiCopy } from "./model/messages";
+export { getSignatureStatusLabel } from "./model/listing";

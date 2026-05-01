@@ -68,7 +68,7 @@ export function ManagementRoutes({ userId, loginPath }: ManagementRoutesProps) {
           />
           <Route
             path={customerRoutePaths.create}
-            element={withPageSuspense(<CustomerForm mode="create" />)}
+            element={<Navigate to={customerRoutePaths.list} replace />}
           />
           <Route
             path={customerRoutePaths.edit()}
@@ -82,7 +82,7 @@ export function ManagementRoutes({ userId, loginPath }: ManagementRoutesProps) {
       />
       <Route
         path={customerRoutePaths.legacyCreate}
-        element={<Navigate to={customerRoutePaths.create} replace />}
+        element={<Navigate to={customerRoutePaths.list} replace />}
       />
       <Route
         path={customerRoutePaths.legacyEdit()}

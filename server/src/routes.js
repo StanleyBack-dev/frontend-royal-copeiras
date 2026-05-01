@@ -8,6 +8,7 @@ import leadsRoutes from "./modules/leads/routes.js";
 import usersRoutes from "./modules/users/routes.js";
 import observabilityRoutes from "./modules/observability/routes.js";
 import signatureRoutes from "./modules/signature/routes.js";
+import eventsRoutes from "./modules/events/routes.js";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use("/leads", leadsRoutes);
 router.use("/users", usersRoutes);
 router.use("/observability", observabilityRoutes);
 router.use("/signature", signatureRoutes);
+router.use("/events", eventsRoutes);
 
 export default router;

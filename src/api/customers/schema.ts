@@ -6,20 +6,25 @@ import {
 } from "../../features/customers/model/constants";
 import { customerValidationMessages } from "../../features/customers/model/messages";
 
+const nullableToUndefined = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((value) => (value == null ? undefined : value), schema);
+
 export const CustomerSchema = z.object({
   idCustomers: z.string(),
   name: z.string().trim().min(1).max(CUSTOMER_NAME_MAX_LENGTH),
-  document: z.string().trim().optional().or(z.literal("")),
+  document: nullableToUndefined(z.string().trim().optional().or(z.literal(""))),
   type: z.enum(["individual", "company"]),
-  email: z
-    .string()
-    .trim()
-    .max(CUSTOMER_EMAIL_MAX_LENGTH, customerValidationMessages.emailMax)
-    .email(customerValidationMessages.emailInvalid)
-    .optional()
-    .or(z.literal("")),
-  phone: z.string().optional().or(z.literal("")),
-  address: z.string().trim().optional().or(z.literal("")),
+  email: nullableToUndefined(
+    z
+      .string()
+      .trim()
+      .max(CUSTOMER_EMAIL_MAX_LENGTH, customerValidationMessages.emailMax)
+      .email(customerValidationMessages.emailInvalid)
+      .optional()
+      .or(z.literal("")),
+  ),
+  phone: nullableToUndefined(z.string().optional().or(z.literal(""))),
+  address: nullableToUndefined(z.string().trim().optional().or(z.literal(""))),
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),

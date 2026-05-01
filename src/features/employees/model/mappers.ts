@@ -11,13 +11,13 @@ import {
 } from "./constants";
 import type { EmployeeFormValues } from "./form";
 
-export function inferEmployeeContactType(phone?: string) {
+export function inferEmployeeContactType(phone?: string | null) {
   return onlyDigits(phone || "").length > EMPLOYEE_PHONE_LANDLINE_DIGITS
     ? "mobile"
     : "landline";
 }
 
-export function inferEmployeeDocumentType(document?: string) {
+export function inferEmployeeDocumentType(document?: string | null) {
   return onlyDigits(document || "").length > EMPLOYEE_DOCUMENT_CPF_DIGITS
     ? "company"
     : "individual";
@@ -30,14 +30,14 @@ export function mapEmployeeToFormValues(
 
   return {
     name: employee.name,
-    cpf: type === "individual" ? employee.document : "",
-    cnpj: type === "company" ? employee.document : "",
+    cpf: type === "individual" ? (employee.document ?? "") : "",
+    cnpj: type === "company" ? (employee.document ?? "") : "",
     createdAt: formatDateTimeDisplay(employee.createdAt),
     type,
     contactType: inferEmployeeContactType(employee.phone),
     email: employee.email || "",
     phone: employee.phone || "",
-    position: employee.position,
+    position: employee.position ?? "",
     isActive: employee.isActive,
   };
 }
@@ -68,12 +68,14 @@ export function mapEmployeeFormToValidationInput(values: EmployeeFormValues) {
 export function mapEmployeeFormToPayload(
   values: EmployeeFormValues,
 ): CreateEmployeePayload {
+  const document =
+    values.type === "individual"
+      ? onlyDigits(values.cpf ?? "", EMPLOYEE_DOCUMENT_CPF_DIGITS)
+      : onlyDigits(values.cnpj ?? "", EMPLOYEE_DOCUMENT_CNPJ_DIGITS);
+
   return {
     name: values.name,
-    document:
-      values.type === "individual"
-        ? onlyDigits(values.cpf ?? "", EMPLOYEE_DOCUMENT_CPF_DIGITS)
-        : onlyDigits(values.cnpj ?? "", EMPLOYEE_DOCUMENT_CNPJ_DIGITS),
+    document: document || undefined,
     email: values.email,
     phone:
       values.contactType === "mobile"

@@ -12,7 +12,7 @@ import { employeeValidationMessages } from "../../features/employees/model/messa
 export const EmployeeSchema = z.object({
   idEmployees: z.string(),
   name: z.string().trim().min(1).max(EMPLOYEE_NAME_MAX_LENGTH),
-  document: z.string().trim().min(1),
+  document: z.string().trim().optional().nullable(),
   email: z
     .string()
     .trim()
@@ -32,8 +32,14 @@ export const CreateEmployeePayloadSchema = z.object({
   document: z
     .string()
     .trim()
+    .optional()
+    .or(z.literal(""))
     .refine(
       (value) => {
+        if (!value) {
+          return true;
+        }
+
         const digits = value.replace(/\D/g, "");
 
         return (
