@@ -15,7 +15,6 @@ import {
 import { customerUiCopy } from "../model/messages";
 
 interface SaveCustomerParams {
-  userId: string;
   formData: CreateCustomerPayload;
   editing?: Customer | null;
 }
@@ -26,10 +25,9 @@ export interface CustomersCollectionResult {
 }
 
 export async function fetchCustomers(
-  userId: string,
   params: ListQueryParams = {},
 ): Promise<CustomersCollectionResult> {
-  const response = await getCustomers(userId, params);
+  const response = await getCustomers(params);
   const parsed = CustomerSchema.array().safeParse(response.items);
 
   if (!parsed.success) {
@@ -49,7 +47,6 @@ export async function fetchCustomers(
 }
 
 export async function saveCustomer({
-  userId,
   formData,
   editing,
 }: SaveCustomerParams): Promise<Customer> {
@@ -61,7 +58,7 @@ export async function saveCustomer({
           throw new Error(customerUiCopy.errors.invalidCustomerData);
         }
 
-        return updateCustomer(editing.idCustomers, parsedPayload.data, userId);
+        return updateCustomer(editing.idCustomers, parsedPayload.data);
       })()
     : await (() => {
         const parsedPayload = CreateCustomerPayloadSchema.safeParse(formData);
@@ -70,7 +67,7 @@ export async function saveCustomer({
           throw new Error(customerUiCopy.errors.invalidCustomerData);
         }
 
-        return createCustomer(parsedPayload.data, userId);
+        return createCustomer(parsedPayload.data);
       })();
 
   const parsedCustomer = CustomerSchema.safeParse(response);

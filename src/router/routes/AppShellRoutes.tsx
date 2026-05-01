@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import type { ComponentType } from "react";
+import { useAuthSession } from "@/features/auth";
 import { Navigate, Route } from "react-router-dom";
 import AppLayout from "../AppLayout";
 import {
@@ -45,7 +46,7 @@ function withPageSuspense(element: React.ReactNode) {
 interface UserScopedProviderRouteProps {
   userId?: string;
   loginPath: string;
-  ProviderOutlet: ComponentType<{ userId: string }>;
+  ProviderOutlet: ComponentType<{ userId?: string }>;
 }
 
 function UserScopedProviderRoute({
@@ -53,11 +54,15 @@ function UserScopedProviderRoute({
   loginPath,
   ProviderOutlet,
 }: UserScopedProviderRouteProps) {
-  if (!userId) {
+  const { session } = useAuthSession();
+
+  const resolvedUserId = userId ?? session?.user.idUsers;
+
+  if (!resolvedUserId) {
     return <Navigate to={loginPath} replace />;
   }
 
-  return <ProviderOutlet userId={userId} />;
+  return <ProviderOutlet userId={resolvedUserId} />;
 }
 
 interface AppShellRoutesProps {

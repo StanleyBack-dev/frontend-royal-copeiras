@@ -79,7 +79,7 @@ export default function Signatures() {
             data={items}
             columns={columns}
             emptyMessage={signatureUiCopy.list.emptyMessage}
-            getId={(item) => item.idContracts}
+            getId={(item) => item.idSignatures}
           />
           <div className="mt-4 flex items-center justify-between text-sm text-brown-700">
             <span>

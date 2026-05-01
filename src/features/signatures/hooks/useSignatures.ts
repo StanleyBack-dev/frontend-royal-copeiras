@@ -44,7 +44,7 @@ function mapSignatureStatusToContractStatus(
   }
 }
 
-export function useSignatures(userId: string) {
+export function useSignatures() {
   const [items, setItems] = useState<SignatureItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [updatingRowId, setUpdatingRowId] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export function useSignatures(userId: string) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getSignatures(userId, {
+      const response = await getSignatures({
         page: pagination.currentPage,
         limit: pagination.limit,
         status: filters.status || undefined,
@@ -78,6 +78,7 @@ export function useSignatures(userId: string) {
       }
 
       const mapped: SignatureItem[] = parsed.data.map((entry) => ({
+        idSignatures: entry.idSignatures,
         idContracts: entry.idContracts,
         contractNumber: entry.contractNumber || "-",
         contractStatus: (entry.contractStatus?.toLowerCase() ||
@@ -110,13 +111,7 @@ export function useSignatures(userId: string) {
     } finally {
       setLoading(false);
     }
-  }, [
-    filters.status,
-    pagination.currentPage,
-    pagination.limit,
-    showError,
-    userId,
-  ]);
+  }, [filters.status, pagination.currentPage, pagination.limit, showError]);
 
   useEffect(() => {
     void load();
@@ -225,19 +220,12 @@ export function useSignatures(userId: string) {
 
       setUpdatingRowId(item.idContracts);
       try {
-        const snapshot = await getSignatureStatus(
-          item.signatureEnvelopeId,
-          userId,
-        );
+        const snapshot = await getSignatureStatus(item.signatureEnvelopeId);
         const nextStatus = snapshot.status.trim().toLowerCase();
         const nextContractStatus =
           mapSignatureStatusToContractStatus(nextStatus);
 
-        await updateContract(
-          item.idContracts,
-          { status: nextContractStatus },
-          userId,
-        );
+        await updateContract(item.idContracts, { status: nextContractStatus });
 
         setItems((previous) =>
           previous.map((entry) =>
@@ -262,7 +250,7 @@ export function useSignatures(userId: string) {
         setUpdatingRowId(null);
       }
     },
-    [showError, showSuccess, userId],
+    [showError, showSuccess],
   );
 
   const cancelRequest = useCallback(
@@ -271,8 +259,8 @@ export function useSignatures(userId: string) {
 
       setUpdatingRowId(item.idContracts);
       try {
-        await cancelSignatureRequest(item.signatureEnvelopeId, userId);
-        await updateContract(item.idContracts, { status: "canceled" }, userId);
+        await cancelSignatureRequest(item.signatureEnvelopeId);
+        await updateContract(item.idContracts, { status: "canceled" });
 
         setItems((previous) =>
           previous.map((entry) =>
@@ -296,7 +284,7 @@ export function useSignatures(userId: string) {
         setUpdatingRowId(null);
       }
     },
-    [showError, showSuccess, userId],
+    [showError, showSuccess],
   );
 
   return {

@@ -8,12 +8,11 @@ import {
 export const BudgetsContext = createContext<UseBudgetsResult | null>(null);
 
 interface BudgetsProviderProps {
-  userId: string;
   children: ReactNode;
 }
 
-export function BudgetsProvider({ userId, children }: BudgetsProviderProps) {
-  const budgetsState = useBudgets(userId);
+export function BudgetsProvider({ children }: BudgetsProviderProps) {
+  const budgetsState = useBudgets();
 
   return (
     <BudgetsContext.Provider value={budgetsState}>
@@ -22,9 +21,10 @@ export function BudgetsProvider({ userId, children }: BudgetsProviderProps) {
   );
 }
 
-export function BudgetsProviderOutlet({ userId }: { userId: string }) {
+export function BudgetsProviderOutlet({ userId }: { userId?: string } = {}) {
+  void userId;
   return (
-    <BudgetsProvider userId={userId}>
+    <BudgetsProvider>
       <Outlet />
     </BudgetsProvider>
   );

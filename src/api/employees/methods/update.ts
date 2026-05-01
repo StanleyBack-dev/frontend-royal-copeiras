@@ -7,16 +7,10 @@ const API_BASE_URL = "/api/employees";
 export async function updateEmployee(
   id: string,
   payload: UpdateEmployeePayload,
-  userId: string,
 ): Promise<Employee> {
   const response = await httpClient.put<unknown>(
     `${API_BASE_URL}/${id}`,
     payload,
-    {
-      headers: {
-        "x-user-id": userId,
-      },
-    },
   );
 
   return extractMutationData<Employee>(response.data);

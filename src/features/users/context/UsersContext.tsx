@@ -5,21 +5,21 @@ import { useUsers, type UseUsersResult } from "../../../hooks/users/useUsers";
 export const UsersContext = createContext<UseUsersResult | null>(null);
 
 interface UsersProviderProps {
-  userId: string;
   children: ReactNode;
 }
 
-export function UsersProvider({ userId, children }: UsersProviderProps) {
-  const usersState = useUsers(userId);
+export function UsersProvider({ children }: UsersProviderProps) {
+  const usersState = useUsers();
 
   return (
     <UsersContext.Provider value={usersState}>{children}</UsersContext.Provider>
   );
 }
 
-export function UsersProviderOutlet({ userId }: { userId: string }) {
+export function UsersProviderOutlet({ userId }: { userId?: string } = {}) {
+  void userId;
   return (
-    <UsersProvider userId={userId}>
+    <UsersProvider>
       <Outlet />
     </UsersProvider>
   );

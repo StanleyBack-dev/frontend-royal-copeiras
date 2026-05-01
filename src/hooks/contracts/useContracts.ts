@@ -89,7 +89,7 @@ function applyOptionalSearchParam(
   params.delete(key);
 }
 
-export function useContracts(userId: string): UseContractsResult {
+export function useContracts(): UseContractsResult {
   const [searchParams, setSearchParams] = useSearchParams();
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -109,7 +109,7 @@ export function useContracts(userId: string): UseContractsResult {
 
   const loadApprovedBudgets = useCallback(async () => {
     try {
-      const result = await fetchApprovedBudgets(userId);
+      const result = await fetchApprovedBudgets();
       setBudgets(result);
     } catch (err) {
       const message = getHttpErrorMessage(
@@ -118,11 +118,11 @@ export function useContracts(userId: string): UseContractsResult {
       );
       showError(contractUiCopy.errors.loadBudgetsFallback, message);
     }
-  }, [showError, userId]);
+  }, [showError]);
 
   const loadLeads = useCallback(async () => {
     try {
-      const result = await fetchBudgetLeadOptions(userId);
+      const result = await fetchBudgetLeadOptions();
       setLeads(result);
     } catch (err) {
       const message = getHttpErrorMessage(
@@ -131,7 +131,7 @@ export function useContracts(userId: string): UseContractsResult {
       );
       showError(contractUiCopy.errors.loadBudgetsFallback, message);
     }
-  }, [showError, userId]);
+  }, [showError]);
 
   const load = useCallback(
     async (params: ContractListQueryParams = {}) => {
@@ -142,7 +142,7 @@ export function useContracts(userId: string): UseContractsResult {
       const requestedLimit = params.limit ?? paginationRef.current.limit;
 
       try {
-        const data = await fetchContracts(userId, {
+        const data = await fetchContracts({
           page: requestedPage,
           limit: requestedLimit,
           status: params.status,
@@ -163,7 +163,7 @@ export function useContracts(userId: string): UseContractsResult {
         setLoading(false);
       }
     },
-    [showError, userId],
+    [showError],
   );
 
   const currentPage = toPositiveInt(searchParams.get("page"), 1);
@@ -202,7 +202,7 @@ export function useContracts(userId: string): UseContractsResult {
     inFlightPrefetches.add(key);
     let isActive = true;
 
-    void fetchContracts(userId, {
+    void fetchContracts({
       page: nextPageNumber,
       limit: pagination.limit,
       ...filters,
@@ -225,7 +225,6 @@ export function useContracts(userId: string): UseContractsResult {
     pagination.currentPage,
     pagination.hasNextPage,
     pagination.limit,
-    userId,
   ]);
 
   useEffect(() => {
@@ -308,7 +307,7 @@ export function useContracts(userId: string): UseContractsResult {
       setError(null);
 
       try {
-        const savedContract = await saveContract({ userId, formData, editing });
+        const savedContract = await saveContract({ formData, editing });
         showSuccess(
           editing
             ? contractUiCopy.success.updateContract
@@ -339,7 +338,6 @@ export function useContracts(userId: string): UseContractsResult {
       pagination.limit,
       showError,
       showSuccess,
-      userId,
     ],
   );
 

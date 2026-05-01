@@ -8,15 +8,11 @@ import {
 export const ContractsContext = createContext<UseContractsResult | null>(null);
 
 interface ContractsProviderProps {
-  userId: string;
   children: ReactNode;
 }
 
-export function ContractsProvider({
-  userId,
-  children,
-}: ContractsProviderProps) {
-  const contractsState = useContracts(userId);
+export function ContractsProvider({ children }: ContractsProviderProps) {
+  const contractsState = useContracts();
 
   return (
     <ContractsContext.Provider value={contractsState}>
@@ -25,9 +21,10 @@ export function ContractsProvider({
   );
 }
 
-export function ContractsProviderOutlet({ userId }: { userId: string }) {
+export function ContractsProviderOutlet({ userId }: { userId?: string } = {}) {
+  void userId;
   return (
-    <ContractsProvider userId={userId}>
+    <ContractsProvider>
       <Outlet />
     </ContractsProvider>
   );

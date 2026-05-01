@@ -53,9 +53,7 @@ export async function logoutCurrentSession(): Promise<void> {
   await logout();
 }
 
-export async function loadMyPagePermissions(
-  userId: string,
-): Promise<PageAccessKey[]> {
-  const response = await getMyPagePermissions(userId);
+export async function loadMyPagePermissions(): Promise<PageAccessKey[]> {
+  const response = await getMyPagePermissions();
   return response.effectivePermissions;
 }

@@ -12,16 +12,8 @@ export interface BudgetListQueryParams extends ListQueryParams {
   idLeads?: string;
 }
 
-export async function getBudgets(
-  userId: string,
-  params: BudgetListQueryParams = {},
-) {
-  const response = await httpClient.get<unknown>(API_BASE_URL, {
-    params,
-    headers: {
-      "x-user-id": userId,
-    },
-  });
+export async function getBudgets(params: BudgetListQueryParams = {}) {
+  const response = await httpClient.get<unknown>(API_BASE_URL, { params });
 
   return normalizeListResponse<Budget>(response.data);
 }

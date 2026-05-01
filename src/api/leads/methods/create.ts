@@ -4,15 +4,8 @@ import { extractMutationData } from "../../shared/normalizers";
 
 const API_BASE_URL = "/api/leads";
 
-export async function createLead(
-  payload: CreateLeadPayload,
-  userId: string,
-): Promise<Lead> {
-  const response = await httpClient.post<unknown>(API_BASE_URL, payload, {
-    headers: {
-      "x-user-id": userId,
-    },
-  });
+export async function createLead(payload: CreateLeadPayload): Promise<Lead> {
+  const response = await httpClient.post<unknown>(API_BASE_URL, payload);
 
   return extractMutationData<Lead>(response.data);
 }

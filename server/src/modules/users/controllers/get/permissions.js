@@ -14,6 +14,8 @@ export function getUserPagePermissionsController() {
         requestId: req.requestId,
       });
 
+      // Do not allow intermediate caches to store permission responses.
+      res.set("Cache-Control", "no-store, no-cache, must-revalidate");
       res.json(result);
     } catch (error) {
       const statusCode = error instanceof HttpError ? error.statusCode : 500;

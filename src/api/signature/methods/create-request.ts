@@ -7,13 +7,8 @@ import type {
 
 export async function createSignatureRequest(
   payload: CreateSignatureRequestPayload,
-  userId: string,
 ): Promise<SignatureRequest> {
-  const response = await httpClient.post<unknown>("/api/signature", payload, {
-    headers: {
-      "x-user-id": userId,
-    },
-  });
+  const response = await httpClient.post<unknown>("/api/signature", payload);
 
   return extractMutationData<SignatureRequest>(response.data);
 }

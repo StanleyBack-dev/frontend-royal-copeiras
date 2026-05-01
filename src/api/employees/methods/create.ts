@@ -6,13 +6,8 @@ const API_BASE_URL = "/api/employees";
 
 export async function createEmployee(
   payload: CreateEmployeePayload,
-  userId: string,
 ): Promise<Employee> {
-  const response = await httpClient.post<unknown>(API_BASE_URL, payload, {
-    headers: {
-      "x-user-id": userId,
-    },
-  });
+  const response = await httpClient.post<unknown>(API_BASE_URL, payload);
 
   return extractMutationData<Employee>(response.data);
 }

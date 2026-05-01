@@ -8,15 +8,11 @@ import {
 export const EmployeesContext = createContext<UseEmployeesResult | null>(null);
 
 interface EmployeesProviderProps {
-  userId: string;
   children: ReactNode;
 }
 
-export function EmployeesProvider({
-  userId,
-  children,
-}: EmployeesProviderProps) {
-  const employeesState = useEmployees(userId);
+export function EmployeesProvider({ children }: EmployeesProviderProps) {
+  const employeesState = useEmployees();
 
   return (
     <EmployeesContext.Provider value={employeesState}>
@@ -25,9 +21,10 @@ export function EmployeesProvider({
   );
 }
 
-export function EmployeesProviderOutlet({ userId }: { userId: string }) {
+export function EmployeesProviderOutlet({ userId }: { userId?: string } = {}) {
+  void userId;
   return (
-    <EmployeesProvider userId={userId}>
+    <EmployeesProvider>
       <Outlet />
     </EmployeesProvider>
   );

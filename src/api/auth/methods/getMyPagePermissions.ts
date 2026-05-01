@@ -5,17 +5,10 @@ import {
 } from "../../users/schema";
 import { normalizeAuthHttpError } from "./http-error";
 
-export async function getMyPagePermissions(
-  userId: string,
-): Promise<UserPagePermissionsResponse> {
+export async function getMyPagePermissions(): Promise<UserPagePermissionsResponse> {
   try {
     const response = await httpClient.get<unknown>(
       "/api/users/me/page-permissions",
-      {
-        headers: {
-          "x-user-id": userId,
-        },
-      },
     );
     const parsed = UserPagePermissionsResponseSchema.safeParse(response.data);
 

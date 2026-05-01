@@ -56,7 +56,7 @@ function toPositiveInt(value: string | null, fallback: number): number {
   return parsed;
 }
 
-export function useUsers(userId: string): UseUsersResult {
+export function useUsers(): UseUsersResult {
   const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -81,7 +81,7 @@ export function useUsers(userId: string): UseUsersResult {
       const requestedLimit = params.limit ?? paginationRef.current.limit;
 
       try {
-        const data = await fetchUsers(userId, {
+        const data = await fetchUsers({
           page: requestedPage,
           limit: requestedLimit,
         });
@@ -98,7 +98,7 @@ export function useUsers(userId: string): UseUsersResult {
         setLoading(false);
       }
     },
-    [showError, userId],
+    [showError],
   );
 
   const currentPage = toPositiveInt(searchParams.get("page"), 1);
@@ -125,7 +125,7 @@ export function useUsers(userId: string): UseUsersResult {
     inFlightPrefetches.add(key);
     let isActive = true;
 
-    void fetchUsers(userId, {
+    void fetchUsers({
       page: nextPageNumber,
       limit: pagination.limit,
     })
@@ -142,12 +142,7 @@ export function useUsers(userId: string): UseUsersResult {
       isActive = false;
       inFlightPrefetches.delete(key);
     };
-  }, [
-    pagination.currentPage,
-    pagination.hasNextPage,
-    pagination.limit,
-    userId,
-  ]);
+  }, [pagination.currentPage, pagination.hasNextPage, pagination.limit]);
 
   useEffect(() => {
     const inFlightPrefetches = prefetchInFlightRef.current;
@@ -207,7 +202,7 @@ export function useUsers(userId: string): UseUsersResult {
       setSaving(true);
       setError(null);
       try {
-        await saveUser({ userId, formData, editing });
+        await saveUser({ formData, editing });
         showSuccess(
           editing
             ? userUiCopy.success.updateUser
@@ -225,14 +220,7 @@ export function useUsers(userId: string): UseUsersResult {
         setSaving(false);
       }
     },
-    [
-      userId,
-      load,
-      showError,
-      showSuccess,
-      pagination.currentPage,
-      pagination.limit,
-    ],
+    [load, showError, showSuccess, pagination.currentPage, pagination.limit],
   );
 
   const unlock = useCallback(
@@ -240,7 +228,7 @@ export function useUsers(userId: string): UseUsersResult {
       setSaving(true);
       setError(null);
       try {
-        await unlockUserCredential(userId, idUsers);
+        await unlockUserCredential(idUsers);
         showSuccess(userUiCopy.success.unlockUser);
         await load({ page: pagination.currentPage, limit: pagination.limit });
       } catch (err) {
@@ -254,14 +242,7 @@ export function useUsers(userId: string): UseUsersResult {
         setSaving(false);
       }
     },
-    [
-      userId,
-      load,
-      showError,
-      showSuccess,
-      pagination.currentPage,
-      pagination.limit,
-    ],
+    [load, showError, showSuccess, pagination.currentPage, pagination.limit],
   );
 
   return {

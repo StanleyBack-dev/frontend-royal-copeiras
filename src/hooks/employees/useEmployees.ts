@@ -53,7 +53,7 @@ function toPositiveInt(value: string | null, fallback: number): number {
   return parsed;
 }
 
-export function useEmployees(userId: string): UseEmployeesResult {
+export function useEmployees(): UseEmployeesResult {
   const [searchParams, setSearchParams] = useSearchParams();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -78,7 +78,7 @@ export function useEmployees(userId: string): UseEmployeesResult {
       const requestedLimit = params.limit ?? paginationRef.current.limit;
 
       try {
-        const data = await fetchEmployees(userId, {
+        const data = await fetchEmployees({
           page: requestedPage,
           limit: requestedLimit,
         });
@@ -95,7 +95,7 @@ export function useEmployees(userId: string): UseEmployeesResult {
         setLoading(false);
       }
     },
-    [showError, userId],
+    [showError],
   );
 
   const currentPage = toPositiveInt(searchParams.get("page"), 1);
@@ -122,7 +122,7 @@ export function useEmployees(userId: string): UseEmployeesResult {
     inFlightPrefetches.add(key);
     let isActive = true;
 
-    void fetchEmployees(userId, {
+    void fetchEmployees({
       page: nextPageNumber,
       limit: pagination.limit,
     })
@@ -139,12 +139,7 @@ export function useEmployees(userId: string): UseEmployeesResult {
       isActive = false;
       inFlightPrefetches.delete(key);
     };
-  }, [
-    pagination.currentPage,
-    pagination.hasNextPage,
-    pagination.limit,
-    userId,
-  ]);
+  }, [pagination.currentPage, pagination.hasNextPage, pagination.limit]);
 
   useEffect(() => {
     const inFlightPrefetches = prefetchInFlightRef.current;
@@ -202,7 +197,7 @@ export function useEmployees(userId: string): UseEmployeesResult {
       setError(null);
 
       try {
-        await saveEmployee({ userId, formData, editing });
+        await saveEmployee({ formData, editing });
         showSuccess(
           editing
             ? employeeUiCopy.success.updateEmployee
@@ -220,14 +215,7 @@ export function useEmployees(userId: string): UseEmployeesResult {
         setSaving(false);
       }
     },
-    [
-      userId,
-      load,
-      showError,
-      showSuccess,
-      pagination.currentPage,
-      pagination.limit,
-    ],
+    [load, showError, showSuccess, pagination.currentPage, pagination.limit],
   );
 
   return {

@@ -9,16 +9,10 @@ interface SendContractEmailResult {
 
 export async function sendContractEmail(
   idContracts: string,
-  userId: string,
 ): Promise<SendContractEmailResult> {
   const response = await httpClient.post<unknown>(
     `/api/contracts/${idContracts}/pdf/send-email`,
     {},
-    {
-      headers: {
-        "x-user-id": userId,
-      },
-    },
   );
 
   return extractMutationData<SendContractEmailResult>(response.data);
