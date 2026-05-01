@@ -89,6 +89,7 @@ export function normalizeBudgetFormValues(
         )
       : "",
     advancePercentage: onlyDigits(values.advancePercentage).slice(0, 3),
+    displacementFee: formatCurrencyInput(values.displacementFee),
     items: values.items.map((item) => ({
       ...item,
       serviceType: item.serviceType,

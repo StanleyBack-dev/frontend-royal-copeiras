@@ -61,6 +61,10 @@ export const BudgetSchema = z.object({
   durationHours: nullableNumberToOptional(),
   paymentMethod: nullableStringToEmpty(),
   advancePercentage: nullableNumberToOptional(),
+  displacementFee: z.preprocess(
+    (value) => (value == null ? 0 : value),
+    z.number().min(0).default(0),
+  ),
   subtotal: z.number(),
   totalAmount: z.number(),
   sentVia: nullableStringToOptional(),
@@ -84,6 +88,7 @@ export const CreateBudgetPayloadSchema = z.object({
   durationHours: z.number().int().min(1).optional(),
   paymentMethod: z.string().optional().or(z.literal("")),
   advancePercentage: z.number().min(0).max(100).optional(),
+  displacementFee: z.number().min(0).optional(),
   totalAmount: z.number().min(0).optional(),
   items: z.array(CreateBudgetItemPayloadSchema).min(1),
 });
