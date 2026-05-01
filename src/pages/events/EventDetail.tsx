@@ -55,6 +55,11 @@ interface AssignmentRowProps {
   onPaymentChange: (value: string) => void;
 }
 
+type AssignmentUpdate = {
+  idEventAssignments: string;
+  payload: { idEmployees: string | undefined; employeePayment: number };
+};
+
 function AssignmentRow({
   assignment,
   employees,
@@ -282,16 +287,9 @@ export default function EventDetail() {
           idEmployees: nextEmployeeId,
           employeePayment: nextPayment,
         },
-      };
+      } satisfies AssignmentUpdate;
     })
-    .filter(
-      (
-        update,
-      ): update is {
-        idEventAssignments: string;
-        payload: { idEmployees?: string; employeePayment?: number };
-      } => Boolean(update),
-    );
+    .filter((update): update is AssignmentUpdate => update !== null);
 
   async function handleSaveAllAssignments() {
     if (!pendingUpdates.length) {
@@ -373,8 +371,9 @@ export default function EventDetail() {
                     >
                       <div>
                         <p className="font-medium text-[#2c1810]">
-                          {inferBudgetServiceType(service.serviceDescription) ||
-                            "Serviço"}
+                          {inferBudgetServiceType(
+                            service.serviceDescription ?? "",
+                          ) || "Serviço"}
                         </p>
                         <p className="text-xs text-[#7a4430]">
                           {service.quantity} x{" "}
@@ -452,7 +451,8 @@ export default function EventDetail() {
                   assignmentDrafts[assignment.idEventAssignments]?.payment ?? ""
                 }
                 chargedAmount={
-                  serviceUnitPriceByItemId.get(assignment.idBudgetItems) ?? 0
+                  serviceUnitPriceByItemId.get(assignment.idBudgetItems ?? "") ??
+                  0
                 }
                 selectedEmployeeIds={selectedEmployeeIds}
                 onSelectedEmployeeChange={(value) => {
