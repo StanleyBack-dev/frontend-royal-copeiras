@@ -32,7 +32,6 @@ function base64ToFile(
 }
 
 export function useContractPdfActions({
-  userId,
   contractId,
   contractNumber,
   onEmailSent,
@@ -56,10 +55,7 @@ export function useContractPdfActions({
     setPreviewing(true);
 
     try {
-      const pdf = await generateContractPreviewPdf(
-        { idContracts: contractId },
-        userId,
-      );
+      const pdf = await generateContractPreviewPdf({ idContracts: contractId });
       const opened = openBase64FileInNewTab(pdf.base64Content, pdf.mimeType);
 
       if (!opened) {
@@ -95,7 +91,7 @@ export function useContractPdfActions({
     setSendingEmail(true);
 
     try {
-      await sendContractEmail(contractId, userId);
+      await sendContractEmail(contractId);
       showSuccess("Prévia do contrato enviada por e-mail com sucesso");
       onEmailSent?.();
     } catch (error) {
@@ -120,7 +116,7 @@ export function useContractPdfActions({
 
     setSendingSignatureRequest(true);
     try {
-      await sendContractSignatureRequest(contractId, userId);
+      await sendContractSignatureRequest(contractId);
       showSuccess("Contrato enviado para assinatura com sucesso");
       onSignatureRequested?.();
     } catch (error) {
@@ -149,10 +145,7 @@ export function useContractPdfActions({
     setSharingWhatsApp(true);
 
     try {
-      const pdf = await generateContractPreviewPdf(
-        { idContracts: contractId },
-        userId,
-      );
+      const pdf = await generateContractPreviewPdf({ idContracts: contractId });
 
       if (!pdf) return null;
 

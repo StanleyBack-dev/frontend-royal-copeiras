@@ -83,7 +83,7 @@ function applyOptionalSearchParam(
   params.delete(key);
 }
 
-export function useBudgets(userId: string): UseBudgetsResult {
+export function useBudgets(): UseBudgetsResult {
   const [searchParams, setSearchParams] = useSearchParams();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -102,7 +102,7 @@ export function useBudgets(userId: string): UseBudgetsResult {
 
   const loadLeadOptions = useCallback(async () => {
     try {
-      const result = await fetchBudgetLeadOptions(userId);
+      const result = await fetchBudgetLeadOptions();
       setLeads(result);
     } catch (err) {
       const message = getHttpErrorMessage(
@@ -111,7 +111,7 @@ export function useBudgets(userId: string): UseBudgetsResult {
       );
       showError(budgetUiCopy.errors.loadLeadsFallback, message);
     }
-  }, [showError, userId]);
+  }, [showError]);
 
   const load = useCallback(
     async (params: BudgetListQueryParams = {}) => {
@@ -122,7 +122,7 @@ export function useBudgets(userId: string): UseBudgetsResult {
       const requestedLimit = params.limit ?? paginationRef.current.limit;
 
       try {
-        const data = await fetchBudgets(userId, {
+        const data = await fetchBudgets({
           page: requestedPage,
           limit: requestedLimit,
           status: params.status,
@@ -143,7 +143,7 @@ export function useBudgets(userId: string): UseBudgetsResult {
         setLoading(false);
       }
     },
-    [showError, userId],
+    [showError],
   );
 
   const currentPage = toPositiveInt(searchParams.get("page"), 1);
@@ -178,7 +178,7 @@ export function useBudgets(userId: string): UseBudgetsResult {
     inFlightPrefetches.add(key);
     let isActive = true;
 
-    void fetchBudgets(userId, {
+    void fetchBudgets({
       page: nextPageNumber,
       limit: pagination.limit,
       ...filters,
@@ -201,7 +201,6 @@ export function useBudgets(userId: string): UseBudgetsResult {
     pagination.currentPage,
     pagination.hasNextPage,
     pagination.limit,
-    userId,
   ]);
 
   useEffect(() => {
@@ -284,7 +283,7 @@ export function useBudgets(userId: string): UseBudgetsResult {
       setError(null);
 
       try {
-        const savedBudget = await saveBudget({ userId, formData, editing });
+        const savedBudget = await saveBudget({ formData, editing });
         showSuccess(
           editing
             ? budgetUiCopy.success.updateBudget
@@ -315,7 +314,6 @@ export function useBudgets(userId: string): UseBudgetsResult {
       pagination.limit,
       showError,
       showSuccess,
-      userId,
     ],
   );
 

@@ -8,8 +8,6 @@ export class GetUserPagePermissionsService {
           idUsers
           group
           effectivePermissions
-          defaultPermissions
-          useGroupDefaults
           updatedAt
         }
       }

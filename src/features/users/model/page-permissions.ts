@@ -1,4 +1,5 @@
-import type { PageAccessKey, UserGroup } from "../../../api/users/schema";
+import type { PageAccessKey } from "../../../api/users/schema";
+import { getDefaultPagePermissionsByGroup } from "./group-defaults";
 
 export interface PagePermissionOption {
   key: PageAccessKey;
@@ -19,47 +20,4 @@ export const pagePermissionOptions: PagePermissionOption[] = [
   { key: "INVESTMENTS", label: "Investimentos" },
 ];
 
-const defaultByGroup: Record<UserGroup, PageAccessKey[]> = {
-  USER: [
-    "DASHBOARD",
-    "LEADS",
-    "BUDGETS",
-    "CONTRACTS",
-    "EVENTS",
-    "FINANCES",
-    "DEBTS",
-    "INVESTMENTS",
-  ],
-  ADMIN: [
-    "DASHBOARD",
-    "LEADS",
-    "BUDGETS",
-    "CONTRACTS",
-    "CLIENTS",
-    "EMPLOYEES",
-    "USERS",
-    "EVENTS",
-    "FINANCES",
-    "DEBTS",
-    "INVESTMENTS",
-  ],
-  ADMIN_MASTER: [
-    "DASHBOARD",
-    "LEADS",
-    "BUDGETS",
-    "CONTRACTS",
-    "CLIENTS",
-    "EMPLOYEES",
-    "USERS",
-    "EVENTS",
-    "FINANCES",
-    "DEBTS",
-    "INVESTMENTS",
-  ],
-};
-
-export function getDefaultPagePermissionsByGroup(
-  group: UserGroup,
-): PageAccessKey[] {
-  return defaultByGroup[group] ?? [];
-}
+export { getDefaultPagePermissionsByGroup };

@@ -1,33 +1,13 @@
 import type { ActiveView } from "../../../types/views";
 import type { PageAccessKey, UserGroup } from "../../../api/users/schema";
-
-const groupDefaults: Record<UserGroup, PageAccessKey[]> = {
-  USER: ["DASHBOARD", "EVENTS", "FINANCES", "DEBTS", "INVESTMENTS"],
-  ADMIN: [
-    "DASHBOARD",
-    "CLIENTS",
-    "EMPLOYEES",
-    "USERS",
-    "EVENTS",
-    "FINANCES",
-    "DEBTS",
-    "INVESTMENTS",
-  ],
-  ADMIN_MASTER: [
-    "DASHBOARD",
-    "CLIENTS",
-    "EMPLOYEES",
-    "USERS",
-    "EVENTS",
-    "FINANCES",
-    "DEBTS",
-    "INVESTMENTS",
-  ],
-};
+import { getDefaultPagePermissionsByGroup } from "../../users/model/group-defaults";
 
 const pageAccessByView: Partial<Record<ActiveView, PageAccessKey>> = {
   dashboard: "DASHBOARD",
   signatures: "CONTRACTS",
+  leads: "LEADS",
+  budgets: "BUDGETS",
+  contracts: "CONTRACTS",
   clients: "CLIENTS",
   employees: "EMPLOYEES",
   users: "USERS",
@@ -40,7 +20,7 @@ const pageAccessByView: Partial<Record<ActiveView, PageAccessKey>> = {
 export function getGroupDefaultPagePermissions(
   group: UserGroup,
 ): PageAccessKey[] {
-  return groupDefaults[group] ?? [];
+  return getDefaultPagePermissionsByGroup(group);
 }
 
 export function hasPageAccess(

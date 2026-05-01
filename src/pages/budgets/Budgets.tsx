@@ -31,19 +31,15 @@ export default function Budgets() {
   } = useBudgetsContext();
   const navigate = useNavigate();
 
-  const { session } = useAuthSession();
+  useAuthSession();
   const [contracts, setContracts] = useState<Contract[] | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadContracts() {
-      if (!session?.user.idUsers) return;
       try {
-        const result = await fetchContracts(session.user.idUsers, {
-          page: 1,
-          limit: 100,
-        });
+        const result = await fetchContracts({ page: 1, limit: 100 });
         if (!cancelled) setContracts(result.items);
       } catch {
         // best-effort; keep contracts undefined
@@ -55,7 +51,7 @@ export default function Budgets() {
     return () => {
       cancelled = true;
     };
-  }, [session?.user.idUsers]);
+  }, []);
 
   const { search, setSearch, filteredBudgets, columns } = useBudgetsList({
     budgets,

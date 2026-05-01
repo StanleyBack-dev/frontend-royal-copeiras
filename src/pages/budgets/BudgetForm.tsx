@@ -131,7 +131,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
         return setHasContract(false);
 
       try {
-        const result = await fetchContracts(session.user.idUsers, {
+        const result = await fetchContracts({
           page: 1,
           limit: 1,
           idBudgets: editing.idBudgets,
@@ -228,11 +228,11 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     // Orcamento mantem status "generated" para continuar permitindo envios
     const now = new Date().toISOString();
     try {
-      await updateBudget(
-        editing.idBudgets,
-        { status: "sent", sentVia: "whatsapp", sentAt: now },
-        session?.user.idUsers || "",
-      );
+      await updateBudget(editing.idBudgets, {
+        status: "sent",
+        sentVia: "whatsapp",
+        sentAt: now,
+      });
     } catch {
       // ignora erro de persistencia, estado local ja foi atualizado
     }
@@ -261,11 +261,10 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
 
     const now = new Date().toISOString();
     try {
-      await updateBudget(
-        editing.idBudgets,
-        { sentVia: "email", sentAt: now },
-        session?.user.idUsers || "",
-      );
+      await updateBudget(editing.idBudgets, {
+        sentVia: "email",
+        sentAt: now,
+      });
     } catch {
       // ignora erro de persistencia, estado local ja foi atualizado
     }
@@ -296,11 +295,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     }
 
     try {
-      await updateBudget(
-        editing.idBudgets,
-        { status: "generated" },
-        session?.user.idUsers || "",
-      );
+      await updateBudget(editing.idBudgets, { status: "generated" });
       updateLocalStatus("generated");
       showSuccess("Orçamento gerado com sucesso");
     } catch (error) {
@@ -313,11 +308,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     if (!editing) return;
 
     try {
-      await updateBudget(
-        editing.idBudgets,
-        { status: "draft" },
-        session?.user.idUsers || "",
-      );
+      await updateBudget(editing.idBudgets, { status: "draft" });
       updateLocalStatus("draft", { sentVia: undefined, sentAt: undefined });
       setEmailSent(false);
       showSuccess("Orçamento voltou para Rascunho");
@@ -331,11 +322,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     if (!editing?.idBudgets) return;
 
     try {
-      await updateBudget(
-        editing.idBudgets,
-        { status: "approved" },
-        session?.user.idUsers || "",
-      );
+      await updateBudget(editing.idBudgets, { status: "approved" });
       updateLocalStatus("approved");
       showSuccess("Orçamento aprovado com sucesso");
     } catch (error) {

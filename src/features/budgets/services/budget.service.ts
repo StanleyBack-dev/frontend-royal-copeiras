@@ -17,7 +17,6 @@ import type { Lead } from "../../../api/leads/schema";
 import { budgetUiCopy } from "../model/messages";
 
 interface SaveBudgetParams {
-  userId: string;
   formData: CreateBudgetPayload;
   editing?: Budget | null;
 }
@@ -30,10 +29,9 @@ export interface BudgetsCollectionResult {
 }
 
 export async function fetchBudgets(
-  userId: string,
   params: BudgetListQueryParams = {},
 ): Promise<BudgetsCollectionResult> {
-  const response = await getBudgets(userId, params);
+  const response = await getBudgets(params);
   const parsed = BudgetSchema.array().safeParse(response.items);
 
   if (!parsed.success) {
@@ -52,13 +50,12 @@ export async function fetchBudgets(
   };
 }
 
-export async function fetchBudgetLeadOptions(userId: string): Promise<Lead[]> {
-  const response = await fetchLeads(userId, { page: 1, limit: 100 });
+export async function fetchBudgetLeadOptions(): Promise<Lead[]> {
+  const response = await fetchLeads({ page: 1, limit: 100 });
   return response.items;
 }
 
 export async function saveBudget({
-  userId,
   formData,
   editing,
 }: SaveBudgetParams): Promise<Budget> {
@@ -70,7 +67,7 @@ export async function saveBudget({
           throw new Error(budgetUiCopy.errors.invalidBudgetData);
         }
 
-        return updateBudget(editing.idBudgets, parsedPayload.data, userId);
+        return updateBudget(editing.idBudgets, parsedPayload.data);
       })()
     : await (() => {
         const parsedPayload = CreateBudgetPayloadSchema.safeParse(formData);
@@ -79,7 +76,7 @@ export async function saveBudget({
           throw new Error(budgetUiCopy.errors.invalidBudgetData);
         }
 
-        return createBudget(parsedPayload.data, userId);
+        return createBudget(parsedPayload.data);
       })();
 
   const parsedBudget = BudgetSchema.safeParse(response);

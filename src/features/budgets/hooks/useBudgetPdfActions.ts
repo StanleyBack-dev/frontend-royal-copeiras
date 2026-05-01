@@ -29,7 +29,6 @@ function base64ToFile(
 }
 
 export function useBudgetPdfActions({
-  userId,
   budgetId,
   budgetNumber,
   onEmailSent,
@@ -43,14 +42,11 @@ export function useBudgetPdfActions({
     setPreviewing(true);
 
     try {
-      const pdf = await generateBudgetPreviewPdf(
-        {
-          idBudgets: budgetId,
-          budgetNumber: budgetNumber || undefined,
-          draft: budgetId ? undefined : draft,
-        },
-        userId,
-      );
+      const pdf = await generateBudgetPreviewPdf({
+        idBudgets: budgetId,
+        budgetNumber: budgetNumber || undefined,
+        draft: budgetId ? undefined : draft,
+      });
       const opened = openBase64FileInNewTab(pdf.base64Content, pdf.mimeType);
 
       if (!opened) {
@@ -86,7 +82,7 @@ export function useBudgetPdfActions({
     setSendingEmail(true);
 
     try {
-      await sendBudgetEmail(budgetId, userId);
+      await sendBudgetEmail(budgetId);
       showSuccess("Orçamento enviado por e-mail com sucesso");
       onEmailSent?.();
       return true;
@@ -117,10 +113,10 @@ export function useBudgetPdfActions({
     setSharingWhatsApp(true);
 
     try {
-      const pdf = await generateBudgetPreviewPdf(
-        { idBudgets: budgetId, budgetNumber: budgetNumber || undefined },
-        userId,
-      );
+      const pdf = await generateBudgetPreviewPdf({
+        idBudgets: budgetId,
+        budgetNumber: budgetNumber || undefined,
+      });
 
       if (!pdf) return null;
 

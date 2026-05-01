@@ -6,13 +6,8 @@ const API_BASE_URL = "/api/budgets";
 
 export async function createBudget(
   payload: CreateBudgetPayload,
-  userId: string,
 ): Promise<Budget> {
-  const response = await httpClient.post<unknown>(API_BASE_URL, payload, {
-    headers: {
-      "x-user-id": userId,
-    },
-  });
+  const response = await httpClient.post<unknown>(API_BASE_URL, payload);
 
   return extractMutationData<Budget>(response.data);
 }

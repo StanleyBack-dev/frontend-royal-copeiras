@@ -7,16 +7,10 @@ const API_BASE_URL = "/api/customers";
 export async function updateCustomer(
   id: string,
   payload: UpdateCustomerPayload,
-  userId: string,
 ): Promise<Customer> {
   const response = await httpClient.put<unknown>(
     `${API_BASE_URL}/${id}`,
     payload,
-    {
-      headers: {
-        "x-user-id": userId,
-      },
-    },
   );
 
   return extractMutationData<Customer>(response.data);

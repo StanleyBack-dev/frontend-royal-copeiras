@@ -9,16 +9,10 @@ interface SendContractSignatureRequestResult {
 
 export async function sendContractSignatureRequest(
   idContracts: string,
-  userId: string,
 ): Promise<SendContractSignatureRequestResult> {
   const response = await httpClient.post<unknown>(
     `/api/contracts/${idContracts}/signature-request`,
     {},
-    {
-      headers: {
-        "x-user-id": userId,
-      },
-    },
   );
 
   return extractMutationData<SendContractSignatureRequestResult>(response.data);

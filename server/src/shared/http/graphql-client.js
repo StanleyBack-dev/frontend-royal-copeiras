@@ -134,12 +134,14 @@ export async function executeGraphql({
           ? await getDevAuthHeaders()
           : {};
 
+    const forwardHeaders = {
+      ...(userId ? { "x-user-id": userId } : {}),
+      ...resolvedAuthHeaders,
+    };
+
     const response = await postGraphqlWithRetry(
       { query, variables },
-      {
-        "x-user-id": userId,
-        ...resolvedAuthHeaders,
-      },
+      forwardHeaders,
       {
         requestId,
         operationName,

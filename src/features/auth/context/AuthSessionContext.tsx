@@ -17,14 +17,6 @@ import {
   getGroupDefaultPagePermissions,
   hasPageAccess,
 } from "../model/page-access";
-import {
-  clearStoredPagePermissions,
-  clearStoredAuthSession,
-  getStoredPagePermissions,
-  getStoredAuthSession,
-  setStoredPagePermissions,
-  setStoredAuthSession,
-} from "../utils/sessionStorage";
 
 let bootstrapSessionPromise: Promise<AuthSessionResponse | null> | null = null;
 
@@ -57,16 +49,15 @@ interface AuthSessionProviderProps {
 }
 
 export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
-  const [session, setSessionState] = useState<AuthSessionResponse | null>(
-    getStoredAuthSession(),
-  );
-  const [pagePermissions, setPagePermissions] = useState<PageAccessKey[]>(
-    getStoredPagePermissions(),
-  );
+  const [session, setSessionState] = useState<AuthSessionResponse | null>(null);
+  // Start with empty permissions on app boot to avoid stale stored values
+  const [pagePermissions, setPagePermissions] = useState<PageAccessKey[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+
+    setIsInitializing(true);
 
     getBootstrapSessionPromise()
       .then((refreshedSession) => {
@@ -78,19 +69,20 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
           );
 
           setSessionState(refreshedSession);
-          setStoredAuthSession(refreshedSession);
 
-          setPagePermissions(defaultPermissions);
-          setStoredPagePermissions(defaultPermissions);
+          setPagePermissions([]);
 
-          void loadMyPagePermissions(refreshedSession.user.idUsers)
+          void loadMyPagePermissions()
             .then((permissions) => {
               if (cancelled) return;
               setPagePermissions(permissions);
-              setStoredPagePermissions(permissions);
             })
             .catch(() => {
-              // Keep group defaults as best-effort fallback.
+              if (cancelled) return;
+              setPagePermissions(defaultPermissions);
+            })
+            .finally(() => {
+              if (!cancelled) setIsInitializing(false);
             });
 
           return;
@@ -98,13 +90,10 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
 
         setSessionState(null);
         setPagePermissions([]);
-        clearStoredAuthSession();
-        clearStoredPagePermissions();
+        setIsInitializing(false);
       })
-      .finally(() => {
-        if (!cancelled) {
-          setIsInitializing(false);
-        }
+      .catch(() => {
+        if (!cancelled) setIsInitializing(false);
       });
 
     return () => {
@@ -112,44 +101,43 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
     };
   }, []);
 
+  useEffect(() => {}, [pagePermissions]);
+
   const setSession = useCallback((nextSession: AuthSessionResponse) => {
     setSessionState(nextSession);
-    setStoredAuthSession(nextSession);
 
     const defaultPermissions = getGroupDefaultPagePermissions(
       nextSession.user.group,
     );
-    setPagePermissions(defaultPermissions);
-    setStoredPagePermissions(defaultPermissions);
 
-    void loadMyPagePermissions(nextSession.user.idUsers)
+    setPagePermissions([]);
+    setIsInitializing(true);
+
+    void loadMyPagePermissions()
       .then((permissions) => {
         setPagePermissions(permissions);
-        setStoredPagePermissions(permissions);
       })
       .catch(() => {
-        // Keep group defaults as best-effort fallback.
+        setPagePermissions(defaultPermissions);
+      })
+      .finally(() => {
+        setIsInitializing(false);
       });
   }, []);
 
   const clearSession = useCallback(() => {
     setSessionState(null);
     setPagePermissions([]);
-    clearStoredAuthSession();
-    clearStoredPagePermissions();
   }, []);
 
   const markPasswordChanged = useCallback(() => {
     setSessionState((current) => {
       if (!current) return current;
 
-      const next = {
+      return {
         ...current,
         mustChangePassword: false,
       };
-
-      setStoredAuthSession(next);
-      return next;
     });
   }, []);
 

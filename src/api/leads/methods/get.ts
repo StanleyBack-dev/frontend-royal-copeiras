@@ -11,16 +11,8 @@ export interface LeadListQueryParams extends ListQueryParams {
   endDate?: string;
 }
 
-export async function getLeads(
-  userId: string,
-  params: LeadListQueryParams = {},
-) {
-  const response = await httpClient.get<unknown>(API_BASE_URL, {
-    params,
-    headers: {
-      "x-user-id": userId,
-    },
-  });
+export async function getLeads(params: LeadListQueryParams = {}) {
+  const response = await httpClient.get<unknown>(API_BASE_URL, { params });
 
   return normalizeListResponse<Lead>(response.data);
 }

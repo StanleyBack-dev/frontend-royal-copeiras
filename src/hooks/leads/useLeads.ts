@@ -75,7 +75,7 @@ function applyOptionalSearchParam(
   params.delete(key);
 }
 
-export function useLeads(userId: string): UseLeadsResult {
+export function useLeads(): UseLeadsResult {
   const [searchParams, setSearchParams] = useSearchParams();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
@@ -100,7 +100,7 @@ export function useLeads(userId: string): UseLeadsResult {
       const requestedLimit = params.limit ?? paginationRef.current.limit;
 
       try {
-        const data = await fetchLeads(userId, {
+        const data = await fetchLeads({
           page: requestedPage,
           limit: requestedLimit,
           status: params.status,
@@ -120,7 +120,7 @@ export function useLeads(userId: string): UseLeadsResult {
         setLoading(false);
       }
     },
-    [showError, userId],
+    [showError],
   );
 
   const currentPage = toPositiveInt(searchParams.get("page"), 1);
@@ -151,7 +151,7 @@ export function useLeads(userId: string): UseLeadsResult {
     inFlightPrefetches.add(key);
     let isActive = true;
 
-    void fetchLeads(userId, {
+    void fetchLeads({
       page: nextPageNumber,
       limit: pagination.limit,
       ...filters,
@@ -174,7 +174,6 @@ export function useLeads(userId: string): UseLeadsResult {
     pagination.currentPage,
     pagination.hasNextPage,
     pagination.limit,
-    userId,
   ]);
 
   useEffect(() => {
@@ -256,7 +255,7 @@ export function useLeads(userId: string): UseLeadsResult {
       setError(null);
 
       try {
-        await saveLead({ userId, formData, editing });
+        await saveLead({ formData, editing });
         showSuccess(
           editing
             ? leadUiCopy.success.updateLead
@@ -285,7 +284,6 @@ export function useLeads(userId: string): UseLeadsResult {
       pagination.limit,
       showError,
       showSuccess,
-      userId,
     ],
   );
 

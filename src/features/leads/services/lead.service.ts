@@ -15,7 +15,6 @@ import {
 import { leadUiCopy } from "../model/messages";
 
 interface SaveLeadParams {
-  userId: string;
   formData: CreateLeadPayload;
   editing?: Lead | null;
 }
@@ -28,10 +27,9 @@ export interface LeadsCollectionResult {
 }
 
 export async function fetchLeads(
-  userId: string,
   params: LeadListQueryParams = {},
 ): Promise<LeadsCollectionResult> {
-  const response = await getLeads(userId, params);
+  const response = await getLeads(params);
   const parsed = LeadSchema.array().safeParse(response.items);
 
   if (!parsed.success) {
@@ -51,7 +49,6 @@ export async function fetchLeads(
 }
 
 export async function saveLead({
-  userId,
   formData,
   editing,
 }: SaveLeadParams): Promise<Lead> {
@@ -63,7 +60,7 @@ export async function saveLead({
           throw new Error(leadUiCopy.errors.invalidLeadData);
         }
 
-        return updateLead(editing.idLeads, parsedPayload.data, userId);
+        return updateLead(editing.idLeads, parsedPayload.data);
       })()
     : await (() => {
         const parsedPayload = CreateLeadPayloadSchema.safeParse(formData);
@@ -72,7 +69,7 @@ export async function saveLead({
           throw new Error(leadUiCopy.errors.invalidLeadData);
         }
 
-        return createLead(parsedPayload.data, userId);
+        return createLead(parsedPayload.data);
       })();
 
   const parsedLead = LeadSchema.safeParse(response);

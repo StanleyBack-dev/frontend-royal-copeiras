@@ -8,15 +8,11 @@ import {
 export const CustomersContext = createContext<UseCustomersResult | null>(null);
 
 interface CustomersProviderProps {
-  userId: string;
   children: ReactNode;
 }
 
-export function CustomersProvider({
-  userId,
-  children,
-}: CustomersProviderProps) {
-  const customersState = useCustomers(userId);
+export function CustomersProvider({ children }: CustomersProviderProps) {
+  const customersState = useCustomers();
 
   return (
     <CustomersContext.Provider value={customersState}>
@@ -25,9 +21,10 @@ export function CustomersProvider({
   );
 }
 
-export function CustomersProviderOutlet({ userId }: { userId: string }) {
+export function CustomersProviderOutlet({ userId }: { userId?: string } = {}) {
+  void userId;
   return (
-    <CustomersProvider userId={userId}>
+    <CustomersProvider>
       <Outlet />
     </CustomersProvider>
   );
