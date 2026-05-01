@@ -36,6 +36,7 @@ export const budgetUiCopy = {
       paymentMethod: "Pagamento",
       advancePercentage: "Entrada (%)",
       items: "Itens do Orçamento",
+      displacementFee: "Taxa de Deslocamento",
     },
     placeholders: {
       lead: "Selecione um lead",
@@ -114,4 +115,6 @@ export const budgetValidationMessages = {
     "Não é permitido repetir o mesmo tipo de serviço no orçamento.",
   itemQuantityInvalid: "A quantidade de cada item deve ser maior que zero.",
   itemUnitPriceInvalid: "Informe um valor unitário válido para cada item.",
+  displacementFeeInvalid:
+    "Informe um valor válido para a taxa de deslocamento (mínimo R$ 0,00).",
 } as const;

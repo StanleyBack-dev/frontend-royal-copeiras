@@ -130,7 +130,10 @@ export function useBudgetForm({
     );
   }
 
-  const totals = useMemo(() => calculateBudgetTotals(form.items), [form.items]);
+  const totals = useMemo(
+    () => calculateBudgetTotals(form.items, form.displacementFee),
+    [form.items, form.displacementFee],
+  );
 
   function submit(values: BudgetFormValues) {
     const normalized = normalizeBudgetFormValues(values);
