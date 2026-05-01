@@ -33,7 +33,7 @@ export async function fetchBudgets(
   userId: string,
   params: BudgetListQueryParams = {},
 ): Promise<BudgetsCollectionResult> {
-  const response = await getBudgets(userId, params);
+  const response = await getBudgets(params);
   const parsed = BudgetSchema.array().safeParse(response.items);
 
   if (!parsed.success) {
@@ -70,7 +70,7 @@ export async function saveBudget({
           throw new Error(budgetUiCopy.errors.invalidBudgetData);
         }
 
-        return updateBudget(editing.idBudgets, parsedPayload.data, userId);
+        return updateBudget(editing.idBudgets, parsedPayload.data);
       })()
     : await (() => {
         const parsedPayload = CreateBudgetPayloadSchema.safeParse(formData);
@@ -79,7 +79,7 @@ export async function saveBudget({
           throw new Error(budgetUiCopy.errors.invalidBudgetData);
         }
 
-        return createBudget(parsedPayload.data, userId);
+        return createBudget(parsedPayload.data);
       })();
 
   const parsedBudget = BudgetSchema.safeParse(response);

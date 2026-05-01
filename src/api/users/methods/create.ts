@@ -6,13 +6,8 @@ const API_BASE_URL = "/api/users";
 
 export async function createUser(
   payload: CreateUserPayload,
-  userId: string,
 ): Promise<CreateUserResponse> {
-  const response = await httpClient.post<unknown>(API_BASE_URL, payload, {
-    headers: {
-      "x-user-id": userId,
-    },
-  });
+  const response = await httpClient.post<unknown>(API_BASE_URL, payload);
 
   return extractMutationData<CreateUserResponse>(response.data);
 }

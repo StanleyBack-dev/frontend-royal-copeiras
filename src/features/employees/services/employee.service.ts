@@ -29,7 +29,7 @@ export async function fetchEmployees(
   userId: string,
   params: ListQueryParams = {},
 ): Promise<EmployeesCollectionResult> {
-  const response = await getEmployees(userId, params);
+  const response = await getEmployees(params);
   const parsed = EmployeeSchema.array().safeParse(response.items);
 
   if (!parsed.success) {
@@ -61,7 +61,7 @@ export async function saveEmployee({
           throw new Error(employeeUiCopy.errors.invalidEmployeeData);
         }
 
-        return updateEmployee(editing.idEmployees, parsedPayload.data, userId);
+        return updateEmployee(editing.idEmployees, parsedPayload.data);
       })()
     : await (() => {
         const parsedPayload = CreateEmployeePayloadSchema.safeParse(formData);
@@ -70,7 +70,7 @@ export async function saveEmployee({
           throw new Error(employeeUiCopy.errors.invalidEmployeeData);
         }
 
-        return createEmployee(parsedPayload.data, userId);
+        return createEmployee(parsedPayload.data);
       })();
 
   const parsedEmployee = EmployeeSchema.safeParse(response);

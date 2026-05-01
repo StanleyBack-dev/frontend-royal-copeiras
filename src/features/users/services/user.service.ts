@@ -37,7 +37,7 @@ export async function fetchUsers(
   userId: string,
   params: ListQueryParams = {},
 ): Promise<UsersCollectionResult> {
-  const response = await getUsers(userId, params);
+  const response = await getUsers(params);
   const parsed = UserSchema.array().safeParse(response.items);
 
   if (!parsed.success) {
@@ -64,16 +64,12 @@ export async function saveUser({ userId, formData, editing }: SaveUserParams) {
       throw new Error(userUiCopy.errors.invalidUserData);
     }
 
-    const response = await updateUser(
-      editing.idUsers,
-      {
-        group: parsedPayload.data.group,
-        status: parsedPayload.data.status,
-        pagePermissions: parsedPayload.data.pagePermissions,
-        useGroupDefaults: parsedPayload.data.useGroupDefaults,
-      },
-      userId,
-    );
+    const response = await updateUser(editing.idUsers, {
+      group: parsedPayload.data.group,
+      status: parsedPayload.data.status,
+      pagePermissions: parsedPayload.data.pagePermissions,
+      useGroupDefaults: parsedPayload.data.useGroupDefaults,
+    });
 
     const parsedResponse = UpdateUserResponseSchema.safeParse(response);
 
@@ -90,7 +86,7 @@ export async function saveUser({ userId, formData, editing }: SaveUserParams) {
     throw new Error(userUiCopy.errors.invalidUserData);
   }
 
-  const response = await createUser(parsedPayload.data, userId);
+  const response = await createUser(parsedPayload.data);
   const parsedResponse = CreateUserResponseSchema.safeParse(response);
 
   if (!parsedResponse.success) {
@@ -104,21 +100,25 @@ export async function fetchUserPagePermissions(
   userId: string,
   idUsers: string,
 ): Promise<UserPagePermissionsResponse> {
-  const response = await getUserPagePermissions(idUsers, userId);
+  const response = await getUserPagePermissions(idUsers);
   const parsed = UserPagePermissionsResponseSchema.safeParse(response);
 
   if (!parsed.success) {
     throw new Error(userUiCopy.errors.invalidPermissionsData);
   }
 
-  return parsed.data;
+  // normalize optional useGroupDefaults to a strict boolean to match form expectations
+  return {
+    ...parsed.data,
+    useGroupDefaults: !!parsed.data.useGroupDefaults,
+  };
 }
 
 export async function unlockUserCredential(
   userId: string,
   idUsers: string,
 ): Promise<void> {
-  const response = await unlockUser(idUsers, userId);
+  const response = await unlockUser(idUsers);
   const parsed = UnlockUserResponseSchema.safeParse(response);
 
   if (!parsed.success) {

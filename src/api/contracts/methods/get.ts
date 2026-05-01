@@ -12,16 +12,8 @@ export interface ContractListQueryParams extends ListQueryParams {
   endDate?: string;
 }
 
-export async function getContracts(
-  userId: string,
-  params: ContractListQueryParams = {},
-) {
-  const response = await httpClient.get<unknown>(API_BASE_URL, {
-    params,
-    headers: {
-      "x-user-id": userId,
-    },
-  });
+export async function getContracts(params: ContractListQueryParams = {}) {
+  const response = await httpClient.get<unknown>(API_BASE_URL, { params });
 
   return normalizeListResponse<Contract>(response.data);
 }

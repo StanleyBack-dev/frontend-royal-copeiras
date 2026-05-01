@@ -67,7 +67,7 @@ export function useSignatures(userId: string) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await getSignatures(userId, {
+      const response = await getSignatures({
         page: pagination.currentPage,
         limit: pagination.limit,
         status: filters.status || undefined,
@@ -225,19 +225,12 @@ export function useSignatures(userId: string) {
 
       setUpdatingRowId(item.idContracts);
       try {
-        const snapshot = await getSignatureStatus(
-          item.signatureEnvelopeId,
-          userId,
-        );
+        const snapshot = await getSignatureStatus(item.signatureEnvelopeId);
         const nextStatus = snapshot.status.trim().toLowerCase();
         const nextContractStatus =
           mapSignatureStatusToContractStatus(nextStatus);
 
-        await updateContract(
-          item.idContracts,
-          { status: nextContractStatus },
-          userId,
-        );
+        await updateContract(item.idContracts, { status: nextContractStatus });
 
         setItems((previous) =>
           previous.map((entry) =>
@@ -271,8 +264,8 @@ export function useSignatures(userId: string) {
 
       setUpdatingRowId(item.idContracts);
       try {
-        await cancelSignatureRequest(item.signatureEnvelopeId, userId);
-        await updateContract(item.idContracts, { status: "canceled" }, userId);
+        await cancelSignatureRequest(item.signatureEnvelopeId);
+        await updateContract(item.idContracts, { status: "canceled" });
 
         setItems((previous) =>
           previous.map((entry) =>

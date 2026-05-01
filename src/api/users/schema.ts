@@ -117,8 +117,8 @@ export const UserPagePermissionsResponseSchema = z.object({
   idUsers: z.string(),
   group: UserGroupSchema,
   effectivePermissions: z.array(PageAccessKeySchema),
-  defaultPermissions: z.array(PageAccessKeySchema),
-  useGroupDefaults: z.boolean(),
+  defaultPermissions: z.array(PageAccessKeySchema).optional(),
+  useGroupDefaults: z.boolean().optional(),
   updatedAt: z.string().nullable().optional(),
 });
 

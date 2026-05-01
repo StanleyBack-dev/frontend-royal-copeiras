@@ -2,30 +2,27 @@ import { HttpError } from "../http/http-error.js";
 import { devAuthConfig } from "./dev-auth.config.js";
 
 export function getAuthContext(req) {
-  const userIdHeader = req.headers["x-user-id"];
   const authorizationHeader = req.headers.authorization;
   const cookieHeader = req.headers.cookie;
 
-  const hasUserId =
-    typeof userIdHeader === "string" && Boolean(userIdHeader.trim());
   const hasAuthorization =
     typeof authorizationHeader === "string" &&
     Boolean(authorizationHeader.trim());
   const hasCookie =
     typeof cookieHeader === "string" && Boolean(cookieHeader.trim());
 
-  if (hasUserId && hasAuthorization) {
+  if (hasAuthorization) {
     return {
-      userId: userIdHeader.trim(),
+      userId: undefined,
       authorization: authorizationHeader.trim(),
       cookieHeader: undefined,
-      source: "request-headers",
+      source: "request-authorization",
     };
   }
 
-  if (hasUserId && hasCookie) {
+  if (hasCookie) {
     return {
-      userId: userIdHeader.trim(),
+      userId: undefined,
       authorization: undefined,
       cookieHeader: cookieHeader.trim(),
       source: "request-cookies",
@@ -41,10 +38,6 @@ export function getAuthContext(req) {
       cookieHeader: undefined,
       source: "dev-auth-config",
     };
-  }
-
-  if (!hasUserId) {
-    throw new HttpError(401, "Missing x-user-id header.");
   }
 
   throw new HttpError(

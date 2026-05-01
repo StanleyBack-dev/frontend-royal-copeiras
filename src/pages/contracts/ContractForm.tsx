@@ -428,7 +428,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       let signatureUrl: string | undefined;
       // poll for the signature entry (small retries)
       for (let i = 0; i < 6; i++) {
-        const res = await getSignatures(session?.user.idUsers || "", {
+        const res = await getSignatures({
           idContracts: editing.idContracts,
           limit: 10,
         });

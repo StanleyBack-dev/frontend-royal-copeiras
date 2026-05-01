@@ -12,6 +12,18 @@ export const httpClient = axios.create({
   },
 });
 
+httpClient.interceptors.request.use((config) => {
+  try {
+    if (config && config.headers) {
+      // delete both camelCase and header-case variants
+      delete config.headers["x-user-id"];
+      delete config.headers["X-User-Id"];
+    }
+  } catch {}
+
+  return config;
+});
+
 let refreshRequest: Promise<void> | null = null;
 let redirectingToLogin = false;
 

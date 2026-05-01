@@ -33,7 +33,7 @@ export async function fetchContracts(
   userId: string,
   params: ContractListQueryParams = {},
 ): Promise<ContractsCollectionResult> {
-  const response = await getContracts(userId, params);
+  const response = await getContracts(params);
   const parsed = ContractSchema.array().safeParse(response.items);
 
   if (!parsed.success) {
@@ -53,7 +53,7 @@ export async function fetchContracts(
 }
 
 export async function fetchApprovedBudgets(userId: string): Promise<Budget[]> {
-  const response = await getBudgets(userId, {
+  const response = await getBudgets({
     page: 1,
     limit: 100,
     status: "approved",
@@ -80,7 +80,7 @@ export async function saveContract({
           throw new Error(contractUiCopy.errors.invalidContractData);
         }
 
-        return updateContract(editing.idContracts, parsedPayload.data, userId);
+        return updateContract(editing.idContracts, parsedPayload.data);
       })()
     : await (() => {
         const parsedPayload = CreateContractPayloadSchema.safeParse(formData);
@@ -89,7 +89,7 @@ export async function saveContract({
           throw new Error(contractUiCopy.errors.invalidContractData);
         }
 
-        return createContract(parsedPayload.data, userId);
+        return createContract(parsedPayload.data);
       })();
 
   const parsedResponse = ContractSchema.safeParse(response);

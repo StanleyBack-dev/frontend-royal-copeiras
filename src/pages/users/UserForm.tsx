@@ -22,7 +22,7 @@ export default function UserForm({ mode }: { mode: "create" | "edit" }) {
   const navigate = useNavigate();
   const { users, save, saving, unlock } = useUsersContext();
   const { showError } = useToast();
-  const { session } = useAuthSession();
+  const { session, setSession } = useAuthSession();
   const { form, editing, errors, setForm, submit } = useUserForm({
     mode,
     id,
@@ -75,7 +75,7 @@ export default function UserForm({ mode }: { mode: "create" | "edit" }) {
         setForm({
           ...form,
           pagePermissions: permissions.effectivePermissions,
-          useGroupDefaults: permissions.useGroupDefaults,
+          useGroupDefaults: !!permissions.useGroupDefaults,
         });
       })
       .catch((error) => {
@@ -149,6 +149,15 @@ export default function UserForm({ mode }: { mode: "create" | "edit" }) {
     }
 
     await save(result.payload, editing);
+
+    if (editing?.idUsers && session?.user.idUsers === editing.idUsers) {
+      try {
+        setSession(session);
+      } catch {
+        // best-effort: ignore errors refreshing session
+      }
+    }
+
     navigate(userRoutePaths.list);
   }
 
@@ -194,7 +203,7 @@ export default function UserForm({ mode }: { mode: "create" | "edit" }) {
             <label className="flex items-center gap-2 text-xs sm:text-sm">
               <input
                 type="checkbox"
-                checked={form.useGroupDefaults}
+                checked={!!form.useGroupDefaults}
                 onChange={(event) =>
                   handleGroupDefaultsToggle(event.currentTarget.checked)
                 }
@@ -214,7 +223,7 @@ export default function UserForm({ mode }: { mode: "create" | "edit" }) {
                   type="checkbox"
                   checked={effectivePermissions.has(option.key)}
                   onChange={() => handlePermissionToggle(option.key)}
-                  disabled={saving || form.useGroupDefaults}
+                  disabled={saving || !!form.useGroupDefaults}
                 />
                 <span>{option.label}</span>
               </label>

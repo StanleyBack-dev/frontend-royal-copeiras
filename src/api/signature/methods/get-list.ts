@@ -9,16 +9,8 @@ export interface SignatureListQueryParams {
   status?: string;
 }
 
-export async function getSignatures(
-  userId: string,
-  params: SignatureListQueryParams = {},
-) {
-  const response = await httpClient.get<unknown>("/api/signature", {
-    params,
-    headers: {
-      "x-user-id": userId,
-    },
-  });
+export async function getSignatures(params: SignatureListQueryParams = {}) {
+  const response = await httpClient.get<unknown>("/api/signature", { params });
 
   return normalizeListResponse<SignatureListItem>(response.data);
 }
