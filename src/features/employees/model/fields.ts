@@ -17,8 +17,8 @@ export function getEmployeeFormFields(
 ): FormField[] {
   const positionOptions: NonNullable<FormField["options"]> =
     budgetServiceTypeOptions.map((serviceType) => ({
-    value: serviceType,
-    label: serviceType,
+      value: serviceType,
+      label: serviceType,
     }));
 
   if (
