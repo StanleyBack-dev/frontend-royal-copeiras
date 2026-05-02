@@ -4,7 +4,20 @@ import {
   clearStoredPagePermissions,
 } from "../../features/auth/utils/sessionStorage";
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "")
+  .trim()
+  .replace(/\/+$/, "");
+
+function buildApiUrl(path: string): string {
+  if (!apiBaseUrl) {
+    return path;
+  }
+
+  return `${apiBaseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export const httpClient = axios.create({
+  baseURL: apiBaseUrl || undefined,
   timeout: 10000,
   withCredentials: true,
   headers: {
@@ -76,7 +89,7 @@ httpClient.interceptors.response.use(
         refreshRequest = (async () => {
           try {
             await axios.post(
-              "/api/auth/refresh",
+              buildApiUrl("/api/auth/refresh"),
               {},
               {
                 withCredentials: true,
