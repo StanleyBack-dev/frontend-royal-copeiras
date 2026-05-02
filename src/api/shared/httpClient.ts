@@ -75,10 +75,6 @@ httpClient.interceptors.response.use(
       originalRequest._retry ||
       isAuthEndpoint
     ) {
-      if (statusCode === 401 && isAuthEndpoint) {
-        clearAuthStateAndRedirect();
-      }
-
       return Promise.reject(error);
     }
 
