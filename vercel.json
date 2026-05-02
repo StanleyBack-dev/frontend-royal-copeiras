@@ -1,7 +1,16 @@
 {
+  "functions": {
+    "api/[...all].js": {
+      "includeFiles": "server/**"
+    }
+  },
   "rewrites": [
     {
-      "source": "/((?!api(?:/|$)|.*\\..*).*)",
+      "source": "/api/(.*)",
+      "destination": "/api/[...all]"
+    },
+    {
+      "source": "/((?!\\..*).*)",
       "destination": "/index.html"
     }
   ]
