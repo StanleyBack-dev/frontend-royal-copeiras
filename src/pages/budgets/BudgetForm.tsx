@@ -66,8 +66,6 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     initialLeadId,
   });
 
-  const [emailSent, setEmailSent] = useState(false);
-  const [confirmApprove, setConfirmApprove] = useState(false);
   const [confirmContract, setConfirmContract] = useState(false);
   const [confirmSendEmail, setConfirmSendEmail] = useState(false);
   const [hasContract, setHasContract] = useState(false);
@@ -76,9 +74,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     mode === "edit" && Boolean(editing && editing.status !== "draft");
   const isGenerated = editing?.status === "generated";
   const isSent = editing?.status === "sent";
-  const isSentByAny =
-    isNonDraftLocked &&
-    (editing?.sentVia === "email" || editing?.sentVia === "whatsapp");
+  const isGeneratedOrSent = isGenerated || isSent;
 
   const selectedLead = leads.find((l) => l.idLeads === form.idLeads) ?? null;
   const isSelectedLeadInactive = selectedLead?.isActive === false;
@@ -120,9 +116,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     userId: session?.user.idUsers || "",
     budgetId: editing?.idBudgets,
     budgetNumber: form.budgetNumber,
-    onEmailSent: () => {
-      setEmailSent(true);
-    },
+    onEmailSent: () => {},
   });
 
   useEffect(() => {
@@ -312,7 +306,6 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     try {
       await updateBudget(editing.idBudgets, { status: "draft" });
       updateLocalStatus("draft", { sentVia: undefined, sentAt: undefined });
-      setEmailSent(false);
       showSuccess("Orçamento voltou para Rascunho");
     } catch (error) {
       const message = getHttpErrorMessage(error, "Erro ao reverter status");
@@ -320,16 +313,21 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     }
   }
 
-  async function handleApproveBudget() {
+  async function handleCreateContract() {
     if (!editing?.idBudgets) return;
 
     try {
+      // Primeiro, atualiza o status do orçamento para "approved"
       await updateBudget(editing.idBudgets, { status: "approved" });
       updateLocalStatus("approved");
-      showSuccess("Orçamento aprovado com sucesso");
+
+      // Depois navega para o formulário de contratos
+      navigate(
+        `${contractRoutePaths.create}?budgetId=${encodeURIComponent(editing.idBudgets)}`,
+      );
     } catch (error) {
-      const message = getHttpErrorMessage(error, "Erro ao aprovar orçamento");
-      showError("Erro ao aprovar orçamento", message);
+      const message = getHttpErrorMessage(error, "Erro ao criar contrato");
+      showError("Erro ao criar contrato", message);
     }
   }
 
@@ -505,21 +503,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </button>
             ) : null}
 
-            {editing?.status === "approved" && !hasContract ? (
-              <button
-                type="button"
-                onClick={() => setConfirmContract(true)}
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] transition-colors"
-                title="Gerar contrato"
-              >
-                <FileSignature size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  Contrato
-                </span>
-              </button>
-            ) : null}
-
-            {isNonDraftLocked && isGenerated && !emailSent ? (
+            {isGeneratedOrSent && !hasContract ? (
               <button
                 type="button"
                 onClick={() => {
@@ -546,7 +530,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </button>
             ) : null}
 
-            {isNonDraftLocked ? (
+            {isGeneratedOrSent && !hasContract ? (
               <button
                 type="button"
                 onClick={() => {
@@ -573,24 +557,22 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </button>
             ) : null}
 
-            {/* Aprovar orçamento */}
-            {isSentByAny && editing?.status !== "approved" ? (
+            {isGeneratedOrSent && !hasContract ? (
               <button
                 type="button"
-                onClick={() => setConfirmApprove(true)}
-                disabled={saving || !session?.user.idUsers}
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title="Aprovar orçamento"
+                onClick={() => setConfirmContract(true)}
+                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] transition-colors"
+                title="Gerar contrato"
               >
                 <FileSignature size={32} className="text-[#C9A227]" />
                 <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  Aprovar
+                  Contrato
                 </span>
               </button>
             ) : null}
 
             {/* Voltar ao Rascunho */}
-            {isNonDraftLocked && (isGenerated || isSent) ? (
+            {isNonDraftLocked && !hasContract ? (
               <button
                 type="button"
                 onClick={() => {
@@ -755,29 +737,6 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
       </ManagementPanelTemplate>
 
       <ConfirmDialog
-        open={confirmApprove}
-        variant="warning"
-        title="Aprovar orçamento"
-        description={
-          <p>
-            Ao aprovar este orçamento, ele{" "}
-            <strong>não poderá mais ser editado</strong>. A partir daí será
-            possível gerar o contrato com o cliente.
-            <br />
-            <br />
-            Tem certeza que deseja aprovar?
-          </p>
-        }
-        confirmLabel="Sim, aprovar"
-        cancelLabel="Voltar"
-        onConfirm={() => {
-          setConfirmApprove(false);
-          void handleApproveBudget();
-        }}
-        onCancel={() => setConfirmApprove(false)}
-      />
-
-      <ConfirmDialog
         open={confirmContract}
         title="Gerar contrato"
         description={
@@ -793,10 +752,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
         cancelLabel="Voltar"
         onConfirm={() => {
           setConfirmContract(false);
-          if (!editing?.idBudgets) return;
-          navigate(
-            `${contractRoutePaths.create}?budgetId=${encodeURIComponent(editing.idBudgets)}`,
-          );
+          void handleCreateContract();
         }}
         onCancel={() => setConfirmContract(false)}
       />
