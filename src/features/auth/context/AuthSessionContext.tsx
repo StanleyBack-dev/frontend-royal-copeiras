@@ -17,16 +17,13 @@ import {
   getGroupDefaultPagePermissions,
   hasPageAccess,
 } from "../model/page-access";
-
-let bootstrapSessionPromise: Promise<AuthSessionResponse | null> | null = null;
-
-function getBootstrapSessionPromise() {
-  if (!bootstrapSessionPromise) {
-    bootstrapSessionPromise = refreshSessionFromCookie();
-  }
-
-  return bootstrapSessionPromise;
-}
+import {
+  clearStoredAuthSession,
+  clearStoredPagePermissions,
+  setStoredAuthSession,
+  setStoredPagePermissions,
+} from "../utils/sessionStorage";
+import { subscribeAuthSessionEvents } from "../utils/auth-session-events";
 
 interface AuthSessionContextValue {
   session: AuthSessionResponse | null;
@@ -50,75 +47,28 @@ interface AuthSessionProviderProps {
 
 export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
   const [session, setSessionState] = useState<AuthSessionResponse | null>(null);
-  // Start with empty permissions on app boot to avoid stale stored values
   const [pagePermissions, setPagePermissions] = useState<PageAccessKey[]>([]);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    setIsInitializing(true);
-
-    getBootstrapSessionPromise()
-      .then((refreshedSession) => {
-        if (cancelled) return;
-
-        if (refreshedSession?.authenticated) {
-          const defaultPermissions = getGroupDefaultPagePermissions(
-            refreshedSession.user.group,
-          );
-
-          setSessionState(refreshedSession);
-
-          setPagePermissions([]);
-
-          void loadMyPagePermissions()
-            .then((permissions) => {
-              if (cancelled) return;
-              setPagePermissions(permissions);
-            })
-            .catch(() => {
-              if (cancelled) return;
-              setPagePermissions(defaultPermissions);
-            })
-            .finally(() => {
-              if (!cancelled) setIsInitializing(false);
-            });
-
-          return;
-        }
-
-        setSessionState(null);
-        setPagePermissions([]);
-        setIsInitializing(false);
-      })
-      .catch(() => {
-        if (!cancelled) setIsInitializing(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {}, [pagePermissions]);
-
-  const setSession = useCallback((nextSession: AuthSessionResponse) => {
-    setSessionState(nextSession);
-
+  const applySession = useCallback((nextSession: AuthSessionResponse) => {
     const defaultPermissions = getGroupDefaultPagePermissions(
       nextSession.user.group,
     );
 
+    setSessionState(nextSession);
+    setStoredAuthSession(nextSession);
     setPagePermissions([]);
+    clearStoredPagePermissions();
     setIsInitializing(true);
 
     void loadMyPagePermissions()
       .then((permissions) => {
         setPagePermissions(permissions);
+        setStoredPagePermissions(permissions);
       })
       .catch(() => {
         setPagePermissions(defaultPermissions);
+        setStoredPagePermissions(defaultPermissions);
       })
       .finally(() => {
         setIsInitializing(false);
@@ -128,7 +78,58 @@ export function AuthSessionProvider({ children }: AuthSessionProviderProps) {
   const clearSession = useCallback(() => {
     setSessionState(null);
     setPagePermissions([]);
+    clearStoredAuthSession();
+    clearStoredPagePermissions();
+    setIsInitializing(false);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setIsInitializing(true);
+
+    refreshSessionFromCookie()
+      .then((refreshedSession) => {
+        if (cancelled) return;
+
+        if (refreshedSession?.authenticated) {
+          applySession(refreshedSession);
+
+          return;
+        }
+
+        clearSession();
+      })
+      .catch(() => {
+        if (!cancelled) {
+          clearSession();
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applySession, clearSession]);
+
+  useEffect(() => {
+    return subscribeAuthSessionEvents((event) => {
+      if (event.type === "refreshed") {
+        applySession(event.session);
+        return;
+      }
+
+      clearSession();
+    });
+  }, [applySession, clearSession]);
+
+  useEffect(() => {}, [pagePermissions]);
+
+  const setSession = useCallback(
+    (nextSession: AuthSessionResponse) => {
+      applySession(nextSession);
+    },
+    [applySession],
+  );
 
   const markPasswordChanged = useCallback(() => {
     setSessionState((current) => {

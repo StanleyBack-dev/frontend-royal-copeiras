@@ -1,8 +1,16 @@
-import axios from "axios";
+import axios, {
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from "axios";
+import { AuthSessionResponseSchema } from "../auth/schema";
 import {
   clearStoredAuthSession,
   clearStoredPagePermissions,
 } from "../../features/auth/utils/sessionStorage";
+import {
+  emitAuthSessionCleared,
+  emitAuthSessionRefreshed,
+} from "../../features/auth/utils/auth-session-events";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "")
   .trim()
@@ -24,6 +32,37 @@ export const httpClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+type RetriableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isAuthEndpointUrl(url: string | undefined): boolean {
+  return (
+    typeof url === "string" &&
+    ["/api/auth/login", "/api/auth/refresh", "/api/auth/logout"].some((path) =>
+      url.includes(path),
+    )
+  );
+}
+
+function hasUnauthorizedGraphqlError(payload: unknown): boolean {
+  if (!isObject(payload) || !Array.isArray(payload.errors)) {
+    return false;
+  }
+
+  return payload.errors.some((error) => {
+    if (!isObject(error) || !isObject(error.extensions)) {
+      return false;
+    }
+
+    return error.extensions.statusCode === 401;
+  });
+}
 
 httpClient.interceptors.request.use((config) => {
   try {
@@ -49,62 +88,94 @@ function clearAuthStateAndRedirect() {
   redirectingToLogin = true;
   clearStoredAuthSession();
   clearStoredPagePermissions();
+  emitAuthSessionCleared();
 
   if (typeof window !== "undefined") {
     window.location.replace("/");
   }
 }
 
+async function refreshSessionOrFail(): Promise<void> {
+  if (!refreshRequest) {
+    refreshRequest = (async () => {
+      try {
+        const response = await axios.post<unknown>(
+          buildApiUrl("/api/auth/refresh"),
+          {},
+          {
+            withCredentials: true,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+
+        const parsed = AuthSessionResponseSchema.safeParse(response.data);
+
+        if (!parsed.success || !parsed.data.authenticated) {
+          throw new Error("Resposta de refresh de sessao invalida.");
+        }
+
+        emitAuthSessionRefreshed(parsed.data);
+      } finally {
+        refreshRequest = null;
+      }
+    })();
+  }
+
+  await refreshRequest;
+}
+
+async function retryAfterRefresh(
+  requestConfig: RetriableRequestConfig | undefined,
+) {
+  if (
+    !requestConfig ||
+    requestConfig._retry ||
+    isAuthEndpointUrl(requestConfig.url)
+  ) {
+    return null;
+  }
+
+  requestConfig._retry = true;
+
+  try {
+    await refreshSessionOrFail();
+    return httpClient(requestConfig);
+  } catch (refreshError) {
+    clearAuthStateAndRedirect();
+    throw refreshError;
+  }
+}
+
 httpClient.interceptors.response.use(
-  (response) => response,
+  async (response: AxiosResponse<unknown>) => {
+    const retriedResponse = await retryAfterRefresh(
+      hasUnauthorizedGraphqlError(response.data)
+        ? (response.config as RetriableRequestConfig | undefined)
+        : undefined,
+    );
+
+    return retriedResponse ?? response;
+  },
   async (error) => {
     const statusCode = error.response?.status;
-    const originalRequest = error.config as
-      | (typeof error.config & { _retry?: boolean })
-      | undefined;
+    const originalRequest = error.config as RetriableRequestConfig | undefined;
 
-    const isAuthEndpoint =
-      typeof originalRequest?.url === "string" &&
-      ["/api/auth/login", "/api/auth/refresh", "/api/auth/logout"].some(
-        (path) => originalRequest.url?.includes(path),
-      );
-
-    if (
-      statusCode !== 401 ||
-      !originalRequest ||
-      originalRequest._retry ||
-      isAuthEndpoint
-    ) {
+    if (statusCode !== 401) {
       return Promise.reject(error);
     }
 
-    originalRequest._retry = true;
-
     try {
-      if (!refreshRequest) {
-        refreshRequest = (async () => {
-          try {
-            await axios.post(
-              buildApiUrl("/api/auth/refresh"),
-              {},
-              {
-                withCredentials: true,
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              },
-            );
-          } finally {
-            refreshRequest = null;
-          }
-        })();
-      }
+      const retriedResponse = await retryAfterRefresh(originalRequest);
 
-      await refreshRequest;
-      return httpClient(originalRequest);
+      if (retriedResponse) {
+        return retriedResponse;
+      }
     } catch (refreshError) {
-      clearAuthStateAndRedirect();
       return Promise.reject(refreshError);
     }
+
+    return Promise.reject(error);
   },
 );
