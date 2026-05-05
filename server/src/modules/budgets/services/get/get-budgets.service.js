@@ -25,6 +25,8 @@ export class GetBudgetsService {
             issueDate
             validUntil
             eventDates
+            eventArrivalTimes
+            eventDepartureTimes
             eventLocation
             guestCount
             durationHours

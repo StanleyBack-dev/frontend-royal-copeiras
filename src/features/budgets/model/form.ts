@@ -21,6 +21,7 @@ export const budgetPaymentMethodOptions = [
   "Transferência Bancária",
   "Dinheiro",
 ] as const;
+const EVENT_TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
 function padDatePart(value: number) {
   return String(value).padStart(2, "0");
@@ -54,6 +55,13 @@ export function buildEventDates(count: number, existingDates: string[] = []) {
   return Array.from(
     { length: count },
     (_, index) => existingDates[index] || "",
+  );
+}
+
+export function buildEventTimes(count: number, existingTimes: string[] = []) {
+  return Array.from(
+    { length: count },
+    (_, index) => existingTimes[index] || "",
   );
 }
 
@@ -99,6 +107,8 @@ export interface BudgetFormValues {
   eventDateMode: (typeof budgetEventDateModeOptions)[number];
   eventDaysCount: string;
   eventDates: string[];
+  eventArrivalTimes: string[];
+  eventDepartureTimes: string[];
   eventLocation: string;
   guestCount: string;
   durationHours: string;
@@ -130,6 +140,8 @@ export function createEmptyBudgetFormValues(
     eventDateMode: "single",
     eventDaysCount: "1",
     eventDates: [""],
+    eventArrivalTimes: [""],
+    eventDepartureTimes: [""],
     eventLocation: "",
     guestCount: "",
     durationHours: "",
@@ -159,6 +171,8 @@ const budgetFormSchemaBase = z.object({
   eventDateMode: z.enum(budgetEventDateModeOptions),
   eventDaysCount: z.string(),
   eventDates: z.array(z.string()),
+  eventArrivalTimes: z.array(z.string()),
+  eventDepartureTimes: z.array(z.string()),
   eventLocation: z
     .string()
     .trim()
@@ -221,6 +235,42 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
         code: z.ZodIssueCode.custom,
         path: ["eventDates"],
         message: budgetValidationMessages.eventDateRequired,
+      });
+    }
+
+    const selectedEventArrivalTimes = data.eventArrivalTimes.slice(
+      0,
+      eventDatesCount,
+    );
+
+    if (
+      selectedEventArrivalTimes.length !== eventDatesCount ||
+      selectedEventArrivalTimes.some(
+        (eventTime) => !EVENT_TIME_PATTERN.test(eventTime),
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["eventArrivalTimes"],
+        message: budgetValidationMessages.eventArrivalTimeRequired,
+      });
+    }
+
+    const selectedEventDepartureTimes = data.eventDepartureTimes.slice(
+      0,
+      eventDatesCount,
+    );
+
+    if (
+      selectedEventDepartureTimes.length !== eventDatesCount ||
+      selectedEventDepartureTimes.some(
+        (eventTime) => !EVENT_TIME_PATTERN.test(eventTime),
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["eventDepartureTimes"],
+        message: budgetValidationMessages.eventDepartureTimeRequired,
       });
     }
 

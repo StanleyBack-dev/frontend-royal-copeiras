@@ -11,6 +11,7 @@ export * from "./model/constants";
 export { getBudgetFormFields } from "./model/fields";
 export {
   buildEventDates,
+  buildEventTimes,
   budgetAdvancePercentageOptions,
   budgetDurationOptions,
   budgetEventDateModeOptions,

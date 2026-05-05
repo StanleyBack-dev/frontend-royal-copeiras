@@ -5,7 +5,11 @@ import type {
 } from "../../../api/budgets/schema";
 import { formatDateTimeDisplay } from "../../../utils/format";
 import type { BudgetFormValues, BudgetItemFormValues } from "./form";
-import { buildEventDates, budgetPaymentMethodOptions } from "./form";
+import {
+  buildEventDates,
+  buildEventTimes,
+  budgetPaymentMethodOptions,
+} from "./form";
 import { formatCurrencyInput, parseCurrencyInput } from "./formatters";
 import {
   buildBudgetServiceDescription,
@@ -38,6 +42,18 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
   const eventDates = budget.eventDates?.length
     ? budget.eventDates.map((value) => value.slice(0, 10))
     : [""];
+  const eventArrivalTimes = budget.eventArrivalTimes?.length
+    ? budget.eventArrivalTimes.map((value) => value.trim())
+    : [];
+  const eventDepartureTimes = budget.eventDepartureTimes?.length
+    ? budget.eventDepartureTimes.map((value) => value.trim())
+    : [];
+  const eventDayCount = Math.max(
+    eventDates.length,
+    eventArrivalTimes.length,
+    eventDepartureTimes.length,
+    1,
+  );
 
   return {
     budgetNumber: budget.budgetNumber,
@@ -46,9 +62,11 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
     status: budget.status,
     issueDate: budget.issueDate.slice(0, 10),
     validUntil: budget.validUntil.slice(0, 10),
-    eventDateMode: eventDates.length > 1 ? "multiple" : "single",
-    eventDaysCount: String(eventDates.length || 1),
-    eventDates: buildEventDates(eventDates.length || 1, eventDates),
+    eventDateMode: eventDayCount > 1 ? "multiple" : "single",
+    eventDaysCount: String(eventDayCount),
+    eventDates: buildEventDates(eventDayCount, eventDates),
+    eventArrivalTimes: buildEventTimes(eventDayCount, eventArrivalTimes),
+    eventDepartureTimes: buildEventTimes(eventDayCount, eventDepartureTimes),
     eventLocation: budget.eventLocation || "",
     guestCount: budget.guestCount != null ? String(budget.guestCount) : "",
     durationHours:
@@ -85,6 +103,17 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
 export function mapBudgetFormToPayload(
   values: BudgetFormValues,
 ): CreateBudgetPayload {
+  const eventDaysCount =
+    values.eventDateMode === "multiple" ? Number(values.eventDaysCount) : 1;
+  const eventDates = values.eventDates
+    .slice(0, eventDaysCount)
+    .map((value) => value.trim());
+  const eventArrivalTimes = values.eventArrivalTimes
+    .slice(0, eventDaysCount)
+    .map((value) => value.trim());
+  const eventDepartureTimes = values.eventDepartureTimes
+    .slice(0, eventDaysCount)
+    .map((value) => value.trim());
   const items = values.items.map(mapBudgetItemFormToPayload);
   const totalAmount = items.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
@@ -96,7 +125,9 @@ export function mapBudgetFormToPayload(
     status: values.status,
     issueDate: values.issueDate || undefined,
     validUntil: values.validUntil,
-    eventDates: values.eventDates.map((value) => value.trim()).filter(Boolean),
+    eventDates,
+    eventArrivalTimes,
+    eventDepartureTimes,
     eventLocation: values.eventLocation.trim(),
     guestCount: values.guestCount ? Number(values.guestCount) : undefined,
     durationHours: values.durationHours

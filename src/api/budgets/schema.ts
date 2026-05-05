@@ -55,7 +55,18 @@ export const BudgetSchema = z.object({
   status: z.enum(budgetStatusOptions),
   issueDate: z.string(),
   validUntil: z.string(),
-  eventDates: z.array(z.string()),
+  eventDates: z.preprocess(
+    (value) => (value == null ? [] : value),
+    z.array(z.string()).optional(),
+  ),
+  eventArrivalTimes: z.preprocess(
+    (value) => (value == null ? [] : value),
+    z.array(z.string()).optional(),
+  ),
+  eventDepartureTimes: z.preprocess(
+    (value) => (value == null ? [] : value),
+    z.array(z.string()).optional(),
+  ),
   eventLocation: nullableStringToEmpty(),
   guestCount: nullableNumberToOptional(),
   durationHours: nullableNumberToOptional(),
@@ -83,6 +94,8 @@ export const CreateBudgetPayloadSchema = z.object({
   issueDate: z.string().optional().or(z.literal("")),
   validUntil: z.string().min(1),
   eventDates: z.array(z.string()).optional(),
+  eventArrivalTimes: z.array(z.string()).optional(),
+  eventDepartureTimes: z.array(z.string()).optional(),
   eventLocation: z.string().optional().or(z.literal("")),
   guestCount: z.number().int().min(0).optional(),
   durationHours: z.number().int().min(1).optional(),

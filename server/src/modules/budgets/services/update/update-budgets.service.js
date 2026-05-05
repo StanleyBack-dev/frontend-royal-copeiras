@@ -20,6 +20,8 @@ export class UpdateBudgetsService {
             issueDate
             validUntil
             eventDates
+            eventArrivalTimes
+            eventDepartureTimes
             eventLocation
             guestCount
             durationHours
