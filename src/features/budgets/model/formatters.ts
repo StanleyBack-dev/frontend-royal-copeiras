@@ -7,6 +7,7 @@ import {
 import {
   addDaysToIsoDate,
   buildEventDates,
+  buildEventTimes,
   type BudgetFormValues,
 } from "./form";
 
@@ -81,7 +82,18 @@ export function normalizeBudgetFormValues(
       ? addDaysToIsoDate(values.issueDate, BUDGET_DEFAULT_VALIDITY_DAYS)
       : values.validUntil,
     eventDaysCount,
-    eventDates: buildEventDates(eventDatesCount, values.eventDates),
+    eventDates: buildEventDates(
+      eventDatesCount,
+      values.eventDates.map((value) => value.trim()),
+    ),
+    eventArrivalTimes: buildEventTimes(
+      eventDatesCount,
+      values.eventArrivalTimes.map((value) => value.trim()),
+    ),
+    eventDepartureTimes: buildEventTimes(
+      eventDatesCount,
+      values.eventDepartureTimes.map((value) => value.trim()),
+    ),
     guestCount: onlyDigits(values.guestCount),
     durationHours: normalizedDurationDigits
       ? String(

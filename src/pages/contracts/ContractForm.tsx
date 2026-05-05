@@ -82,6 +82,101 @@ function formatEventDatesText(eventDates: string[]) {
     .join(", ");
 }
 
+function parseTimeToMinutes(time?: string) {
+  if (!time || !/^\d{2}:\d{2}$/.test(time)) {
+    return undefined;
+  }
+
+  const [hours, minutes] = time.split(":").map(Number);
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return undefined;
+  }
+
+  return hours * 60 + minutes;
+}
+
+function addOneDayIsoDate(date: string) {
+  const parsed = new Date(`${date}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return date;
+  }
+
+  parsed.setDate(parsed.getDate() + 1);
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatEventScheduleText(
+  eventDates: string[],
+  eventArrivalTimes: string[],
+  eventDepartureTimes: string[],
+) {
+  const dayCount = Math.max(
+    eventDates.length,
+    eventArrivalTimes.length,
+    eventDepartureTimes.length,
+  );
+
+  if (!dayCount) {
+    return "com horários de chegada e partida a definir";
+  }
+
+  if (dayCount === 1) {
+    const arrival = eventArrivalTimes[0] || "a definir";
+    const departure = eventDepartureTimes[0] || "a definir";
+    const arrivalMinutes = parseTimeToMinutes(arrival);
+    const departureMinutes = parseTimeToMinutes(departure);
+    const isNextDay =
+      arrivalMinutes !== undefined &&
+      departureMinutes !== undefined &&
+      departureMinutes > 0 &&
+      departureMinutes < arrivalMinutes;
+
+    if (isNextDay && eventDates[0]) {
+      return `com chegada às ${arrival} e saída em ${formatEventDateWithWeekday(addOneDayIsoDate(eventDates[0]))} (dia seguinte), às ${departure}`;
+    }
+
+    return `com chegada às ${arrival} e saída às ${departure}`;
+  }
+
+  const lines = Array.from({ length: dayCount }, (_, index) => {
+    const dateLabel = eventDates[index]
+      ? formatEventDateWithWeekday(eventDates[index])
+      : `${index + 1}o dia`;
+    const arrival = eventArrivalTimes[index] || "a definir";
+    const departure = eventDepartureTimes[index] || "a definir";
+    const arrivalMinutes = parseTimeToMinutes(arrival);
+    const departureMinutes = parseTimeToMinutes(departure);
+    const isNextDay =
+      arrivalMinutes !== undefined &&
+      departureMinutes !== undefined &&
+      departureMinutes > 0 &&
+      departureMinutes < arrivalMinutes;
+
+    const departureDateLabel =
+      isNextDay && eventDates[index]
+        ? `${formatEventDateWithWeekday(addOneDayIsoDate(eventDates[index]))} (dia seguinte)`
+        : dateLabel;
+
+    if (departureDateLabel === dateLabel) {
+      return `no dia ${dateLabel}, chegada às ${arrival} e saída às ${departure}`;
+    }
+
+    return `no dia ${dateLabel}, chegada às ${arrival} e saída em ${departureDateLabel}, às ${departure}`;
+  });
+
+  return `com a seguinte programação: ${lines.join("; ")}`;
+}
+
 function buildServicesAndQuantities(items: BudgetItem[]) {
   if (!items.length) {
     return "1 - servico";
@@ -126,6 +221,11 @@ function buildServicesAndQuantities(items: BudgetItem[]) {
 function buildDefaultContractBody(budget: Budget | null) {
   const servicesAndQuantities = buildServicesAndQuantities(budget?.items || []);
   const eventDatesText = formatEventDatesText(budget?.eventDates || []);
+  const eventScheduleText = formatEventScheduleText(
+    budget?.eventDates || [],
+    budget?.eventArrivalTimes || [],
+    budget?.eventDepartureTimes || [],
+  );
   const eventHours = budget?.durationHours
     ? String(budget.durationHours).padStart(2, "0")
     : "08";
@@ -184,7 +284,7 @@ function buildDefaultContractBody(budget: Budget | null) {
 1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada, consistentes na disponibilização de:
 ${servicesBlock}  
 1.2. Pelo período de ${eventHours} horas consecutivas.
-1.3. O evento está previsto para ocorrer ${eventDatesText}.${displacementClause}\n\nCLAUSULA 2a - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}${displacementFee > 0 ? `, sendo ${displacementFeeLabel} referente à taxa de deslocamento` : ""}.\n2.2. O pagamento deverá ser realizado à vista, via pix (CNPJ 64.062.038/0001-71) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n2.3. Caso a prestação dos serviços ultrapasse o horário previamente acordado, será necessário contratar horas adicionais, no valor de R$ 90,00 (noventa reais) por hora extra, por profissional.\n\nCLAUSULA 3a - RESPONSABILIDADES DO CONTRATANTE:\n\n3.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n3.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLAUSULA 4a - RESPONSABILIDADES DA CONTRATADA:\n\n4.1. A Royal Copeiras compromete-se a prestar os serviços contratados com profissional qualificada e devidamente treinada para atender as necessidades do evento.\n4.2. A contratada se compromete a garantir a pontualidade e a boa apresentação da equipe durante todo o evento.\n4.3. A contratada se responsabiliza pela supervisão e acompanhamento da equipe para assegurar o cumprimento das atividades conforme o acordado neste contrato.\n\nCLAUSULA 5a - CANCELAMENTO E REEMBOLSO:\n\n5.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n5.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n5.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLAUSULA 6a - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n6.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n6.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da Royal Copeiras.\n6.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLAUSULA 7a - VIGÊNCIA:\n\n7.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLAUSULA 8a - CONDIÇÕES GERAIS:\n\n8.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nCLAUSULA 9a - DOS MATERIAIS DE LIMPEZA:\n\n9.1. A CONTRATADA se responsabiliza por disponibilizar, para a adequada execução dos serviços durante o evento, os seguintes materiais de limpeza: desinfetante, aromatizante de ambiente (cheirinho de banheiro), pano de chão, rodo, vassoura, pá de lixo, sacos de lixo, luvas e álcool.\n9.2. Caso o CONTRATANTE deseje a inclusão de papel toalha e papel higiênico, este valor será cobrado à parte e adicionado ao valor total do serviço. Ressalta-se que os materiais mencionados acima serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe Royal Copeiras`;
+1.3. O evento está previsto para ocorrer ${eventDatesText}, ${eventScheduleText}.${displacementClause}\n\nCLAUSULA 2a - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}${displacementFee > 0 ? `, sendo ${displacementFeeLabel} referente à taxa de deslocamento` : ""}.\n2.2. O pagamento deverá ser realizado à vista, via pix (CNPJ 64.062.038/0001-71) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n2.3. Caso a prestação dos serviços ultrapasse o horário previamente acordado, será necessário contratar horas adicionais, no valor de R$ 90,00 (noventa reais) por hora extra, por profissional.\n\nCLAUSULA 3a - RESPONSABILIDADES DO CONTRATANTE:\n\n3.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n3.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLAUSULA 4a - RESPONSABILIDADES DA CONTRATADA:\n\n4.1. A Royal Copeiras compromete-se a prestar os serviços contratados com profissional qualificada e devidamente treinada para atender as necessidades do evento.\n4.2. A contratada se compromete a garantir a pontualidade e a boa apresentação da equipe durante todo o evento.\n4.3. A contratada se responsabiliza pela supervisão e acompanhamento da equipe para assegurar o cumprimento das atividades conforme o acordado neste contrato.\n\nCLAUSULA 5a - CANCELAMENTO E REEMBOLSO:\n\n5.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n5.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n5.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLAUSULA 6a - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n6.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n6.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da Royal Copeiras.\n6.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLAUSULA 7a - VIGÊNCIA:\n\n7.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLAUSULA 8a - CONDIÇÕES GERAIS:\n\n8.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nCLAUSULA 9a - DOS MATERIAIS DE LIMPEZA:\n\n9.1. A CONTRATADA se responsabiliza por disponibilizar, para a adequada execução dos serviços durante o evento, os seguintes materiais de limpeza: desinfetante, aromatizante de ambiente (cheirinho de banheiro), pano de chão, rodo, vassoura, pá de lixo, sacos de lixo, luvas e álcool.\n9.2. Caso o CONTRATANTE deseje a inclusão de papel toalha e papel higiênico, este valor será cobrado à parte e adicionado ao valor total do serviço. Ressalta-se que os materiais mencionados acima serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe Royal Copeiras`;
 }
 
 function buildDefaultFormValues(initialBudgetId?: string): ContractFormValues {

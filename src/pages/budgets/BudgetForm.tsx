@@ -7,6 +7,7 @@ import {
   budgetUiCopy,
   getBudgetFormFields,
   buildEventDates,
+  buildEventTimes,
   budgetFormSchema,
   normalizeBudgetFormValues,
   type BudgetFormValues,
@@ -408,6 +409,18 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
       </div>
     ) : null;
 
+  const eventDayCount =
+    form.eventDateMode === "multiple" ? Number(form.eventDaysCount) : 1;
+  const eventDateValues = buildEventDates(eventDayCount, form.eventDates);
+  const eventArrivalTimeValues = buildEventTimes(
+    eventDayCount,
+    form.eventArrivalTimes,
+  );
+  const eventDepartureTimeValues = buildEventTimes(
+    eventDayCount,
+    form.eventDepartureTimes,
+  );
+
   return (
     <>
       <ManagementPanelTemplate
@@ -630,29 +643,69 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {buildEventDates(
-                form.eventDateMode === "multiple"
-                  ? Number(form.eventDaysCount)
-                  : 1,
-                form.eventDates,
-              ).map((eventDate: string, index: number) => (
-                <Input
-                  key={`event-date-${index}`}
-                  label={`Data ${index + 1} *`}
-                  type="date"
-                  value={eventDate}
-                  disabled={isNonDraftLocked}
-                  onChange={(event) => {
-                    const nextEventDates = [...form.eventDates];
-                    nextEventDates[index] = event.target.value;
-                    setForm({
-                      ...form,
-                      eventDates: nextEventDates,
-                    });
-                  }}
-                  error={index === 0 ? errors.eventDates : undefined}
-                />
+            <div className="grid grid-cols-1 gap-4">
+              {eventDateValues.map((eventDate: string, index: number) => (
+                <div
+                  key={`event-schedule-${index}`}
+                  className="rounded-2xl border border-[#eadfd6] bg-white/70 p-4"
+                >
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                    Dia {index + 1}
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Input
+                      label={`Data ${index + 1} *`}
+                      type="date"
+                      value={eventDate}
+                      disabled={isNonDraftLocked}
+                      onChange={(event) => {
+                        const nextEventDates = [...eventDateValues];
+                        nextEventDates[index] = event.target.value;
+                        setForm({
+                          ...form,
+                          eventDates: nextEventDates,
+                        });
+                      }}
+                      error={index === 0 ? errors.eventDates : undefined}
+                    />
+                    <Input
+                      label={`Chegada ${index + 1} *`}
+                      type="time"
+                      value={eventArrivalTimeValues[index] || ""}
+                      disabled={isNonDraftLocked}
+                      onChange={(event) => {
+                        const nextEventArrivalTimes = [
+                          ...eventArrivalTimeValues,
+                        ];
+                        nextEventArrivalTimes[index] = event.target.value;
+                        setForm({
+                          ...form,
+                          eventArrivalTimes: nextEventArrivalTimes,
+                        });
+                      }}
+                      error={index === 0 ? errors.eventArrivalTimes : undefined}
+                    />
+                    <Input
+                      label={`Partida ${index + 1} *`}
+                      type="time"
+                      value={eventDepartureTimeValues[index] || ""}
+                      disabled={isNonDraftLocked}
+                      onChange={(event) => {
+                        const nextEventDepartureTimes = [
+                          ...eventDepartureTimeValues,
+                        ];
+                        nextEventDepartureTimes[index] = event.target.value;
+                        setForm({
+                          ...form,
+                          eventDepartureTimes: nextEventDepartureTimes,
+                        });
+                      }}
+                      error={
+                        index === 0 ? errors.eventDepartureTimes : undefined
+                      }
+                    />
+                  </div>
+                </div>
               ))}
             </div>
           </div>
