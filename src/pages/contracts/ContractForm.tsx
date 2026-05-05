@@ -17,6 +17,7 @@ import {
   getServiceLabels,
   buildBudgetServiceDescription,
 } from "@/features/budgets/model/service-items";
+import { formatCurrencyExtended } from "@/utils/format";
 import {
   FileSignature,
   FileText,
@@ -39,13 +40,6 @@ type ContractFormValues = {
 };
 
 type ContractFormErrors = Partial<Record<keyof ContractFormValues, string>>;
-
-function formatCurrencyBRL(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
-}
 
 function formatEventDateWithWeekday(dateString: string) {
   const date = new Date(`${dateString}T12:00:00`);
@@ -231,10 +225,10 @@ function buildDefaultContractBody(budget: Budget | null) {
     : "08";
   const totalAmount =
     typeof budget?.totalAmount === "number" ? budget.totalAmount : 0;
-  const totalAmountLabel = formatCurrencyBRL(totalAmount);
+  const totalAmountLabel = formatCurrencyExtended(totalAmount);
   const displacementFee =
     typeof budget?.displacementFee === "number" ? budget.displacementFee : 0;
-  const displacementFeeLabel = formatCurrencyBRL(displacementFee);
+  const displacementFeeLabel = formatCurrencyExtended(displacementFee);
   const advancePercentage =
     typeof budget?.advancePercentage === "number"
       ? budget.advancePercentage

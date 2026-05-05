@@ -5,6 +5,12 @@ import { budgetUiCopy } from "../model/messages";
 import {
   buildBudgetServiceDescription,
   budgetServiceTypeOptions,
+  serviceGenderOptions,
+  DEFAULT_SERVICE_GENDER,
+  TOTAL_SERVICE_COMBOS,
+  serviceComboKey,
+  type BudgetServiceType,
+  type ServiceGenderOption,
 } from "../model/service-items";
 
 interface BudgetItemsEditorProps {
@@ -29,11 +35,18 @@ export default function BudgetItemsEditor({
   onUpdateItem,
   disabled = false,
 }: BudgetItemsEditorProps) {
-  const selectedTypes = new Set(
-    items.map((item) => item.serviceType).filter(Boolean),
+  const selectedCombos = new Set(
+    items
+      .map((item) => {
+        if (!item.serviceType) return null;
+        const g =
+          item.gender ||
+          DEFAULT_SERVICE_GENDER[item.serviceType as BudgetServiceType];
+        return serviceComboKey(item.serviceType, g);
+      })
+      .filter(Boolean) as string[],
   );
-  const allTypesSelected =
-    selectedTypes.size >= budgetServiceTypeOptions.length;
+  const allTypesSelected = selectedCombos.size >= TOTAL_SERVICE_COMBOS;
 
   function buildDescriptionPreview(item: BudgetItemFormValues): string {
     if (!item.serviceType) {
@@ -41,7 +54,14 @@ export default function BudgetItemsEditor({
     }
 
     const quantity = Number(item.quantity || 0);
-    return buildBudgetServiceDescription(item.serviceType, quantity);
+    const genderOption =
+      item.gender ||
+      DEFAULT_SERVICE_GENDER[item.serviceType as BudgetServiceType];
+    return buildBudgetServiceDescription(
+      item.serviceType,
+      quantity,
+      genderOption as ServiceGenderOption,
+    );
   }
 
   return (
@@ -78,6 +98,26 @@ export default function BudgetItemsEditor({
           Number(item.unitPrice.replace(/[^\d]/g, "")) / 100 || 0;
         const total = quantity * unitPrice;
 
+        // Combos taken by OTHER items (used for availability checks in this row)
+        const otherCombos = new Set(
+          items
+            .filter((_, i) => i !== index)
+            .map((other) => {
+              if (!other.serviceType) return null;
+              const g =
+                other.gender ||
+                DEFAULT_SERVICE_GENDER[other.serviceType as BudgetServiceType];
+              return serviceComboKey(other.serviceType, g);
+            })
+            .filter(Boolean) as string[],
+        );
+
+        // A type is available if at least one gender variant is not taken by other items
+        const isTypeAvailable = (type: BudgetServiceType) =>
+          serviceGenderOptions.some(
+            (g) => !otherCombos.has(serviceComboKey(type, g)),
+          );
+
         return (
           <div
             key={item.id || `budget-item-${index}`}
@@ -97,13 +137,33 @@ export default function BudgetItemsEditor({
                   }}
                   value={item.serviceType}
                   onChange={(event) => {
-                    const nextType = event.target
-                      .value as BudgetItemFormValues["serviceType"];
+                    const nextType = event.target.value as
+                      | BudgetServiceType
+                      | "";
+                    let nextGender: ServiceGenderOption | "" = "";
+                    if (nextType) {
+                      const preferred =
+                        DEFAULT_SERVICE_GENDER[nextType as BudgetServiceType];
+                      const preferredTaken = otherCombos.has(
+                        serviceComboKey(nextType, preferred),
+                      );
+                      nextGender = preferredTaken
+                        ? (serviceGenderOptions.find(
+                            (g) =>
+                              !otherCombos.has(serviceComboKey(nextType, g)),
+                          ) ?? preferred)
+                        : preferred;
+                    }
                     const nextQuantity = Number(item.quantity || 0);
                     onUpdateItem(index, {
                       serviceType: nextType,
+                      gender: nextGender,
                       description: nextType
-                        ? buildBudgetServiceDescription(nextType, nextQuantity)
+                        ? buildBudgetServiceDescription(
+                            nextType,
+                            nextQuantity,
+                            nextGender || undefined,
+                          )
                         : "",
                     });
                   }}
@@ -115,7 +175,7 @@ export default function BudgetItemsEditor({
                   {budgetServiceTypeOptions
                     .filter(
                       (type) =>
-                        type === item.serviceType || !selectedTypes.has(type),
+                        type === item.serviceType || isTypeAvailable(type),
                     )
                     .map((type) => (
                       <option key={type} value={type}>
@@ -123,6 +183,57 @@ export default function BudgetItemsEditor({
                       </option>
                     ))}
                 </select>
+                {item.serviceType && (
+                  <div className="mt-2 flex gap-3">
+                    {serviceGenderOptions.map((opt) => {
+                      const isTakenByOther = otherCombos.has(
+                        serviceComboKey(item.serviceType, opt),
+                      );
+                      const isDisabled = disabled || isTakenByOther;
+                      return (
+                        <label
+                          key={opt}
+                          className="flex items-center gap-1.5 cursor-pointer text-sm text-[#2c1810]"
+                          style={{
+                            opacity: isDisabled ? 0.4 : 1,
+                            pointerEvents: isDisabled ? "none" : "auto",
+                          }}
+                          title={
+                            isTakenByOther
+                              ? `${opt} já está em uso para este tipo de serviço`
+                              : undefined
+                          }
+                        >
+                          <input
+                            type="radio"
+                            name={`item-gender-${index}`}
+                            value={opt}
+                            checked={
+                              (item.gender ||
+                                DEFAULT_SERVICE_GENDER[
+                                  item.serviceType as BudgetServiceType
+                                ]) === opt
+                            }
+                            onChange={() => {
+                              const nextQuantity = Number(item.quantity || 0);
+                              onUpdateItem(index, {
+                                gender: opt,
+                                description: buildBudgetServiceDescription(
+                                  item.serviceType as BudgetServiceType,
+                                  nextQuantity,
+                                  opt,
+                                ),
+                              });
+                            }}
+                            disabled={isDisabled}
+                            className="accent-[#7a4430]"
+                          />
+                          {opt}
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <Input
                 label="Quantidade *"
@@ -130,17 +241,25 @@ export default function BudgetItemsEditor({
                 min={1}
                 step={1}
                 value={item.quantity}
-                onChange={(event) =>
+                onChange={(event) => {
+                  const genderOption =
+                    item.gender ||
+                    (item.serviceType
+                      ? DEFAULT_SERVICE_GENDER[
+                          item.serviceType as BudgetServiceType
+                        ]
+                      : undefined);
                   onUpdateItem(index, {
                     quantity: event.target.value,
                     description: item.serviceType
                       ? buildBudgetServiceDescription(
                           item.serviceType,
                           Number(event.target.value || 0),
+                          genderOption as ServiceGenderOption | undefined,
                         )
                       : item.description,
-                  })
-                }
+                  });
+                }}
                 placeholder={budgetUiCopy.form.placeholders.itemQuantity}
                 wrapperClassName="md:col-span-2"
                 inputMode="numeric"
