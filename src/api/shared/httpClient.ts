@@ -1,7 +1,4 @@
-import axios, {
-  type AxiosResponse,
-  type InternalAxiosRequestConfig,
-} from "axios";
+import axios from "axios";
 import { AuthSessionResponseSchema } from "../auth/schema";
 import {
   clearStoredAuthSession,
@@ -33,7 +30,11 @@ export const httpClient = axios.create({
   },
 });
 
-type RetriableRequestConfig = InternalAxiosRequestConfig & {
+type ResponseInterceptorUse = typeof httpClient.interceptors.response.use;
+type ResponseSuccessHandler = Parameters<ResponseInterceptorUse>[0];
+type ResponseErrorHandler = Parameters<ResponseInterceptorUse>[1];
+type InterceptorResponse = Parameters<NonNullable<ResponseSuccessHandler>>[0];
+type RetriableRequestConfig = InterceptorResponse["config"] & {
   _retry?: boolean;
 };
 
@@ -148,8 +149,8 @@ async function retryAfterRefresh(
   }
 }
 
-httpClient.interceptors.response.use(
-  async (response: AxiosResponse<unknown>) => {
+const handleSuccessfulResponse: ResponseSuccessHandler = (response) => {
+  return Promise.resolve().then(async () => {
     const retriedResponse = await retryAfterRefresh(
       hasUnauthorizedGraphqlError(response.data)
         ? (response.config as RetriableRequestConfig | undefined)
@@ -157,25 +158,29 @@ httpClient.interceptors.response.use(
     );
 
     return retriedResponse ?? response;
-  },
-  async (error) => {
+  }) as ReturnType<NonNullable<ResponseSuccessHandler>>;
+};
+
+const handleResponseError: ResponseErrorHandler = (error) => {
+  return Promise.resolve().then(async () => {
     const statusCode = error.response?.status;
     const originalRequest = error.config as RetriableRequestConfig | undefined;
 
     if (statusCode !== 401) {
-      return Promise.reject(error);
+      throw error;
     }
 
-    try {
-      const retriedResponse = await retryAfterRefresh(originalRequest);
+    const retriedResponse = await retryAfterRefresh(originalRequest);
 
-      if (retriedResponse) {
-        return retriedResponse;
-      }
-    } catch (refreshError) {
-      return Promise.reject(refreshError);
+    if (retriedResponse) {
+      return retriedResponse;
     }
 
-    return Promise.reject(error);
-  },
+    throw error;
+  }) as ReturnType<NonNullable<ResponseErrorHandler>>;
+};
+
+httpClient.interceptors.response.use(
+  handleSuccessfulResponse,
+  handleResponseError,
 );
