@@ -9,35 +9,149 @@ export const budgetServiceTypeOptions = [
 
 export type BudgetServiceType = (typeof budgetServiceTypeOptions)[number];
 
+export const serviceGenderOptions = ["Masculino", "Feminino"] as const;
+export type ServiceGenderOption = (typeof serviceGenderOptions)[number];
+
 interface ServiceMeta {
   singularLower: string;
   pluralLower: string;
+  gender: "masculine" | "feminine";
+}
+
+/** Grammar-level gender and labels for each (baseType × ServiceGenderOption) combination */
+const SERVICE_GENDER_META: Record<
+  BudgetServiceType,
+  Record<ServiceGenderOption, ServiceMeta>
+> = {
+  Garçom: {
+    Masculino: {
+      singularLower: "garçom",
+      pluralLower: "garçons",
+      gender: "masculine",
+    },
+    Feminino: {
+      singularLower: "garçonete",
+      pluralLower: "garçonetes",
+      gender: "feminine",
+    },
+  },
+  Copeira: {
+    Masculino: {
+      singularLower: "copeiro",
+      pluralLower: "copeiros",
+      gender: "masculine",
+    },
+    Feminino: {
+      singularLower: "copeira",
+      pluralLower: "copeiras",
+      gender: "feminine",
+    },
+  },
+  Porteiro: {
+    Masculino: {
+      singularLower: "porteiro",
+      pluralLower: "porteiros",
+      gender: "masculine",
+    },
+    Feminino: {
+      singularLower: "porteira",
+      pluralLower: "porteiras",
+      gender: "feminine",
+    },
+  },
+  Segurança: {
+    Masculino: {
+      singularLower: "segurança",
+      pluralLower: "seguranças",
+      gender: "masculine",
+    },
+    Feminino: {
+      singularLower: "segurança",
+      pluralLower: "seguranças",
+      gender: "feminine",
+    },
+  },
+  Monitor: {
+    Masculino: {
+      singularLower: "monitor",
+      pluralLower: "monitores",
+      gender: "masculine",
+    },
+    Feminino: {
+      singularLower: "monitora",
+      pluralLower: "monitoras",
+      gender: "feminine",
+    },
+  },
+  Recepcionista: {
+    Masculino: {
+      singularLower: "recepcionista",
+      pluralLower: "recepcionistas",
+      gender: "masculine",
+    },
+    Feminino: {
+      singularLower: "recepcionista",
+      pluralLower: "recepcionistas",
+      gender: "feminine",
+    },
+  },
+};
+
+/** Default gender option for each base service type (used for new items) */
+export const DEFAULT_SERVICE_GENDER: Record<
+  BudgetServiceType,
+  ServiceGenderOption
+> = {
+  Garçom: "Masculino",
+  Copeira: "Feminino",
+  Porteiro: "Masculino",
+  Segurança: "Masculino",
+  Monitor: "Masculino",
+  Recepcionista: "Feminino",
+};
+
+/** Total number of available (type × gender) combinations */
+export const TOTAL_SERVICE_COMBOS =
+  budgetServiceTypeOptions.length * serviceGenderOptions.length;
+
+/** Returns the combo key used for uniqueness checks */
+export function serviceComboKey(
+  serviceType: BudgetServiceType | "",
+  gender: ServiceGenderOption | "",
+): string {
+  return `${serviceType}:${gender}`;
 }
 
 const SERVICE_META: Record<BudgetServiceType, ServiceMeta> = {
   Garçom: {
     singularLower: "garçom",
     pluralLower: "garçons",
+    gender: "masculine",
   },
   Copeira: {
     singularLower: "copeira",
     pluralLower: "copeiras",
+    gender: "feminine",
   },
   Porteiro: {
     singularLower: "porteiro",
     pluralLower: "porteiros",
+    gender: "masculine",
   },
   Segurança: {
     singularLower: "segurança",
     pluralLower: "seguranças",
+    gender: "masculine",
   },
   Monitor: {
     singularLower: "monitor",
     pluralLower: "monitores",
+    gender: "masculine",
   },
   Recepcionista: {
     singularLower: "recepcionista",
     pluralLower: "recepcionistas",
+    gender: "feminine",
   },
 };
 
@@ -48,7 +162,10 @@ function normalizeText(value: string): string {
     .toLowerCase();
 }
 
-function toPtBrNumberWords(value: number): string {
+function toPtBrNumberWords(
+  value: number,
+  gender: "masculine" | "feminine" = "masculine",
+): string {
   const units = [
     "zero",
     "um",
@@ -102,6 +219,8 @@ function toPtBrNumberWords(value: number): string {
     return String(value);
   }
 
+  if (value === 1) return gender === "feminine" ? "uma" : "um";
+  if (value === 2) return gender === "feminine" ? "duas" : "dois";
   if (value < 10) return units[value];
   if (value < 20) return teens[value - 10];
 
@@ -109,6 +228,8 @@ function toPtBrNumberWords(value: number): string {
   const rest = value % 100;
 
   const toTens = (num: number): string => {
+    if (num === 1) return gender === "feminine" ? "uma" : "um";
+    if (num === 2) return gender === "feminine" ? "duas" : "dois";
     if (num < 10) return units[num];
     if (num < 20) return teens[num - 10];
     const ten = Math.floor(num / 10);
@@ -129,18 +250,32 @@ function toPtBrNumberWords(value: number): string {
   return `${hundreds[hundred]} e ${toTens(rest)}`;
 }
 
-function serviceLower(type: BudgetServiceType, quantity: number): string {
-  const meta = SERVICE_META[type];
+function resolveServiceMeta(
+  type: BudgetServiceType,
+  genderOption?: ServiceGenderOption,
+): ServiceMeta {
+  const effectiveGender = genderOption ?? DEFAULT_SERVICE_GENDER[type];
+  return SERVICE_GENDER_META[type][effectiveGender];
+}
+
+function serviceLower(
+  type: BudgetServiceType,
+  quantity: number,
+  genderOption?: ServiceGenderOption,
+): string {
+  const meta = resolveServiceMeta(type, genderOption);
   return quantity === 1 ? meta.singularLower : meta.pluralLower;
 }
 
 export function buildBudgetServiceDescription(
   type: BudgetServiceType,
   quantity: number,
+  genderOption?: ServiceGenderOption,
 ): string {
   const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
-  const quantityWords = toPtBrNumberWords(safeQuantity);
-  const lowerService = serviceLower(type, safeQuantity);
+  const meta = resolveServiceMeta(type, genderOption);
+  const quantityWords = toPtBrNumberWords(safeQuantity, meta.gender);
+  const lowerService = serviceLower(type, safeQuantity, genderOption);
 
   const FRAGMENTS: Record<string, string> = {
     copeira:
@@ -196,16 +331,35 @@ export function inferBudgetServiceType(
   const normalized = normalizeText(description);
 
   for (const option of budgetServiceTypeOptions) {
-    const meta = SERVICE_META[option];
-    if (
-      normalized.includes(normalizeText(meta.singularLower)) ||
-      normalized.includes(normalizeText(meta.pluralLower))
-    ) {
-      return option;
+    for (const genderOption of serviceGenderOptions) {
+      const meta = SERVICE_GENDER_META[option][genderOption];
+      if (
+        normalized.includes(normalizeText(meta.singularLower)) ||
+        normalized.includes(normalizeText(meta.pluralLower))
+      ) {
+        return option;
+      }
     }
   }
 
   return "";
+}
+
+export function inferServiceGenderFromDescription(
+  description: string,
+  baseType: BudgetServiceType,
+): ServiceGenderOption {
+  const normalized = normalizeText(description);
+  for (const genderOption of serviceGenderOptions) {
+    const meta = SERVICE_GENDER_META[baseType][genderOption];
+    if (
+      normalized.includes(normalizeText(meta.singularLower)) ||
+      normalized.includes(normalizeText(meta.pluralLower))
+    ) {
+      return genderOption;
+    }
+  }
+  return DEFAULT_SERVICE_GENDER[baseType];
 }
 
 export function getServiceLabels(type: BudgetServiceType): {
@@ -214,4 +368,10 @@ export function getServiceLabels(type: BudgetServiceType): {
 } {
   const meta = SERVICE_META[type];
   return { singular: meta.singularLower, plural: meta.pluralLower };
+}
+
+export function getServiceGender(
+  type: BudgetServiceType,
+): "masculine" | "feminine" {
+  return SERVICE_META[type].gender;
 }

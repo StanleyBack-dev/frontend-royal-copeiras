@@ -9,7 +9,9 @@ import {
 import { budgetValidationMessages } from "./messages";
 import {
   budgetServiceTypeOptions,
+  serviceGenderOptions,
   type BudgetServiceType,
+  type ServiceGenderOption,
 } from "./service-items";
 
 export const budgetEventDateModeOptions = ["single", "multiple"] as const;
@@ -92,6 +94,7 @@ export const budgetAdvancePercentageOptions = Array.from(
 export interface BudgetItemFormValues {
   id?: string;
   serviceType: BudgetServiceType | "";
+  gender: ServiceGenderOption | "";
   description: string;
   quantity: string;
   unitPrice: string;
@@ -120,6 +123,7 @@ export interface BudgetFormValues {
 
 export const emptyBudgetItemFormValues: BudgetItemFormValues = {
   serviceType: "",
+  gender: "",
   description: "",
   quantity: "1",
   unitPrice: "",
@@ -198,6 +202,7 @@ const budgetFormSchemaBase = z.object({
     z.object({
       id: z.string().optional(),
       serviceType: z.enum(budgetServiceTypeOptions).or(z.literal("")),
+      gender: z.enum(serviceGenderOptions).or(z.literal("")),
       description: z.string(),
       quantity: z.string(),
       unitPrice: z.string(),
@@ -335,12 +340,12 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
       });
     }
 
-    const selectedTypes = data.items
-      .map((item) => item.serviceType.trim())
-      .filter(Boolean);
-    const uniqueTypes = new Set(selectedTypes);
+    const selectedCombos = data.items
+      .filter((item) => item.serviceType.trim())
+      .map((item) => `${item.serviceType.trim()}:${item.gender.trim()}`);
+    const uniqueCombos = new Set(selectedCombos);
 
-    if (selectedTypes.length !== uniqueTypes.size) {
+    if (selectedCombos.length !== uniqueCombos.size) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["items"],

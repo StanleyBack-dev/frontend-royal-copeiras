@@ -14,7 +14,9 @@ import { formatCurrencyInput, parseCurrencyInput } from "./formatters";
 import {
   buildBudgetServiceDescription,
   inferBudgetServiceType,
+  inferServiceGenderFromDescription,
   sanitizeBudgetServiceDescription,
+  type BudgetServiceType,
 } from "./service-items";
 
 function toDecimal(value: string): number | undefined {
@@ -26,8 +28,10 @@ function mapBudgetItemFormToPayload(
   index: number,
 ): CreateBudgetItemPayload {
   const quantity = Number(item.quantity || 0);
+  const effectiveGender =
+    item.serviceType && item.gender ? item.gender : undefined;
   const description = item.serviceType
-    ? buildBudgetServiceDescription(item.serviceType, quantity)
+    ? buildBudgetServiceDescription(item.serviceType, quantity, effectiveGender)
     : item.description.trim();
 
   return {
@@ -86,12 +90,23 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
         : "0,00",
     items: (budget.items || []).map((item) => {
       const serviceType = inferBudgetServiceType(item.description);
+      const gender = serviceType
+        ? inferServiceGenderFromDescription(
+            item.description,
+            serviceType as BudgetServiceType,
+          )
+        : "";
 
       return {
         id: item.idBudgetItems,
         serviceType,
+        gender,
         description: serviceType
-          ? buildBudgetServiceDescription(serviceType, item.quantity)
+          ? buildBudgetServiceDescription(
+              serviceType,
+              item.quantity,
+              gender || undefined,
+            )
           : sanitizeBudgetServiceDescription(item.description),
         quantity: String(item.quantity),
         unitPrice: formatCurrencyInput(String(item.unitPrice * 100)),
