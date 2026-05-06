@@ -27,6 +27,22 @@ export function filterCustomersBySearch(customers: Customer[], search: string) {
 export function getCustomerTableColumns(): DataTableColumn<Customer>[] {
   return [
     {
+      key: "actions",
+      label: customerUiCopy.listing.columns.actions,
+      render: (customer) => (
+        <div className="flex gap-2">
+          <Link
+            to={customerRoutePaths.edit(customer.idCustomers)}
+            title={customerUiCopy.listing.actions.edit}
+            className="hover:text-yellow-700"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <EditIcon size={18} />
+          </Link>
+        </div>
+      ),
+    },
+    {
       key: "name",
       label: customerUiCopy.listing.columns.name,
       render: (customer) => (
@@ -79,22 +95,6 @@ export function getCustomerTableColumns(): DataTableColumn<Customer>[] {
       key: "createdAt",
       label: customerUiCopy.listing.columns.createdAt,
       render: (customer) => formatDateTimeDisplay(customer.createdAt),
-    },
-    {
-      key: "actions",
-      label: customerUiCopy.listing.columns.actions,
-      render: (customer) => (
-        <div className="flex gap-2">
-          <Link
-            to={customerRoutePaths.edit(customer.idCustomers)}
-            title={customerUiCopy.listing.actions.edit}
-            className="hover:text-yellow-700"
-            style={{ display: "flex", alignItems: "center" }}
-          >
-            <EditIcon size={18} />
-          </Link>
-        </div>
-      ),
     },
   ];
 }

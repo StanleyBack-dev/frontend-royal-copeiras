@@ -10,6 +10,7 @@ export const contractUiCopy = {
       contractNumber: "Contrato",
       budgetNumber: "Orçamento",
       status: "Status",
+      createdAt: "Criação",
       signatureStatus: "Assinatura",
       signedAt: "Assinado em",
       issueDate: "Emissão",

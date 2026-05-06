@@ -42,6 +42,20 @@ export function filterContractsBySearch(contracts: Contract[], search: string) {
 export function getContractTableColumns(): DataTableColumn<Contract>[] {
   return [
     {
+      key: "actions",
+      label: contractUiCopy.list.columns.actions,
+      render: (contract) => (
+        <Link
+          to={contractRoutePaths.edit(contract.idContracts)}
+          title="Editar contrato"
+          className="hover:text-yellow-700"
+          style={{ display: "flex", alignItems: "center" }}
+        >
+          <EditIcon size={18} />
+        </Link>
+      ),
+    },
+    {
       key: "contractNumber",
       label: contractUiCopy.list.columns.contractNumber,
       render: (contract) => (
@@ -81,18 +95,9 @@ export function getContractTableColumns(): DataTableColumn<Contract>[] {
         contract.validUntil ? formatDateTimeDisplay(contract.validUntil) : "-",
     },
     {
-      key: "actions",
-      label: contractUiCopy.list.columns.actions,
-      render: (contract) => (
-        <Link
-          to={contractRoutePaths.edit(contract.idContracts)}
-          title="Editar contrato"
-          className="hover:text-yellow-700"
-          style={{ display: "flex", alignItems: "center" }}
-        >
-          <EditIcon size={18} />
-        </Link>
-      ),
+      key: "createdAt",
+      label: contractUiCopy.list.columns.createdAt,
+      render: (contract) => formatDateTimeDisplay(contract.createdAt),
     },
   ];
 }

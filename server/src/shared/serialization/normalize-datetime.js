@@ -1,5 +1,6 @@
 const ISO_DATETIME_WITHOUT_TIMEZONE_PATTERN =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?$/;
+const SAO_PAULO_OFFSET = "-03:00";
 
 function isPlainObject(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -10,7 +11,7 @@ function normalizeDateTimeString(value) {
     return value;
   }
 
-  return `${value}Z`;
+  return `${value}${SAO_PAULO_OFFSET}`;
 }
 
 export function normalizeDateTimes(value) {

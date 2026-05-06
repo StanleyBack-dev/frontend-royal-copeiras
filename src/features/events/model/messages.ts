@@ -11,6 +11,7 @@ export const eventUiCopy = {
       status: "Status",
       eventLocation: "Local",
       eventDates: "Data(s) do evento",
+      createdAt: "Criação",
       guestCount: "Convidados",
       totalRevenue: "Receita",
       totalCost: "Custo",

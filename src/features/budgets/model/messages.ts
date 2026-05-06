@@ -10,6 +10,7 @@ export const budgetUiCopy = {
       budgetNumber: "Orçamento",
       lead: "Lead",
       status: "Status",
+      createdAt: "Criação",
       eventLocation: "Local",
       totalAmount: "Total",
       validUntil: "Validade",
