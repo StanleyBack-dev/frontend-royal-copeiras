@@ -4,7 +4,6 @@ import { HttpError } from "./http-error.js";
 import { logEvent, summarizePayload } from "../observability/logger.js";
 import { devAuthConfig } from "../auth/dev-auth.config.js";
 import { getDevAuthHeaders } from "../auth/dev-auth.provider.js";
-import { normalizeDateTimes } from "../serialization/normalize-datetime.js";
 import {
   recordGraphqlCompleted,
   recordGraphqlRetry,
@@ -160,8 +159,6 @@ export async function executeGraphql({
       throw new HttpError(502, "Invalid GraphQL response payload.");
     }
 
-    const normalizedData = normalizeDateTimes(payload.data);
-
     const durationMs = Date.now() - startedAt;
 
     recordGraphqlCompleted({
@@ -176,10 +173,10 @@ export async function executeGraphql({
       operationName,
       durationMs,
       statusCode: response.status,
-      response: summarizePayload(normalizedData),
+      response: summarizePayload(payload.data),
     });
 
-    return normalizedData;
+    return payload.data;
   } catch (error) {
     const durationMs = Date.now() - startedAt;
 
