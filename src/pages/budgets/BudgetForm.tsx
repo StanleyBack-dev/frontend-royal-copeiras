@@ -20,6 +20,7 @@ import BudgetDisplacementFeeCard from "@/features/budgets/components/BudgetDispl
 import { useBudgetsContext } from "@/features/budgets/context/useBudgetsContext";
 import { useToast } from "@/shared/toast/useToast";
 import { budgetRoutePaths, contractRoutePaths } from "@/router";
+import { formatDateTimeDisplay } from "@/utils/format";
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { fetchContracts } from "@/features/contracts/services/contract.service";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -393,13 +394,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </span>{" "}
               em{" "}
               <span className="font-semibold">
-                {new Intl.DateTimeFormat("pt-BR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }).format(new Date(editing.sentAt))}
+                {formatDateTimeDisplay(editing.sentAt)}
               </span>
             </p>
           </div>

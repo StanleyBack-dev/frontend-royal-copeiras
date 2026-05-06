@@ -53,6 +53,20 @@ export function getBudgetTableColumns(
 ): DataTableColumn<Budget>[] {
   return [
     {
+      key: "actions",
+      label: budgetUiCopy.list.columns.actions,
+      render: (budget) => (
+        <Link
+          to={budgetRoutePaths.edit(budget.idBudgets)}
+          title="Editar orçamento"
+          className="hover:text-yellow-700"
+          style={{ display: "flex", alignItems: "center" }}
+        >
+          <EditIcon size={18} />
+        </Link>
+      ),
+    },
+    {
       key: "budgetNumber",
       label: budgetUiCopy.list.columns.budgetNumber,
       render: (budget) => (
@@ -110,6 +124,11 @@ export function getBudgetTableColumns(
       render: (budget) => formatDateTimeDisplay(budget.validUntil),
     },
     {
+      key: "createdAt",
+      label: budgetUiCopy.list.columns.createdAt,
+      render: (budget) => formatDateTimeDisplay(budget.createdAt),
+    },
+    {
       key: "preview",
       label: budgetUiCopy.list.columns.preview,
       render: (budget) => {
@@ -139,20 +158,6 @@ export function getBudgetTableColumns(
 
         return <PreviewAction />;
       },
-    },
-    {
-      key: "actions",
-      label: budgetUiCopy.list.columns.actions,
-      render: (budget) => (
-        <Link
-          to={budgetRoutePaths.edit(budget.idBudgets)}
-          title="Editar orçamento"
-          className="hover:text-yellow-700"
-          style={{ display: "flex", alignItems: "center" }}
-        >
-          <EditIcon size={18} />
-        </Link>
-      ),
     },
   ];
 }

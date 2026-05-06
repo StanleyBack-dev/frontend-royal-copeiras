@@ -30,6 +30,22 @@ export function filterEmployeesBySearch(employees: Employee[], search: string) {
 export function getEmployeeTableColumns(): DataTableColumn<Employee>[] {
   return [
     {
+      key: "actions",
+      label: employeeUiCopy.listing.columns.actions,
+      render: (employee) => (
+        <div className="flex gap-2">
+          <Link
+            to={employeeRoutePaths.edit(employee.idEmployees)}
+            title={employeeUiCopy.listing.actions.edit}
+            className="hover:text-yellow-700"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <EditIcon size={18} />
+          </Link>
+        </div>
+      ),
+    },
+    {
       key: "name",
       label: employeeUiCopy.listing.columns.name,
       render: (employee) => (
@@ -79,22 +95,6 @@ export function getEmployeeTableColumns(): DataTableColumn<Employee>[] {
       key: "createdAt",
       label: employeeUiCopy.listing.columns.createdAt,
       render: (employee) => formatDateTimeDisplay(employee.createdAt),
-    },
-    {
-      key: "actions",
-      label: employeeUiCopy.listing.columns.actions,
-      render: (employee) => (
-        <div className="flex gap-2">
-          <Link
-            to={employeeRoutePaths.edit(employee.idEmployees)}
-            title={employeeUiCopy.listing.actions.edit}
-            className="hover:text-yellow-700"
-            style={{ display: "flex", alignItems: "center" }}
-          >
-            <EditIcon size={18} />
-          </Link>
-        </div>
-      ),
     },
   ];
 }

@@ -166,10 +166,42 @@ export function formatCurrencyExtended(value: number): string {
   return `${brl} (${extenso})`;
 }
 
+const SAO_PAULO_TIMEZONE = "America/Sao_Paulo";
+const ISO_DATETIME_WITHOUT_TIMEZONE_PATTERN =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?$/;
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseDateTimeDisplayValue(value: string): Date {
+  if (ISO_DATE_PATTERN.test(value)) {
+    return new Date(`${value}T00:00:00-03:00`);
+  }
+
+  if (ISO_DATETIME_WITHOUT_TIMEZONE_PATTERN.test(value)) {
+    return new Date(`${value}-03:00`);
+  }
+
+  return new Date(value);
+}
+
+export function formatDateDisplay(value?: string): string {
+  if (!value) return "";
+
+  const parsedDate = parseDateTimeDisplayValue(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeZone: SAO_PAULO_TIMEZONE,
+  }).format(parsedDate);
+}
+
 export function formatDateTimeDisplay(value?: string): string {
   if (!value) return "";
 
-  const parsedDate = new Date(value);
+  const parsedDate = parseDateTimeDisplayValue(value);
 
   if (Number.isNaN(parsedDate.getTime())) {
     return value;
@@ -178,6 +210,7 @@ export function formatDateTimeDisplay(value?: string): string {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "short",
+    timeZone: SAO_PAULO_TIMEZONE,
   }).format(parsedDate);
 }
 

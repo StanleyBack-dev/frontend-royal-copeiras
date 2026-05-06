@@ -16,6 +16,7 @@ import { useUsersContext } from "@/features/users/context/useUsersContext";
 import { useToast } from "@/shared/toast/useToast";
 import { userRoutePaths } from "@/router";
 import { getHttpErrorMessage } from "@/api/shared/http-error";
+import { formatDateTimeDisplay } from "@/utils/format";
 
 export default function UserForm({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams();
@@ -239,7 +240,7 @@ export default function UserForm({ mode }: { mode: "create" | "edit" }) {
               {editing?.lockedUntil && (
                 <span className="text-xs text-[#9a7060]">
                   {isLocked
-                    ? `Bloqueado até ${new Date(editing.lockedUntil).toLocaleString("pt-BR")}`
+                    ? `Bloqueado até ${formatDateTimeDisplay(editing.lockedUntil)}`
                     : "Não está bloqueado"}
                 </span>
               )}

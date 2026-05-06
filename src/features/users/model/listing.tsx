@@ -39,6 +39,22 @@ export function filterUsersBySearch(users: User[], search: string) {
 export function getUserTableColumns(): DataTableColumn<User>[] {
   return [
     {
+      key: "actions",
+      label: userUiCopy.listing.columns.actions,
+      render: (user) => (
+        <div className="flex gap-2">
+          <Link
+            to={userRoutePaths.edit(user.idUsers)}
+            title={userUiCopy.listing.actions.edit}
+            className="hover:text-yellow-700"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <EditIcon size={18} />
+          </Link>
+        </div>
+      ),
+    },
+    {
       key: "name",
       label: userUiCopy.listing.columns.name,
       render: (user) => (
@@ -102,22 +118,6 @@ export function getUserTableColumns(): DataTableColumn<User>[] {
       key: "createdAt",
       label: userUiCopy.listing.columns.createdAt,
       render: (user) => formatDateTimeDisplay(user.createdAt),
-    },
-    {
-      key: "actions",
-      label: userUiCopy.listing.columns.actions,
-      render: (user) => (
-        <div className="flex gap-2">
-          <Link
-            to={userRoutePaths.edit(user.idUsers)}
-            title={userUiCopy.listing.actions.edit}
-            className="hover:text-yellow-700"
-            style={{ display: "flex", alignItems: "center" }}
-          >
-            <EditIcon size={18} />
-          </Link>
-        </div>
-      ),
     },
   ];
 }

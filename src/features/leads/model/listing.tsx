@@ -50,6 +50,29 @@ function getSourceLabel(source?: Lead["source"]) {
 export function getLeadTableColumns(): DataTableColumn<Lead>[] {
   return [
     {
+      key: "actions",
+      label: leadUiCopy.listing.columns.actions,
+      render: (lead) => (
+        <div className="flex gap-2">
+          <Link
+            to={`${budgetRoutePaths.create}?leadId=${lead.idLeads}`}
+            title={leadUiCopy.listing.actions.createBudget}
+            className="rounded-md border border-[#e8d5c9] px-2 py-1 text-xs font-semibold text-[#7a4430] transition hover:bg-[#f5ede8]"
+          >
+            Orçamento
+          </Link>
+          <Link
+            to={leadRoutePaths.edit(lead.idLeads)}
+            title={leadUiCopy.listing.actions.edit}
+            className="hover:text-yellow-700"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <EditIcon size={18} />
+          </Link>
+        </div>
+      ),
+    },
+    {
       key: "name",
       label: leadUiCopy.listing.columns.name,
       render: (lead) => (
@@ -100,29 +123,6 @@ export function getLeadTableColumns(): DataTableColumn<Lead>[] {
       key: "createdAt",
       label: leadUiCopy.listing.columns.createdAt,
       render: (lead) => formatDateTimeDisplay(lead.createdAt),
-    },
-    {
-      key: "actions",
-      label: leadUiCopy.listing.columns.actions,
-      render: (lead) => (
-        <div className="flex gap-2">
-          <Link
-            to={`${budgetRoutePaths.create}?leadId=${lead.idLeads}`}
-            title={leadUiCopy.listing.actions.createBudget}
-            className="rounded-md border border-[#e8d5c9] px-2 py-1 text-xs font-semibold text-[#7a4430] transition hover:bg-[#f5ede8]"
-          >
-            Orçamento
-          </Link>
-          <Link
-            to={leadRoutePaths.edit(lead.idLeads)}
-            title={leadUiCopy.listing.actions.edit}
-            className="hover:text-yellow-700"
-            style={{ display: "flex", alignItems: "center" }}
-          >
-            <EditIcon size={18} />
-          </Link>
-        </div>
-      ),
     },
   ];
 }

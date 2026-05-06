@@ -17,7 +17,7 @@ import {
   getServiceLabels,
   buildBudgetServiceDescription,
 } from "@/features/budgets/model/service-items";
-import { formatCurrencyExtended } from "@/utils/format";
+import { formatCurrencyExtended, formatDateTimeDisplay } from "@/utils/format";
 import {
   FileSignature,
   FileText,
@@ -622,13 +622,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
               </span>{" "}
               em{" "}
               <span className="font-semibold">
-                {new Intl.DateTimeFormat("pt-BR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }).format(new Date(editing.sentAt))}
+                {formatDateTimeDisplay(editing.sentAt)}
               </span>
             </p>
           </div>
@@ -859,13 +853,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
             />
             <Input
               label="Criado em"
-              value={new Intl.DateTimeFormat("pt-BR", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              }).format(new Date(editing.createdAt))}
+              value={formatDateTimeDisplay(editing.createdAt)}
               readOnly
               disabled
             />

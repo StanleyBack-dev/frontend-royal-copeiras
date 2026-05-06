@@ -2,6 +2,10 @@ import type { DataTableColumn } from "../../../components/organisms/DataTable";
 import type { Event } from "../../../api/events/schema";
 import { eventUiCopy } from "./messages";
 import { getEventStatusColors, getEventStatusLabel } from "./constants";
+import {
+  formatDateDisplay,
+  formatDateTimeDisplay,
+} from "../../../utils/format";
 
 export type EventItem = Event;
 
@@ -14,17 +18,7 @@ function formatCurrencyBRL(value: number) {
 
 function formatEventDates(dates?: string[] | null): string {
   if (!dates || dates.length === 0) return "-";
-  return dates
-    .map((d) => {
-      const date = new Date(`${d}T12:00:00`);
-      if (Number.isNaN(date.getTime())) return d;
-      return new Intl.DateTimeFormat("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }).format(date);
-    })
-    .join(", ");
+  return dates.map((d) => formatDateDisplay(d) || d).join(", ");
 }
 
 export function formatEventStatus(status: string): React.ReactNode {
@@ -62,6 +56,19 @@ export function getEventTableColumns(
   onDetail: (item: EventItem) => void,
 ): DataTableColumn<EventItem>[] {
   return [
+    {
+      key: "actions",
+      label: eventUiCopy.list.columns.actions,
+      render: (item) => (
+        <button
+          type="button"
+          onClick={() => onDetail(item)}
+          className="rounded-lg border border-[#e8d5c9] bg-[#faf6f2] px-3 py-1.5 text-xs font-medium text-[#7a4430] transition-colors hover:bg-[#e8d5c9]"
+        >
+          Ver detalhes
+        </button>
+      ),
+    },
     {
       key: "contractNumber",
       label: eventUiCopy.list.columns.contractNumber,
@@ -108,17 +115,9 @@ export function getEventTableColumns(
       render: (item) => formatCurrencyBRL(item.companyReceivable),
     },
     {
-      key: "actions",
-      label: eventUiCopy.list.columns.actions,
-      render: (item) => (
-        <button
-          type="button"
-          onClick={() => onDetail(item)}
-          className="rounded-lg border border-[#e8d5c9] bg-[#faf6f2] px-3 py-1.5 text-xs font-medium text-[#7a4430] transition-colors hover:bg-[#e8d5c9]"
-        >
-          Ver detalhes
-        </button>
-      ),
+      key: "createdAt",
+      label: eventUiCopy.list.columns.createdAt,
+      render: (item) => formatDateTimeDisplay(item.createdAt),
     },
   ];
 }
