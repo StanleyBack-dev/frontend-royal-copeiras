@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  closeContractWithoutSignature,
   generateContractPreviewPdf,
   sendContractEmail,
   sendContractSignatureRequest,
@@ -16,6 +17,7 @@ interface UseContractPdfActionsParams {
   contractNumber?: string;
   onEmailSent?: () => void;
   onSignatureRequested?: () => void;
+  onClosedWithoutSignature?: () => void;
 }
 
 function base64ToFile(
@@ -36,10 +38,12 @@ export function useContractPdfActions({
   contractNumber,
   onEmailSent,
   onSignatureRequested,
+  onClosedWithoutSignature,
 }: UseContractPdfActionsParams) {
   const [previewing, setPreviewing] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [sendingSignatureRequest, setSendingSignatureRequest] = useState(false);
+  const [closingWithoutSignature, setClosingWithoutSignature] = useState(false);
   const [sharingWhatsApp, setSharingWhatsApp] = useState(false);
   const { showError, showSuccess } = useToast();
 
@@ -130,6 +134,33 @@ export function useContractPdfActions({
     }
   }
 
+  async function closeWithoutSignature(): Promise<boolean> {
+    if (!contractId) {
+      showError(
+        "Salve o contrato antes",
+        "E necessario salvar o contrato antes de encerrar sem assinatura.",
+      );
+      return false;
+    }
+
+    setClosingWithoutSignature(true);
+    try {
+      await closeContractWithoutSignature(contractId);
+      showSuccess("Contrato encerrado sem assinatura com sucesso");
+      onClosedWithoutSignature?.();
+      return true;
+    } catch (error) {
+      const message = getHttpErrorMessage(
+        error,
+        "Erro ao encerrar contrato sem assinatura",
+      );
+      showError("Erro ao encerrar contrato", message);
+      return false;
+    } finally {
+      setClosingWithoutSignature(false);
+    }
+  }
+
   async function shareWhatsApp(
     leadName: string,
     phone: string,
@@ -201,10 +232,12 @@ export function useContractPdfActions({
     preview,
     sendEmail,
     sendSignatureRequest,
+    closeWithoutSignature,
     shareWhatsApp,
     previewing,
     sendingEmail,
     sendingSignatureRequest,
+    closingWithoutSignature,
     sharingWhatsApp,
   };
 }

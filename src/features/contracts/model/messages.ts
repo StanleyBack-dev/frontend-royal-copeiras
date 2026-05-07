@@ -47,6 +47,7 @@ export const contractUiCopy = {
       generated: "Gerado",
       pending_signature: "Pendente assinatura",
       signed: "Assinado",
+      closed_without_signature: "Encerrado sem assinatura",
       rejected: "Rejeitado",
       expired: "Expirado",
       canceled: "Cancelado",

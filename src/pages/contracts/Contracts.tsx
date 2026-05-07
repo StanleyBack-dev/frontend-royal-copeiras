@@ -39,6 +39,10 @@ export default function Contracts() {
       label: contractUiCopy.form.options.pending_signature,
     },
     { value: "signed", label: contractUiCopy.form.options.signed },
+    {
+      value: "closed_without_signature",
+      label: contractUiCopy.form.options.closed_without_signature,
+    },
     { value: "rejected", label: contractUiCopy.form.options.rejected },
     { value: "expired", label: contractUiCopy.form.options.expired },
     { value: "canceled", label: contractUiCopy.form.options.canceled },

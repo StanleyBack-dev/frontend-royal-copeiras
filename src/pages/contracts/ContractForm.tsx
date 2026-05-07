@@ -344,6 +344,8 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const leadHasPhone = Boolean(selectedLead?.phone);
   const [confirmSendEmail, setConfirmSendEmail] = useState(false);
   const [confirmSendSignature, setConfirmSendSignature] = useState(false);
+  const [confirmCloseWithoutSignature, setConfirmCloseWithoutSignature] =
+    useState(false);
 
   useEffect(() => {
     if (mode === "edit" && editing) {
@@ -407,6 +409,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
         | "generated"
         | "pending_signature"
         | "signed"
+        | "closed_without_signature"
         | "rejected"
         | "expired"
         | "canceled",
@@ -588,6 +591,22 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     });
   }
 
+  async function handleCloseWithoutSignature() {
+    if (!editing?.idContracts) {
+      return;
+    }
+
+    const closed = await pdfActions.closeWithoutSignature();
+    if (!closed) {
+      return;
+    }
+
+    updateLocalStatus("closed_without_signature", {
+      sentVia: "manual_close",
+      sentAt: new Date().toISOString(),
+    });
+  }
+
   const formGuidanceContent =
     isNonDraftLocked || editing?.sentAt ? (
       <div className="space-y-4">
@@ -618,7 +637,9 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
                       ? "WhatsApp"
                       : editing.sentVia === "signature_provider"
                         ? "Plataforma de assinatura"
-                        : editing.sentVia}
+                        : editing.sentVia === "manual_close"
+                          ? "Encerramento manual"
+                          : editing.sentVia}
               </span>{" "}
               em{" "}
               <span className="font-semibold">
@@ -664,11 +685,18 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       }
     >
       <LoadingOverlay
-        open={pdfActions.sendingSignatureRequest}
-        label="Enviando para assinatura..."
+        open={
+          pdfActions.sendingSignatureRequest ||
+          pdfActions.closingWithoutSignature
+        }
+        label={
+          pdfActions.closingWithoutSignature
+            ? "Encerrando contrato..."
+            : "Enviando para assinatura..."
+        }
       />
       <div className="mb-6 flex justify-center">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5 sm:gap-6">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6 sm:gap-6">
           <button
             type="button"
             onClick={() => {
@@ -800,6 +828,26 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
                     : "Assinatura"}
                 </span>
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmCloseWithoutSignature(true);
+                }}
+                disabled={
+                  !editing?.idContracts ||
+                  !session?.user.idUsers ||
+                  pdfActions.closingWithoutSignature
+                }
+                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
+                title="Encerrar sem gerar assinaturas"
+              >
+                <FileSignature size={32} className="text-[#7a4430]" />
+                <span className="text-center text-xs font-semibold text-[#2C1810]">
+                  {pdfActions.closingWithoutSignature
+                    ? "Encerrando..."
+                    : "Encerrar"}
+                </span>
+              </button>
               <ConfirmDialog
                 open={confirmSendSignature}
                 title="Enviar para assinatura"
@@ -819,6 +867,30 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
                   void handleSendSignatureRequest();
                 }}
                 onCancel={() => setConfirmSendSignature(false)}
+              />
+              <ConfirmDialog
+                open={confirmCloseWithoutSignature}
+                title="Encerrar sem assinaturas"
+                description={
+                  <p>
+                    Você está prestes a encerrar este contrato sem gerar
+                    assinaturas.
+                    <br />
+                    <br />
+                    Essa ação é irreversível e criará automaticamente o cliente
+                    e o evento vinculados ao contrato.
+                    <br />
+                    <br />
+                    Deseja continuar?
+                  </p>
+                }
+                confirmLabel="Sim, encerrar"
+                cancelLabel="Voltar"
+                onConfirm={() => {
+                  setConfirmCloseWithoutSignature(false);
+                  void handleCloseWithoutSignature();
+                }}
+                onCancel={() => setConfirmCloseWithoutSignature(false)}
               />
             </>
           ) : null}
@@ -893,6 +965,9 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
             {contractUiCopy.form.options.pending_signature}
           </option>
           <option value="signed">{contractUiCopy.form.options.signed}</option>
+          <option value="closed_without_signature">
+            {contractUiCopy.form.options.closed_without_signature}
+          </option>
           <option value="rejected">
             {contractUiCopy.form.options.rejected}
           </option>
