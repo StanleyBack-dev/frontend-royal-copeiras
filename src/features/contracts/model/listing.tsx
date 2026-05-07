@@ -15,6 +15,8 @@ function getContractStatusLabel(status: Contract["status"]) {
     pending_signature: "pending_signature",
     pendingsignature: "pending_signature",
     signed: "signed",
+    closed_without_signature: "closed_without_signature",
+    closedwithoutsignature: "closed_without_signature",
     rejected: "rejected",
     expired: "expired",
     canceled: "canceled",

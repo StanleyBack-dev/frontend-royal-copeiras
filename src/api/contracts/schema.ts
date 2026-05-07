@@ -11,6 +11,7 @@ export const contractStatusOptions = [
   "generated",
   "pending_signature",
   "signed",
+  "closed_without_signature",
   "rejected",
   "expired",
   "canceled",

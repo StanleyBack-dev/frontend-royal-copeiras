@@ -5,3 +5,4 @@ export { updateContract } from "./update";
 export { generateContractPreviewPdf } from "./preview-pdf";
 export { sendContractEmail } from "./send-email";
 export { sendContractSignatureRequest } from "./send-signature-request";
+export { closeContractWithoutSignature } from "./close-without-signature";
