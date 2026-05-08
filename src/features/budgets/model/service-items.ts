@@ -267,6 +267,20 @@ function serviceLower(
   return quantity === 1 ? meta.singularLower : meta.pluralLower;
 }
 
+function capitalizePtBrLabel(value: string): string {
+  if (!value) return value;
+  return value.charAt(0).toLocaleUpperCase("pt-BR") + value.slice(1);
+}
+
+export function getBudgetServiceDisplayLabel(
+  type: BudgetServiceType,
+  quantity = 1,
+  genderOption?: ServiceGenderOption,
+): string {
+  const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+  return capitalizePtBrLabel(serviceLower(type, safeQuantity, genderOption));
+}
+
 export function buildBudgetServiceDescription(
   type: BudgetServiceType,
   quantity: number,

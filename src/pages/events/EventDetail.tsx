@@ -15,7 +15,13 @@ import { getEmployees } from "@/api/employees/methods/get";
 import type { Employee } from "@/api/employees/schema";
 import { eventRoutePaths } from "@/router/navigation/paths";
 import type { Event, EventAssignment } from "@/api/events/schema";
-import { inferBudgetServiceType } from "@/features/budgets/model/service-items";
+import {
+  buildBudgetServiceDescription,
+  getBudgetServiceDisplayLabel,
+  inferBudgetServiceType,
+  inferServiceGenderFromDescription,
+  type BudgetServiceType,
+} from "@/features/budgets/model/service-items";
 import {
   formatCurrencyInput,
   parseCurrencyInput,
@@ -80,8 +86,26 @@ function AssignmentRow({
   const inferredServiceType = assignment.budgetItemDescription
     ? inferBudgetServiceType(assignment.budgetItemDescription)
     : "";
+  const inferredGender =
+    inferredServiceType && assignment.budgetItemDescription
+      ? inferServiceGenderFromDescription(
+          assignment.budgetItemDescription,
+          inferredServiceType as BudgetServiceType,
+        )
+      : undefined;
+  const serviceQuantity =
+    assignment.budgetItemQuantity && assignment.budgetItemQuantity > 0
+      ? assignment.budgetItemQuantity
+      : 1;
+  const normalizedServiceLabel = inferredServiceType
+    ? buildBudgetServiceDescription(
+        inferredServiceType as BudgetServiceType,
+        serviceQuantity,
+        inferredGender,
+      )
+    : serviceLabel;
   const assignmentLabel = inferredServiceType
-    ? `${inferredServiceType} ${assignment.allocationIndex}`
+    ? `${getBudgetServiceDisplayLabel(inferredServiceType as BudgetServiceType, 1, inferredGender)} ${assignment.allocationIndex}`
     : `Serviço ${assignment.allocationIndex}`;
   const currentEmployeeLabel = assignment.employeeName
     ? `Atual: ${assignment.employeeName}`
@@ -95,7 +119,9 @@ function AssignmentRow({
         <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
           {assignmentLabel}
         </p>
-        <p className="text-sm font-semibold text-[#2c1810]">{serviceLabel}</p>
+        <p className="whitespace-pre-line text-sm font-semibold text-[#2c1810]">
+          {normalizedServiceLabel}
+        </p>
         {currentEmployeeLabel && (
           <p className="text-xs text-[#7a4430]">{currentEmployeeLabel}</p>
         )}
@@ -232,6 +258,21 @@ export default function EventDetail() {
   }
 
   const statusLabel = getEventStatusLabel(event.status);
+
+  function getEventServiceLabel(description: string, quantity: number): string {
+    const inferredType = inferBudgetServiceType(description);
+
+    if (!inferredType) {
+      return "Serviço";
+    }
+
+    const inferredGender = inferServiceGenderFromDescription(
+      description,
+      inferredType as BudgetServiceType,
+    );
+
+    return getBudgetServiceDisplayLabel(inferredType, quantity, inferredGender);
+  }
 
   function parsePaymentValue(value: string): number {
     return parseCurrencyInput(value) ?? 0;
@@ -371,9 +412,10 @@ export default function EventDetail() {
                     >
                       <div>
                         <p className="font-medium text-[#2c1810]">
-                          {inferBudgetServiceType(
+                          {getEventServiceLabel(
                             service.serviceDescription ?? "",
-                          ) || "Serviço"}
+                            service.quantity,
+                          )}
                         </p>
                         <p className="text-xs text-[#7a4430]">
                           {service.quantity} x{" "}
