@@ -150,7 +150,7 @@ export function createEmptyBudgetFormValues(
     eventLocation: "",
     guestCount: "",
     durationHours: "",
-    paymentMethod: "",
+    paymentMethod: "PIX",
     advancePercentage: "30",
     displacementFee: "0,00",
     items: [{ ...emptyBudgetItemFormValues }],
