@@ -18,6 +18,21 @@ const nullableNumberToOptional = () =>
     z.number().optional(),
   );
 
+const stringTrimmed = (minLength = 0) =>
+  z.preprocess(
+    (val) => (typeof val === "string" ? val.trim() : val),
+    z.string().min(minLength),
+  );
+
+const UUID_CANONICAL_PATTERN =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+const uuidCanonicalString = () =>
+  z.preprocess(
+    (value) => (typeof value === "string" ? value.trim() : value),
+    z.string().regex(UUID_CANONICAL_PATTERN, "Invalid UUID"),
+  );
+
 export const budgetStatusOptions = [
   "draft",
   "generated",
@@ -30,7 +45,9 @@ export const budgetStatusOptions = [
 
 export const BudgetItemSchema = z.object({
   idBudgetItems: z.string(),
-  description: z.string().trim().min(1),
+  idPositions: nullableStringToOptional(),
+  position: nullableStringToOptional(),
+  description: stringTrimmed(1),
   quantity: z.number().int().min(1),
   unitPrice: z.number().min(0),
   totalPrice: z.number().min(0),
@@ -41,7 +58,8 @@ export const BudgetItemSchema = z.object({
 });
 
 export const CreateBudgetItemPayloadSchema = z.object({
-  description: z.string().trim().min(1),
+  idPositions: uuidCanonicalString(),
+  description: stringTrimmed(1),
   quantity: z.number().int().min(1),
   unitPrice: z.number().min(0),
   notes: z.string().optional().or(z.literal("")),
@@ -89,19 +107,19 @@ export const BudgetSchema = z.object({
 });
 
 export const CreateBudgetPayloadSchema = z.object({
-  idLeads: z.string().uuid().optional().or(z.literal("")),
+  idLeads: z.string().uuid(),
   status: z.enum(budgetStatusOptions).optional(),
-  issueDate: z.string().optional().or(z.literal("")),
+  issueDate: z.string().min(1),
   validUntil: z.string().min(1),
-  eventDates: z.array(z.string()).optional(),
-  eventArrivalTimes: z.array(z.string()).optional(),
-  eventDepartureTimes: z.array(z.string()).optional(),
-  eventLocation: z.string().optional().or(z.literal("")),
-  guestCount: z.number().int().min(0).optional(),
-  durationHours: z.number().int().min(1).optional(),
-  paymentMethod: z.string().optional().or(z.literal("")),
-  advancePercentage: z.number().min(0).max(100).optional(),
-  displacementFee: z.number().min(0).optional(),
+  eventDates: z.array(z.string()).min(1),
+  eventArrivalTimes: z.array(z.string()).min(1),
+  eventDepartureTimes: z.array(z.string()).min(1),
+  eventLocation: stringTrimmed(1),
+  guestCount: z.number().int().min(1),
+  durationHours: z.number().int().min(1).max(24),
+  paymentMethod: stringTrimmed(1),
+  advancePercentage: z.number().min(0).max(100),
+  displacementFee: z.number().min(0).default(0),
   totalAmount: z.number().min(0).optional(),
   items: z.array(CreateBudgetItemPayloadSchema).min(1),
 });

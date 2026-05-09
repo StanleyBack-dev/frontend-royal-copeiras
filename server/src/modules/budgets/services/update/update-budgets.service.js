@@ -34,6 +34,8 @@ export class UpdateBudgetsService {
             sentAt
             items {
               idBudgetItems
+              idPositions
+              position
               description
               quantity
               unitPrice

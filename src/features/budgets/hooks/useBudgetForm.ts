@@ -8,15 +8,6 @@ import {
 } from "@/features/budgets/model/form";
 import { normalizeBudgetFormValues } from "@/features/budgets/model/formatters";
 import {
-  buildBudgetServiceDescription,
-  budgetServiceTypeOptions,
-  serviceGenderOptions,
-  DEFAULT_SERVICE_GENDER,
-  serviceComboKey,
-  type BudgetServiceType,
-  type ServiceGenderOption,
-} from "@/features/budgets/model/service-items";
-import {
   calculateBudgetTotals,
   mapBudgetFormToPayload,
   mapBudgetToFormValues,
@@ -74,52 +65,10 @@ export function useBudgetForm({
           ...current,
           items: [
             ...current.items,
-            (() => {
-              const usedCombos = new Set(
-                current.items
-                  .filter((item) => item.serviceType)
-                  .map((item) => {
-                    const g =
-                      item.gender ||
-                      DEFAULT_SERVICE_GENDER[
-                        item.serviceType as BudgetServiceType
-                      ];
-                    return serviceComboKey(item.serviceType, g);
-                  }),
-              );
-
-              // Find first available (type × gender) combo
-              let nextType: BudgetServiceType | "" = "";
-              let nextGender: ServiceGenderOption | "" = "";
-
-              outer: for (const type of budgetServiceTypeOptions) {
-                const preferred = DEFAULT_SERVICE_GENDER[type];
-                const orderedGenders: ServiceGenderOption[] = [
-                  preferred,
-                  ...serviceGenderOptions.filter((g) => g !== preferred),
-                ];
-                for (const g of orderedGenders) {
-                  if (!usedCombos.has(serviceComboKey(type, g))) {
-                    nextType = type;
-                    nextGender = g;
-                    break outer;
-                  }
-                }
-              }
-
-              return {
-                ...emptyBudgetItemFormValues,
-                serviceType: nextType,
-                gender: nextGender,
-                description: nextType
-                  ? buildBudgetServiceDescription(
-                      nextType,
-                      1,
-                      nextGender || undefined,
-                    )
-                  : "",
-              };
-            })(),
+            {
+              ...emptyBudgetItemFormValues,
+              description: "",
+            },
           ],
         },
         current,

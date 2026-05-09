@@ -23,6 +23,8 @@ import { budgetRoutePaths, contractRoutePaths } from "@/router";
 import { formatDateTimeDisplay } from "@/utils/format";
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { fetchContracts } from "@/features/contracts/services/contract.service";
+import { fetchPositions } from "@/features/positions/services/position.service";
+import type { Position } from "@/api/positions/schema";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { updateBudget } from "@/api/budgets/methods";
 import { getHttpErrorMessage } from "@/api/shared/http-error";
@@ -49,6 +51,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   const { budgets, leads, save, saving, setBudgets } = useBudgetsContext();
   const { showError, showSuccess } = useToast();
   const { session } = useAuthSession();
+  const [positions, setPositions] = useState<Position[]>([]);
   const initialLeadId = searchParams.get("leadId") || undefined;
   const {
     form,
@@ -145,6 +148,30 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
       cancelled = true;
     };
   }, [editing?.idBudgets, session?.user.idUsers]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void fetchPositions({ page: 1, limit: 100 })
+      .then((result) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setPositions(result.items);
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        setPositions([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleSave(values: BudgetFormValues) {
     if (isNonDraftLocked) return;
@@ -696,6 +723,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
 
           <BudgetItemsEditor
             items={form.items}
+            positions={positions}
             onAddItem={addItem}
             onRemoveItem={removeItem}
             onUpdateItem={updateItem}

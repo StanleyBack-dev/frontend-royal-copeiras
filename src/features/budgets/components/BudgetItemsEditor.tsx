@@ -1,20 +1,18 @@
 import Button from "@/components/atoms/Button";
 import Input from "@/components/atoms/Input";
+import type { Position } from "@/api/positions/schema";
 import type { BudgetItemFormValues } from "../model/form";
 import { budgetUiCopy } from "../model/messages";
 import {
   buildBudgetServiceDescription,
-  budgetServiceTypeOptions,
   serviceGenderOptions,
-  DEFAULT_SERVICE_GENDER,
-  TOTAL_SERVICE_COMBOS,
   serviceComboKey,
-  type BudgetServiceType,
   type ServiceGenderOption,
 } from "../model/service-items";
 
 interface BudgetItemsEditorProps {
   items: BudgetItemFormValues[];
+  positions: Position[];
   onAddItem: () => void;
   onRemoveItem: (index: number) => void;
   onUpdateItem: (index: number, patch: Partial<BudgetItemFormValues>) => void;
@@ -30,23 +28,26 @@ function formatCurrency(value: number) {
 
 export default function BudgetItemsEditor({
   items,
+  positions,
   onAddItem,
   onRemoveItem,
   onUpdateItem,
   disabled = false,
 }: BudgetItemsEditorProps) {
+  const selectablePositions = positions.filter((position) => position.isActive);
+
   const selectedCombos = new Set(
     items
       .map((item) => {
-        if (!item.serviceType) return null;
-        const g =
-          item.gender ||
-          DEFAULT_SERVICE_GENDER[item.serviceType as BudgetServiceType];
-        return serviceComboKey(item.serviceType, g);
+        if (!item.idPositions) return null;
+        const g = item.gender || "Masculino";
+        return serviceComboKey(item.idPositions, g);
       })
       .filter(Boolean) as string[],
   );
-  const allTypesSelected = selectedCombos.size >= TOTAL_SERVICE_COMBOS;
+  const totalCombos = selectablePositions.length * serviceGenderOptions.length;
+  const allTypesSelected =
+    selectedCombos.size >= totalCombos && totalCombos > 0;
 
   function buildDescriptionPreview(item: BudgetItemFormValues): string {
     if (!item.serviceType) {
@@ -54,9 +55,7 @@ export default function BudgetItemsEditor({
     }
 
     const quantity = Number(item.quantity || 0);
-    const genderOption =
-      item.gender ||
-      DEFAULT_SERVICE_GENDER[item.serviceType as BudgetServiceType];
+    const genderOption = item.gender || "Masculino";
     return buildBudgetServiceDescription(
       item.serviceType,
       quantity,
@@ -81,11 +80,15 @@ export default function BudgetItemsEditor({
           size="sm"
           variant="outline"
           onClick={onAddItem}
-          disabled={disabled || allTypesSelected}
+          disabled={
+            disabled || allTypesSelected || selectablePositions.length === 0
+          }
           title={
             allTypesSelected
               ? "Todos os tipos de serviço já foram selecionados"
-              : undefined
+              : selectablePositions.length === 0
+                ? "Cadastre cargos ativos no módulo de cargos para adicionar itens"
+                : undefined
           }
         >
           {budgetUiCopy.form.actions.addItem}
@@ -103,20 +106,23 @@ export default function BudgetItemsEditor({
           items
             .filter((_, i) => i !== index)
             .map((other) => {
-              if (!other.serviceType) return null;
-              const g =
-                other.gender ||
-                DEFAULT_SERVICE_GENDER[other.serviceType as BudgetServiceType];
-              return serviceComboKey(other.serviceType, g);
+              if (!other.idPositions) return null;
+              const g = other.gender || "Masculino";
+              return serviceComboKey(other.idPositions, g);
             })
             .filter(Boolean) as string[],
         );
 
-        // A type is available if at least one gender variant is not taken by other items
-        const isTypeAvailable = (type: BudgetServiceType) =>
+        // A position is available if at least one gender variant is not taken by other items
+        const isPositionAvailable = (idPositions: string) =>
           serviceGenderOptions.some(
-            (g) => !otherCombos.has(serviceComboKey(type, g)),
+            (g) => !otherCombos.has(serviceComboKey(idPositions, g)),
           );
+
+        const selectedPosition = selectablePositions.find(
+          (position) => position.idPositions === item.idPositions,
+        );
+        const serviceLabel = selectedPosition?.name || item.serviceType;
 
         return (
           <div
@@ -135,32 +141,36 @@ export default function BudgetItemsEditor({
                     color: "#2C1810",
                     background: disabled ? "#f5ede8" : "#fff",
                   }}
-                  value={item.serviceType}
+                  value={item.idPositions}
                   onChange={(event) => {
-                    const nextType = event.target.value as
-                      | BudgetServiceType
-                      | "";
+                    const nextPositionId = event.target.value;
+                    const nextPosition = selectablePositions.find(
+                      (position) => position.idPositions === nextPositionId,
+                    );
+                    const nextServiceType = nextPosition?.name || "";
                     let nextGender: ServiceGenderOption | "" = "";
-                    if (nextType) {
-                      const preferred =
-                        DEFAULT_SERVICE_GENDER[nextType as BudgetServiceType];
+                    if (nextPositionId) {
+                      const preferred: ServiceGenderOption = "Masculino";
                       const preferredTaken = otherCombos.has(
-                        serviceComboKey(nextType, preferred),
+                        serviceComboKey(nextPositionId, preferred),
                       );
                       nextGender = preferredTaken
                         ? (serviceGenderOptions.find(
                             (g) =>
-                              !otherCombos.has(serviceComboKey(nextType, g)),
+                              !otherCombos.has(
+                                serviceComboKey(nextPositionId, g),
+                              ),
                           ) ?? preferred)
                         : preferred;
                     }
                     const nextQuantity = Number(item.quantity || 0);
                     onUpdateItem(index, {
-                      serviceType: nextType,
+                      idPositions: nextPositionId,
+                      serviceType: nextServiceType,
                       gender: nextGender,
-                      description: nextType
+                      description: nextServiceType
                         ? buildBudgetServiceDescription(
-                            nextType,
+                            nextServiceType,
                             nextQuantity,
                             nextGender || undefined,
                           )
@@ -172,22 +182,26 @@ export default function BudgetItemsEditor({
                   <option value="">
                     {budgetUiCopy.form.placeholders.itemServiceType}
                   </option>
-                  {budgetServiceTypeOptions
+                  {selectablePositions
                     .filter(
-                      (type) =>
-                        type === item.serviceType || isTypeAvailable(type),
+                      (position) =>
+                        position.idPositions === item.idPositions ||
+                        isPositionAvailable(position.idPositions),
                     )
-                    .map((type) => (
-                      <option key={type} value={type}>
-                        {type}
+                    .map((position) => (
+                      <option
+                        key={position.idPositions}
+                        value={position.idPositions}
+                      >
+                        {position.name}
                       </option>
                     ))}
                 </select>
-                {item.serviceType && (
+                {serviceLabel && (
                   <div className="mt-2 flex gap-3">
                     {serviceGenderOptions.map((opt) => {
                       const isTakenByOther = otherCombos.has(
-                        serviceComboKey(item.serviceType, opt),
+                        serviceComboKey(item.idPositions, opt),
                       );
                       const isDisabled = disabled || isTakenByOther;
                       return (
@@ -208,18 +222,13 @@ export default function BudgetItemsEditor({
                             type="radio"
                             name={`item-gender-${index}`}
                             value={opt}
-                            checked={
-                              (item.gender ||
-                                DEFAULT_SERVICE_GENDER[
-                                  item.serviceType as BudgetServiceType
-                                ]) === opt
-                            }
+                            checked={(item.gender || "Masculino") === opt}
                             onChange={() => {
                               const nextQuantity = Number(item.quantity || 0);
                               onUpdateItem(index, {
                                 gender: opt,
                                 description: buildBudgetServiceDescription(
-                                  item.serviceType as BudgetServiceType,
+                                  serviceLabel,
                                   nextQuantity,
                                   opt,
                                 ),
@@ -243,17 +252,12 @@ export default function BudgetItemsEditor({
                 value={item.quantity}
                 onChange={(event) => {
                   const genderOption =
-                    item.gender ||
-                    (item.serviceType
-                      ? DEFAULT_SERVICE_GENDER[
-                          item.serviceType as BudgetServiceType
-                        ]
-                      : undefined);
+                    item.gender || (serviceLabel ? "Masculino" : undefined);
                   onUpdateItem(index, {
                     quantity: event.target.value,
-                    description: item.serviceType
+                    description: serviceLabel
                       ? buildBudgetServiceDescription(
-                          item.serviceType,
+                          serviceLabel,
                           Number(event.target.value || 0),
                           genderOption as ServiceGenderOption | undefined,
                         )

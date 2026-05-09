@@ -7,7 +7,7 @@ export const budgetServiceTypeOptions = [
   "Recepcionista",
 ] as const;
 
-export type BudgetServiceType = (typeof budgetServiceTypeOptions)[number];
+export type BudgetServiceType = string;
 
 export const serviceGenderOptions = ["Masculino", "Feminino"] as const;
 export type ServiceGenderOption = (typeof serviceGenderOptions)[number];
@@ -20,7 +20,7 @@ interface ServiceMeta {
 
 /** Grammar-level gender and labels for each (baseType × ServiceGenderOption) combination */
 const SERVICE_GENDER_META: Record<
-  BudgetServiceType,
+  string,
   Record<ServiceGenderOption, ServiceMeta>
 > = {
   Garçom: {
@@ -98,10 +98,7 @@ const SERVICE_GENDER_META: Record<
 };
 
 /** Default gender option for each base service type (used for new items) */
-export const DEFAULT_SERVICE_GENDER: Record<
-  BudgetServiceType,
-  ServiceGenderOption
-> = {
+export const DEFAULT_SERVICE_GENDER: Record<string, ServiceGenderOption> = {
   Garçom: "Masculino",
   Copeira: "Feminino",
   Porteiro: "Masculino",
@@ -122,7 +119,7 @@ export function serviceComboKey(
   return `${serviceType}:${gender}`;
 }
 
-const SERVICE_META: Record<BudgetServiceType, ServiceMeta> = {
+const SERVICE_META: Record<string, ServiceMeta> = {
   Garçom: {
     singularLower: "garçom",
     pluralLower: "garçons",
@@ -160,6 +157,10 @@ function normalizeText(value: string): string {
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
+}
+
+function getDefaultServiceGender(type: string): ServiceGenderOption {
+  return DEFAULT_SERVICE_GENDER[type] ?? "Masculino";
 }
 
 function toPtBrNumberWords(
@@ -254,8 +255,22 @@ function resolveServiceMeta(
   type: BudgetServiceType,
   genderOption?: ServiceGenderOption,
 ): ServiceMeta {
-  const effectiveGender = genderOption ?? DEFAULT_SERVICE_GENDER[type];
-  return SERVICE_GENDER_META[type][effectiveGender];
+  const knownMeta = SERVICE_GENDER_META[type];
+  const effectiveGender = genderOption ?? getDefaultServiceGender(type);
+
+  if (knownMeta) {
+    return knownMeta[effectiveGender];
+  }
+
+  const normalized = type.trim().toLowerCase();
+  const pluralLower =
+    normalized.endsWith("s") || !normalized ? normalized : `${normalized}s`;
+
+  return {
+    singularLower: normalized || "serviço",
+    pluralLower: pluralLower || "serviços",
+    gender: effectiveGender === "Feminino" ? "feminine" : "masculine",
+  };
 }
 
 function serviceLower(
@@ -364,8 +379,14 @@ export function inferServiceGenderFromDescription(
   baseType: BudgetServiceType,
 ): ServiceGenderOption {
   const normalized = normalizeText(description);
+  const knownMeta = SERVICE_GENDER_META[baseType];
+
+  if (!knownMeta) {
+    return getDefaultServiceGender(baseType);
+  }
+
   for (const genderOption of serviceGenderOptions) {
-    const meta = SERVICE_GENDER_META[baseType][genderOption];
+    const meta = knownMeta[genderOption];
     if (
       normalized.includes(normalizeText(meta.singularLower)) ||
       normalized.includes(normalizeText(meta.pluralLower))
@@ -373,7 +394,7 @@ export function inferServiceGenderFromDescription(
       return genderOption;
     }
   }
-  return DEFAULT_SERVICE_GENDER[baseType];
+  return getDefaultServiceGender(baseType);
 }
 
 export function getServiceLabels(type: BudgetServiceType): {
@@ -381,11 +402,18 @@ export function getServiceLabels(type: BudgetServiceType): {
   plural: string;
 } {
   const meta = SERVICE_META[type];
+
+  if (!meta) {
+    const singular = type.trim().toLowerCase() || "serviço";
+    const plural = singular.endsWith("s") ? singular : `${singular}s`;
+    return { singular, plural };
+  }
+
   return { singular: meta.singularLower, plural: meta.pluralLower };
 }
 
 export function getServiceGender(
   type: BudgetServiceType,
 ): "masculine" | "feminine" {
-  return SERVICE_META[type].gender;
+  return SERVICE_META[type]?.gender ?? "masculine";
 }
