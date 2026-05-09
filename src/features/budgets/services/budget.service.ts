@@ -1,6 +1,7 @@
 import { createBudget } from "../../../api/budgets/methods/create";
 import {
   getBudgets,
+  getBudgetById,
   type BudgetListQueryParams,
 } from "../../../api/budgets/methods/get";
 import { updateBudget } from "../../../api/budgets/methods/update";
@@ -48,6 +49,17 @@ export async function fetchBudgets(
       hasNextPage: response.hasNextPage,
     },
   };
+}
+
+export async function fetchBudgetById(idBudgets: string): Promise<Budget> {
+  const response = await getBudgetById(idBudgets);
+  const parsed = BudgetSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error(budgetUiCopy.errors.invalidBudgetData);
+  }
+
+  return parsed.data;
 }
 
 export async function fetchBudgetLeadOptions(): Promise<Lead[]> {

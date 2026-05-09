@@ -17,3 +17,9 @@ export async function getBudgets(params: BudgetListQueryParams = {}) {
 
   return normalizeListResponse<Budget>(response.data);
 }
+
+export async function getBudgetById(idBudgets: string) {
+  const response = await httpClient.get<Budget>(`${API_BASE_URL}/${idBudgets}`);
+
+  return response.data;
+}

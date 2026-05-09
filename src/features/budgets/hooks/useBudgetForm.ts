@@ -12,6 +12,7 @@ import {
   mapBudgetFormToPayload,
   mapBudgetToFormValues,
 } from "@/features/budgets/model/mappers";
+import { fetchBudgetById } from "@/features/budgets/services/budget.service";
 
 interface UseBudgetFormParams {
   mode: "create" | "edit";
@@ -35,7 +36,9 @@ export function useBudgetForm({
   );
   const [editing, setEditing] = useState<Budget | null>(null);
   const [errors, setErrors] = useState<BudgetFormErrors>({});
+  const [loadingBudget, setLoadingBudget] = useState(false);
 
+  // Primary effect: load from context budgets
   useEffect(() => {
     if (mode === "edit" && id && budgets.length) {
       const found = budgets.find((budget) => budget.idBudgets === id);
@@ -47,10 +50,46 @@ export function useBudgetForm({
       }
     }
 
-    setEditing(null);
-    setForm(createEmptyBudgetFormValues(initialLeadId));
-    setErrors({});
+    // If in edit mode but budget not found in context, will try direct fetch
+    if (!(mode === "edit" && id)) {
+      setEditing(null);
+      setForm(createEmptyBudgetFormValues(initialLeadId));
+      setErrors({});
+    }
   }, [budgets, id, initialLeadId, mode]);
+
+  // Secondary effect: load directly from API when in edit mode but not found in context
+  useEffect(() => {
+    if (mode !== "edit" || !id || editing) {
+      return;
+    }
+
+    let isMounted = true;
+    setLoadingBudget(true);
+
+    void fetchBudgetById(id)
+      .then((budget) => {
+        if (!isMounted) return;
+        setEditing(budget);
+        setForm(mapBudgetToFormValues(budget));
+        setErrors({});
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        // If fetch fails, form remains in edit mode but empty
+        // User will see the issue and can navigate back
+        setEditing(null);
+        setForm(createEmptyBudgetFormValues(initialLeadId));
+        setErrors({});
+      })
+      .finally(() => {
+        if (isMounted) setLoadingBudget(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [mode, id, editing, initialLeadId]);
 
   function updateForm(nextValues: BudgetFormValues) {
     setForm((currentValues: BudgetFormValues) =>
@@ -163,5 +202,6 @@ export function useBudgetForm({
     updateItem,
     totals,
     submit,
+    loadingBudget,
   };
 }
