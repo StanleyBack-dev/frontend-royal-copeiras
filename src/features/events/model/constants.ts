@@ -17,19 +17,19 @@ export const EVENT_STATUS_COLORS: Record<
     border: "border-blue-200",
   },
   in_progress: {
-    bg: "bg-orange-50",
-    text: "text-orange-700",
-    border: "border-orange-200",
+    bg: "bg-amber-50",
+    text: "text-amber-800",
+    border: "border-amber-300",
   },
   completed: {
-    bg: "bg-green-50",
-    text: "text-green-700",
-    border: "border-green-200",
+    bg: "bg-emerald-100",
+    text: "text-emerald-800",
+    border: "border-emerald-300",
   },
   canceled: {
-    bg: "bg-gray-50",
-    text: "text-gray-500",
-    border: "border-gray-200",
+    bg: "bg-sky-50",
+    text: "text-sky-700",
+    border: "border-sky-200",
   },
 };
 

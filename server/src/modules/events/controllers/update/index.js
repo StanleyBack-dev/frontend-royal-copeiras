@@ -3,6 +3,13 @@ import { UpdateEventService } from "../../services/update/update-event.service.j
 import { getAuthContext } from "../../../../shared/auth/get-user-id.js";
 import { HttpError } from "../../../../shared/http/http-error.js";
 
+const STATUS_TO_GRAPHQL_ENUM = {
+  scheduled: "SCHEDULED",
+  in_progress: "IN_PROGRESS",
+  completed: "COMPLETED",
+  canceled: "CANCELED",
+};
+
 export function updateEventAssignmentController() {
   const service = new UpdateEventAssignmentService();
 
@@ -37,7 +44,18 @@ export function updateEventController() {
     try {
       const auth = getAuthContext(req);
 
-      const data = await service.execute(auth.userId, req.params.id, req.body, {
+      const rawStatus =
+        typeof req.body?.status === "string" ? req.body.status : undefined;
+      const mappedStatus = rawStatus
+        ? STATUS_TO_GRAPHQL_ENUM[rawStatus] || undefined
+        : undefined;
+
+      const payload = {
+        ...req.body,
+        ...(mappedStatus ? { status: mappedStatus } : {}),
+      };
+
+      const data = await service.execute(auth.userId, req.params.id, payload, {
         authorization: auth.authorization,
         cookieHeader: auth.cookieHeader,
         requestId: req.requestId,

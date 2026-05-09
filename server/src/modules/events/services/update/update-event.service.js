@@ -11,6 +11,7 @@ export class UpdateEventService {
           code
           data {
             idEvents
+            status
             overtimeMinutes
             updatedAt
           }

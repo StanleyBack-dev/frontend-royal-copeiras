@@ -66,6 +66,7 @@ export const UpdateEventAssignmentPayloadSchema = z.object({
 
 export const UpdateEventPayloadSchema = z.object({
   overtimeMinutes: z.number().int().min(0).optional(),
+  status: z.enum(eventStatusOptions).optional(),
 });
 
 export type Event = z.infer<typeof EventSchema>;
