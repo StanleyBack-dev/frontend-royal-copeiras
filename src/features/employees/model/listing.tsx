@@ -60,6 +60,21 @@ export function getEmployeeTableColumns(): DataTableColumn<Employee>[] {
       render: (employee) => formatEmployeeDocument(employee.document),
     },
     {
+      key: "gender",
+      label: employeeUiCopy.listing.columns.gender,
+      render: (employee) => {
+        if (employee.gender === "MALE") {
+          return employeeUiCopy.form.options.male;
+        }
+
+        if (employee.gender === "FEMALE") {
+          return employeeUiCopy.form.options.female;
+        }
+
+        return "-";
+      },
+    },
+    {
       key: "position",
       label: employeeUiCopy.listing.columns.position,
     },

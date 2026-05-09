@@ -102,17 +102,30 @@ export function getEmployeeFormFields(
       options: [{ value: "", label: "Selecione" }, ...positionOptions],
     },
     {
+      name: "gender",
+      label: employeeUiCopy.form.labels.gender,
+      required: true,
+      as: "select",
+      options: [
+        { value: "", label: "Selecione" },
+        { value: "MALE", label: employeeUiCopy.form.options.male },
+        { value: "FEMALE", label: employeeUiCopy.form.options.female },
+      ],
+    },
+    {
       name: "email",
       label: employeeUiCopy.form.labels.email,
       type: "email",
       placeholder: employeeUiCopy.form.placeholders.email,
       maxLength: EMPLOYEE_EMAIL_MAX_LENGTH,
       inputMode: "email",
+      colSpan: 2,
     },
     {
       name: "isActive",
       label: employeeUiCopy.form.labels.isActive,
       type: "checkbox",
+      colSpan: 2,
     },
   ];
 }

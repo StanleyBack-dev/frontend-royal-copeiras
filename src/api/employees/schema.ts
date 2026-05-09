@@ -8,9 +8,12 @@ import {
 } from "../../features/employees/model/constants";
 import { employeeValidationMessages } from "../../features/employees/model/messages";
 
+export const EmployeeGenderSchema = z.enum(["MALE", "FEMALE"]);
+
 export const EmployeeSchema = z.object({
   idEmployees: z.string(),
   name: z.string().trim().min(1).max(EMPLOYEE_NAME_MAX_LENGTH),
+  gender: EmployeeGenderSchema.nullable().optional(),
   document: z.string().trim().optional().nullable(),
   email: z
     .string()
@@ -29,6 +32,7 @@ export const EmployeeSchema = z.object({
 
 export const CreateEmployeePayloadSchema = z.object({
   name: z.string().trim().min(1).max(EMPLOYEE_NAME_MAX_LENGTH),
+  gender: EmployeeGenderSchema,
   document: z
     .string()
     .trim()
@@ -68,3 +72,4 @@ export const UpdateEmployeePayloadSchema =
 export type Employee = z.infer<typeof EmployeeSchema>;
 export type CreateEmployeePayload = z.infer<typeof CreateEmployeePayloadSchema>;
 export type UpdateEmployeePayload = z.infer<typeof UpdateEmployeePayloadSchema>;
+export type EmployeeGender = z.infer<typeof EmployeeGenderSchema>;
