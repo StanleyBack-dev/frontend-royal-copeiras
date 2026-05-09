@@ -11,6 +11,8 @@ import {
 } from "@/features/events";
 import type { EventStatus } from "@/api/events/schema";
 
+type EventsHeaderTab = EventStatus | "" | "__upcoming__";
+
 export default function Events() {
   const {
     items,
@@ -26,8 +28,9 @@ export default function Events() {
     setActiveStatusTab,
   } = useEventsContext();
 
-  const tabs: { value: EventStatus | ""; label: string }[] = [
+  const tabs: { value: EventsHeaderTab; label: string }[] = [
     { value: "", label: "Todos" },
+    { value: "__upcoming__", label: "Próximos" },
     ...ALL_EVENT_STATUSES.map((status) => ({
       value: status,
       label: EVENT_STATUS_LABELS[status],
@@ -55,7 +58,11 @@ export default function Events() {
             <button
               key={tab.value}
               type="button"
-              onClick={() => setActiveStatusTab(tab.value as EventStatus | "")}
+              onClick={() =>
+                setActiveStatusTab(
+                  tab.value as EventStatus | "" | "__upcoming__",
+                )
+              }
               className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
                 isActive
                   ? "border-[#7a4430] bg-[#7a4430] text-white"
