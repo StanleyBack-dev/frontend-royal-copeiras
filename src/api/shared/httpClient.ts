@@ -118,6 +118,7 @@ async function refreshSessionOrFail(): Promise<void> {
         }
 
         emitAuthSessionRefreshed(parsed.data);
+        redirectingToLogin = false;
       } finally {
         refreshRequest = null;
       }
