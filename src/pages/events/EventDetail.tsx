@@ -11,6 +11,7 @@ import {
   eventUiCopy,
   getEventStatusLabel,
 } from "@/features/events";
+import { useToast } from "@/shared/toast/useToast";
 import { getEmployees } from "@/api/employees/methods/get";
 import type { Employee } from "@/api/employees/schema";
 import { eventRoutePaths } from "@/router/navigation/paths";
@@ -26,6 +27,9 @@ import {
   formatCurrencyInput,
   parseCurrencyInput,
 } from "@/features/budgets/model/formatters";
+import { budgetDurationOptions } from "@/features/budgets/model/form";
+
+const EVENT_OVERTIME_RATE_PER_EMPLOYEE_HOUR = 90;
 
 function formatCurrencyBRL(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -55,6 +59,8 @@ interface AssignmentRowProps {
   employees: Employee[];
   selectedEmployee: string;
   payment: string;
+  employeeError?: string;
+  paymentError?: string;
   chargedAmount: number;
   selectedEmployeeIds: Set<string>;
   onSelectedEmployeeChange: (value: string) => void;
@@ -63,7 +69,7 @@ interface AssignmentRowProps {
 
 type AssignmentUpdate = {
   idEventAssignments: string;
-  payload: { idEmployees: string | undefined; employeePayment: number };
+  payload: { idEmployees: string; employeePayment: number };
 };
 
 function AssignmentRow({
@@ -71,17 +77,13 @@ function AssignmentRow({
   employees,
   selectedEmployee,
   payment,
+  employeeError,
+  paymentError,
   chargedAmount,
   selectedEmployeeIds,
   onSelectedEmployeeChange,
   onPaymentChange,
 }: AssignmentRowProps) {
-  const availableEmployees = employees.filter(
-    (employee) =>
-      employee.idEmployees === selectedEmployee ||
-      !selectedEmployeeIds.has(employee.idEmployees),
-  );
-
   const serviceLabel = assignment.budgetItemDescription || "-";
   const inferredServiceType = assignment.budgetItemDescription
     ? inferBudgetServiceType(assignment.budgetItemDescription)
@@ -112,6 +114,27 @@ function AssignmentRow({
     : null;
   const paymentValue = parseCurrencyInput(payment) ?? 0;
   const receivedAmount = chargedAmount - paymentValue;
+  const requiredEmployeeGender =
+    inferredGender === "Feminino"
+      ? "FEMALE"
+      : inferredGender === "Masculino"
+        ? "MALE"
+        : undefined;
+  const availableEmployees = employees.filter((employee) => {
+    if (employee.idEmployees === selectedEmployee) {
+      return true;
+    }
+
+    if (selectedEmployeeIds.has(employee.idEmployees)) {
+      return false;
+    }
+
+    if (!requiredEmployeeGender) {
+      return true;
+    }
+
+    return employee.gender === requiredEmployeeGender;
+  });
 
   return (
     <div className="rounded-xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
@@ -129,15 +152,15 @@ function AssignmentRow({
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <Select
-          label={eventUiCopy.detail.assignment.employee}
+          label={`${eventUiCopy.detail.assignment.employee} *`}
           value={selectedEmployee}
           onChange={(e) => onSelectedEmployeeChange(e.target.value)}
+          error={employeeError}
         >
-          <option value="">— Não atribuído —</option>
+          <option value="">Selecione um funcionário</option>
           {availableEmployees.map((emp) => (
             <option key={emp.idEmployees} value={emp.idEmployees}>
               {emp.name}
-              {emp.position ? ` (${emp.position})` : ""}
             </option>
           ))}
         </Select>
@@ -173,6 +196,7 @@ function AssignmentRow({
               onChange={(e) => onPaymentChange(e.target.value)}
               placeholder="0,00"
               inputMode="decimal"
+              error={paymentError}
             />
           </div>
         </div>
@@ -184,13 +208,19 @@ function AssignmentRow({
 export default function EventDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { allItems, loading, handleUpdateAssignments } = useEventsContext();
+  const { allItems, loading, handleUpdateAssignments, handleUpdateEvent } =
+    useEventsContext();
+  const { showError } = useToast();
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [savingAssignments, setSavingAssignments] = useState(false);
+  const [overtimeMinutesDraft, setOvertimeMinutesDraft] = useState(0);
   const [assignmentDrafts, setAssignmentDrafts] = useState<
     Record<string, { selectedEmployee: string; payment: string }>
+  >({});
+  const [assignmentErrors, setAssignmentErrors] = useState<
+    Record<string, { employee?: string; payment?: string }>
   >({});
 
   const event: Event | undefined = allItems.find((e) => e.idEvents === id);
@@ -206,18 +236,20 @@ export default function EventDetail() {
     >((acc, assignment) => {
       acc[assignment.idEventAssignments] = {
         selectedEmployee: assignment.idEmployees ?? "",
-        payment:
-          assignment.employeePayment > 0
-            ? formatCurrencyInput(
-                String(Math.round(Number(assignment.employeePayment) * 100)),
-              )
-            : "",
+        payment: formatCurrencyInput(
+          String(Math.round(Number(assignment.employeePayment || 0) * 100)),
+        ),
       };
       return acc;
     }, {});
 
     setAssignmentDrafts(nextDrafts);
+    setAssignmentErrors({});
   }, [event?.idEvents, event?.assignments]);
+
+  useEffect(() => {
+    setOvertimeMinutesDraft(event?.overtimeMinutes ?? 0);
+  }, [event?.idEvents, event?.overtimeMinutes]);
 
   useEffect(() => {
     setLoadingEmployees(true);
@@ -258,6 +290,7 @@ export default function EventDetail() {
   }
 
   const statusLabel = getEventStatusLabel(event.status);
+  const eventId = event.idEvents;
 
   function getEventServiceLabel(description: string, quantity: number): string {
     const inferredType = inferBudgetServiceType(description);
@@ -295,7 +328,19 @@ export default function EventDetail() {
     return acc + payment;
   }, 0);
 
-  const dynamicCompanyReceivable = event.totalRevenue - dynamicTotalCost;
+  const allocatedEmployeesCount = draftAssignments.reduce(
+    (count, assignment) => (assignment.isActive ? count + 1 : count),
+    0,
+  );
+
+  const dynamicOvertimeAmount =
+    allocatedEmployeesCount *
+    (overtimeMinutesDraft / 60) *
+    EVENT_OVERTIME_RATE_PER_EMPLOYEE_HOUR;
+
+  const baseRevenue = event.totalRevenue - Number(event.overtimeAmount || 0);
+  const dynamicTotalRevenue = baseRevenue + dynamicOvertimeAmount;
+  const dynamicCompanyReceivable = dynamicTotalRevenue - dynamicTotalCost;
 
   const selectedEmployeeIds = new Set(
     Object.values(assignmentDrafts)
@@ -310,7 +355,7 @@ export default function EventDetail() {
         return null;
       }
 
-      const nextEmployeeId = draft.selectedEmployee || undefined;
+      const nextEmployeeId = draft.selectedEmployee;
       const currentEmployeeId = assignment.idEmployees || undefined;
       const nextPayment = parsePaymentValue(draft.payment);
       const currentPayment = Number(assignment.employeePayment || 0);
@@ -332,14 +377,63 @@ export default function EventDetail() {
     })
     .filter((update): update is AssignmentUpdate => update !== null);
 
+  const pendingOvertimeChanged =
+    overtimeMinutesDraft !== (event.overtimeMinutes ?? 0);
+
+  function validateAssignmentDrafts() {
+    const nextErrors: Record<string, { employee?: string; payment?: string }> =
+      {};
+
+    for (const assignment of draftAssignments) {
+      if (!assignment.isActive) {
+        continue;
+      }
+
+      const draft = assignmentDrafts[assignment.idEventAssignments];
+      const rowErrors: { employee?: string; payment?: string } = {};
+
+      if (!draft?.selectedEmployee?.trim()) {
+        rowErrors.employee = "Funcionário é obrigatório.";
+      }
+
+      if (!draft?.payment?.trim()) {
+        rowErrors.payment = "Pagamento é obrigatório.";
+      }
+
+      if (Object.keys(rowErrors).length > 0) {
+        nextErrors[assignment.idEventAssignments] = rowErrors;
+      }
+    }
+
+    setAssignmentErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
   async function handleSaveAllAssignments() {
-    if (!pendingUpdates.length) {
+    const isValid = validateAssignmentDrafts();
+    if (!isValid) {
+      showError(
+        eventUiCopy.errors.updateFallback,
+        eventUiCopy.errors.assignmentRequiredFields,
+      );
+      return;
+    }
+
+    if (!pendingUpdates.length && !pendingOvertimeChanged) {
       return;
     }
 
     setSavingAssignments(true);
     try {
-      await handleUpdateAssignments(pendingUpdates);
+      if (pendingOvertimeChanged) {
+        await handleUpdateEvent(eventId, {
+          overtimeMinutes: overtimeMinutesDraft,
+        });
+      }
+
+      if (pendingUpdates.length) {
+        await handleUpdateAssignments(pendingUpdates);
+      }
     } finally {
       setSavingAssignments(false);
     }
@@ -436,6 +530,20 @@ export default function EventDetail() {
                       {formatCurrencyBRL(event.displacementFee || 0)}
                     </p>
                   </div>
+
+                  {Number(event.discountTotal || 0) > 0 ? (
+                    <div className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <p className="font-medium text-red-700">
+                          {eventUiCopy.detail.fields.discountTotal}
+                        </p>
+                        <p className="font-semibold text-red-700">
+                          -{" "}
+                          {formatCurrencyBRL(Number(event.discountTotal || 0))}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : (
                 <p className="text-sm text-[#7a4430]">
@@ -448,16 +556,41 @@ export default function EventDetail() {
       </SectionCard>
 
       <SectionCard title={eventUiCopy.detail.financialSection}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:max-w-sm">
+          <Select
+            label={eventUiCopy.detail.fields.overtime}
+            value={String(Math.floor(overtimeMinutesDraft / 60))}
+            onChange={(event) => {
+              const parsedHours = Number(event.target.value);
+              setOvertimeMinutesDraft(
+                Number.isFinite(parsedHours) ? parsedHours * 60 : 0,
+              );
+            }}
+          >
+            <option value="0">Sem horas extras</option>
+            {budgetDurationOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FinancialCard
             label={eventUiCopy.detail.fields.totalRevenue}
-            value={formatCurrencyBRL(event.totalRevenue)}
+            value={formatCurrencyBRL(dynamicTotalRevenue)}
             colorClass="text-[#2c1810]"
           />
           <FinancialCard
             label={eventUiCopy.detail.fields.totalCost}
             value={formatCurrencyBRL(dynamicTotalCost)}
             colorClass="text-red-700"
+          />
+          <FinancialCard
+            label={eventUiCopy.detail.fields.overtimeAmount}
+            value={formatCurrencyBRL(dynamicOvertimeAmount)}
+            colorClass="text-[#7a4430]"
           />
           <FinancialCard
             label={eventUiCopy.detail.fields.companyReceivable}
@@ -492,6 +625,12 @@ export default function EventDetail() {
                 payment={
                   assignmentDrafts[assignment.idEventAssignments]?.payment ?? ""
                 }
+                employeeError={
+                  assignmentErrors[assignment.idEventAssignments]?.employee
+                }
+                paymentError={
+                  assignmentErrors[assignment.idEventAssignments]?.payment
+                }
                 chargedAmount={
                   serviceUnitPriceByItemId.get(
                     assignment.idBudgetItems ?? "",
@@ -506,6 +645,13 @@ export default function EventDetail() {
                       selectedEmployee: value,
                     },
                   }));
+                  setAssignmentErrors((prev) => ({
+                    ...prev,
+                    [assignment.idEventAssignments]: {
+                      ...prev[assignment.idEventAssignments],
+                      employee: undefined,
+                    },
+                  }));
                 }}
                 onPaymentChange={(value) => {
                   setAssignmentDrafts((prev) => ({
@@ -515,30 +661,40 @@ export default function EventDetail() {
                       payment: formatCurrencyInput(value),
                     },
                   }));
+                  setAssignmentErrors((prev) => ({
+                    ...prev,
+                    [assignment.idEventAssignments]: {
+                      ...prev[assignment.idEventAssignments],
+                      payment: undefined,
+                    },
+                  }));
                 }}
               />
             ))}
-
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                variant="primary"
-                onClick={() => {
-                  void handleSaveAllAssignments();
-                }}
-                disabled={savingAssignments || pendingUpdates.length === 0}
-              >
-                {savingAssignments
-                  ? eventUiCopy.detail.assignment.saving
-                  : "Salvar alterações da equipe"}
-              </Button>
-            </div>
           </div>
         ) : (
           <p className="text-sm text-[#7a4430]">
             {eventUiCopy.detail.noAssignments}
           </p>
         )}
+
+        <div className="mt-4 flex justify-end">
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => {
+              void handleSaveAllAssignments();
+            }}
+            disabled={
+              savingAssignments ||
+              (pendingUpdates.length === 0 && !pendingOvertimeChanged)
+            }
+          >
+            {savingAssignments
+              ? eventUiCopy.detail.assignment.saving
+              : "Salvar alterações do evento"}
+          </Button>
+        </div>
       </SectionCard>
     </ManagementPanelTemplate>
   );

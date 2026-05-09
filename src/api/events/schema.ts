@@ -47,6 +47,9 @@ export const EventSchema = z.object({
   eventDates: z.array(z.string()).nullable().optional(),
   eventLocation: z.string().nullable().optional(),
   displacementFee: z.number().optional().default(0),
+  discountTotal: z.number().optional().default(0),
+  overtimeMinutes: z.number().int().min(0).optional().default(0),
+  overtimeAmount: z.number().optional().default(0),
   serviceBreakdown: z.array(EventServiceBreakdownSchema).optional().default([]),
   totalRevenue: z.number(),
   totalCost: z.number(),
@@ -57,8 +60,12 @@ export const EventSchema = z.object({
 });
 
 export const UpdateEventAssignmentPayloadSchema = z.object({
-  idEmployees: z.string().optional(),
-  employeePayment: z.number().optional(),
+  idEmployees: z.string().min(1),
+  employeePayment: z.number(),
+});
+
+export const UpdateEventPayloadSchema = z.object({
+  overtimeMinutes: z.number().int().min(0).optional(),
 });
 
 export type Event = z.infer<typeof EventSchema>;
@@ -66,3 +73,4 @@ export type EventAssignment = z.infer<typeof EventAssignmentSchema>;
 export type UpdateEventAssignmentPayload = z.infer<
   typeof UpdateEventAssignmentPayloadSchema
 >;
+export type UpdateEventPayload = z.infer<typeof UpdateEventPayloadSchema>;

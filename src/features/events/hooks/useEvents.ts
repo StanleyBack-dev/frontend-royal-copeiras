@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { EventSchema } from "../../../api/events/schema";
 import { getEvents } from "../../../api/events/methods/get-list";
 import { updateEventAssignment } from "../../../api/events/methods/update-assignment";
+import { updateEvent } from "../../../api/events/methods/update-event";
 import { getHttpErrorMessage } from "../../../api/shared/http-error";
 import { useToast } from "../../../shared/toast/useToast";
 import {
@@ -142,7 +143,7 @@ export function useEvents() {
 
   async function handleUpdateAssignment(
     idEventAssignments: string,
-    payload: { idEmployees?: string; employeePayment?: number },
+    payload: { idEmployees: string; employeePayment: number },
   ) {
     return handleUpdateAssignments([
       {
@@ -155,7 +156,7 @@ export function useEvents() {
   async function handleUpdateAssignments(
     updates: Array<{
       idEventAssignments: string;
-      payload: { idEmployees?: string; employeePayment?: number };
+      payload: { idEmployees: string; employeePayment: number };
     }>,
   ) {
     if (!updates.length) {
@@ -171,6 +172,27 @@ export function useEvents() {
       showSuccess(
         eventUiCopy.success.assignmentUpdated,
         eventUiCopy.success.assignmentUpdated,
+      );
+      await load();
+    } catch (error) {
+      const message = getHttpErrorMessage(
+        error,
+        eventUiCopy.errors.updateFallback,
+      );
+      showError(eventUiCopy.errors.updateFallback, message);
+      throw error;
+    }
+  }
+
+  async function handleUpdateEvent(
+    idEvents: string,
+    payload: { overtimeMinutes?: number },
+  ) {
+    try {
+      await updateEvent(idEvents, payload);
+      showSuccess(
+        eventUiCopy.success.eventUpdated,
+        eventUiCopy.success.eventUpdated,
       );
       await load();
     } catch (error) {
@@ -199,6 +221,7 @@ export function useEvents() {
     columns,
     activeStatusTab,
     setActiveStatusTab: handleStatusTabChange,
+    handleUpdateEvent,
     handleUpdateAssignment,
     handleUpdateAssignments,
     reload: load,
