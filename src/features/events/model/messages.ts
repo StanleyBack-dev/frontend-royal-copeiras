@@ -37,6 +37,9 @@ export const eventUiCopy = {
       paymentMethod: "Forma de pagamento",
       advance: "Entrada",
       displacementFee: "Taxa de deslocamento",
+      discountTotal: "Valor total de desconto",
+      overtime: "Horas extras",
+      overtimeAmount: "Valor de horas extras",
       notes: "Observações",
       totalRevenue: "Receita total",
       totalCost: "Custo com equipe",
@@ -58,8 +61,11 @@ export const eventUiCopy = {
   errors: {
     loadFallback: "Erro ao carregar eventos",
     updateFallback: "Erro ao atualizar atribuição",
+    assignmentRequiredFields:
+      "Preencha funcionário e pagamento em todas as alocações antes de salvar.",
   },
   success: {
+    eventUpdated: "Evento atualizado com sucesso",
     assignmentUpdated: "Atribuição atualizada com sucesso",
   },
 } as const;

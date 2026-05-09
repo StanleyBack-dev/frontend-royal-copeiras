@@ -23,6 +23,9 @@ export class GetEventsService {
             eventDates
             eventLocation
             displacementFee
+            discountTotal
+            overtimeMinutes
+            overtimeAmount
             serviceBreakdown {
               idBudgetItems
               serviceDescription
