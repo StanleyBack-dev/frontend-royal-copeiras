@@ -63,6 +63,19 @@ export function normalizeBudgetFormValues(
   values: BudgetFormValues,
   previousValues?: BudgetFormValues,
 ): BudgetFormValues {
+  const normalizedDiscountType = values.discountType as
+    | "percentage"
+    | "amount"
+    | "";
+  const normalizedDiscountPercentage =
+    normalizedDiscountType === "percentage"
+      ? onlyDigits(values.discountPercentage).slice(0, 3)
+      : "";
+  const normalizedDiscountAmount =
+    normalizedDiscountType === "amount"
+      ? formatCurrencyInput(values.discountAmount)
+      : "";
+
   const eventDaysCount =
     values.eventDateMode === "multiple"
       ? String(
@@ -101,6 +114,9 @@ export function normalizeBudgetFormValues(
         )
       : "",
     advancePercentage: onlyDigits(values.advancePercentage).slice(0, 3),
+    discountPercentage: normalizedDiscountPercentage,
+    discountType: normalizedDiscountType,
+    discountAmount: normalizedDiscountAmount,
     displacementFee: formatCurrencyInput(values.displacementFee),
     items: values.items.map((item) => ({
       ...item,

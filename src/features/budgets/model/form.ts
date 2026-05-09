@@ -22,6 +22,7 @@ export const budgetPaymentMethodOptions = [
   "Transferência Bancária",
   "Dinheiro",
 ] as const;
+export const budgetDiscountTypeOptions = ["percentage", "amount"] as const;
 const EVENT_TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
 function padDatePart(value: number) {
@@ -90,6 +91,18 @@ export const budgetAdvancePercentageOptions = Array.from(
   },
 );
 
+export const budgetDiscountPercentageOptions = Array.from(
+  { length: 100 / BUDGET_ADVANCE_PERCENTAGE_STEP },
+  (_, index) => {
+    const percentage = (index + 1) * BUDGET_ADVANCE_PERCENTAGE_STEP;
+
+    return {
+      value: String(percentage),
+      label: `${percentage}%`,
+    };
+  },
+);
+
 export interface BudgetItemFormValues {
   id?: string;
   idPositions: string;
@@ -117,6 +130,9 @@ export interface BudgetFormValues {
   durationHours: string;
   paymentMethod: string;
   advancePercentage: string;
+  discountPercentage: string;
+  discountType: "percentage" | "amount" | "";
+  discountAmount: string;
   displacementFee: string;
   items: BudgetItemFormValues[];
 }
@@ -152,6 +168,9 @@ export function createEmptyBudgetFormValues(
     durationHours: "",
     paymentMethod: "PIX",
     advancePercentage: "30",
+    discountPercentage: "",
+    discountType: "",
+    discountAmount: "",
     displacementFee: "0,00",
     items: [{ ...emptyBudgetItemFormValues }],
   };
@@ -198,6 +217,9 @@ const budgetFormSchemaBase = z.object({
     .string()
     .trim()
     .min(1, budgetValidationMessages.advancePercentageRequired),
+  discountPercentage: z.string().trim().optional(),
+  discountType: z.enum(budgetDiscountTypeOptions).or(z.literal("")).optional(),
+  discountAmount: z.string().trim().optional(),
   displacementFee: z.string().trim(),
   items: z.array(
     z.object({
@@ -327,6 +349,45 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
         path: ["advancePercentage"],
         message: budgetValidationMessages.advancePercentageInvalid,
       });
+    }
+
+    if (data.discountType === "percentage") {
+      const discountPercentage = Number(data.discountPercentage || 0);
+
+      if (
+        !data.discountPercentage ||
+        !Number.isFinite(discountPercentage) ||
+        discountPercentage <= 0 ||
+        discountPercentage > 100
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["discountPercentage"],
+          message: budgetValidationMessages.discountPercentageRequired,
+        });
+      }
+    }
+
+    if (data.discountType === "amount") {
+      const discountAmountDigits = (data.discountAmount || "").replace(
+        /[^\d]/g,
+        "",
+      );
+      const discountAmountValue = discountAmountDigits
+        ? Number(discountAmountDigits) / 100
+        : 0;
+
+      if (
+        !discountAmountDigits ||
+        !Number.isFinite(discountAmountValue) ||
+        discountAmountValue <= 0
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["discountAmount"],
+          message: budgetValidationMessages.discountAmountRequired,
+        });
+      }
     }
 
     if (data.items.length < 1) {

@@ -154,8 +154,21 @@ export function useBudgetForm({
   }
 
   const totals = useMemo(
-    () => calculateBudgetTotals(form.items, form.displacementFee),
-    [form.items, form.displacementFee],
+    () =>
+      calculateBudgetTotals(
+        form.items,
+        form.displacementFee,
+        form.discountPercentage,
+        form.discountType,
+        form.discountAmount,
+      ),
+    [
+      form.items,
+      form.displacementFee,
+      form.discountPercentage,
+      form.discountType,
+      form.discountAmount,
+    ],
   );
 
   function submit(values: BudgetFormValues) {

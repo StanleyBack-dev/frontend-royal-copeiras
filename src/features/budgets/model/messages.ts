@@ -38,6 +38,7 @@ export const budgetUiCopy = {
       durationHours: "Duração",
       paymentMethod: "Pagamento",
       advancePercentage: "Entrada (%)",
+      discountPercentage: "Desconto (%)",
       items: "Itens do Orçamento",
       displacementFee: "Taxa de Deslocamento",
     },
@@ -115,6 +116,10 @@ export const budgetValidationMessages = {
   paymentMethodRequired: "Selecione a forma de pagamento.",
   advancePercentageRequired: "Selecione a porcentagem de entrada.",
   advancePercentageInvalid: "A entrada deve estar entre 0% e 100%.",
+  discountPercentageRequired:
+    "Selecione a porcentagem de desconto quando o tipo for percentual.",
+  discountAmountRequired:
+    "Informe o valor do desconto quando o tipo for monetário.",
   itemsRequired: "Informe pelo menos um item de serviço.",
   itemDescriptionRequired: "Preencha a descrição dos serviços.",
   itemServiceTypeRequired: "Selecione o tipo de serviço de cada item.",

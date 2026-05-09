@@ -27,6 +27,9 @@ export class CreateBudgetsService {
             durationHours
             paymentMethod
             advancePercentage
+            discountPercentage
+            discountType
+            discountAmount
             displacementFee
             subtotal
             totalAmount

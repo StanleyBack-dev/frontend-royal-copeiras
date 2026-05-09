@@ -440,6 +440,15 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     eventDayCount,
     form.eventDepartureTimes,
   );
+  const showDisplacementSummary = totals.displacementFee > 0;
+  const showDiscountSummary =
+    Boolean(form.discountType) || totals.discountAmount > 0;
+  const summaryGridColumnsClass =
+    showDisplacementSummary && showDiscountSummary
+      ? "md:grid-cols-4"
+      : showDisplacementSummary || showDiscountSummary
+        ? "md:grid-cols-3"
+        : "md:grid-cols-2";
 
   return (
     <>
@@ -730,7 +739,9 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
             disabled={isNonDraftLocked}
           />
 
-          <div className="mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 md:grid-cols-3">
+          <div
+            className={`mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 ${summaryGridColumnsClass}`}
+          >
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
                 {budgetUiCopy.form.summary.subtotal}
@@ -739,14 +750,26 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
                 {formatCurrency(totals.subtotal)}
               </p>
             </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                {budgetUiCopy.form.labels.displacementFee}
-              </p>
-              <p className="mt-1 text-lg font-bold text-[#2c1810]">
-                {formatCurrency(totals.displacementFee)}
-              </p>
-            </div>
+            {showDisplacementSummary ? (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                  {budgetUiCopy.form.labels.displacementFee}
+                </p>
+                <p className="mt-1 text-lg font-bold text-[#2c1810]">
+                  {formatCurrency(totals.displacementFee)}
+                </p>
+              </div>
+            ) : null}
+            {showDiscountSummary ? (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                  Desconto
+                </p>
+                <p className="mt-1 text-lg font-bold text-red-700">
+                  -{formatCurrency(totals.discountAmount)}
+                </p>
+              </div>
+            ) : null}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
                 {budgetUiCopy.form.summary.total}
@@ -756,6 +779,60 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
               </p>
             </div>
           </div>
+
+          {form.discountType === "percentage" &&
+          form.discountPercentage &&
+          Number(form.discountPercentage) > 0 ? (
+            <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                    Desconto ({form.discountPercentage}%)
+                  </p>
+                  <p className="text-sm font-semibold text-red-600">
+                    -{formatCurrency(totals.discountAmount)}
+                  </p>
+                </div>
+                <div className="border-t border-[#e8d5c9] pt-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                      Total com Desconto
+                    </p>
+                    <p className="text-lg font-bold text-[#2c1810]">
+                      {formatCurrency(totals.total)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {form.discountType === "amount" &&
+          form.discountAmount &&
+          Number(form.discountAmount.replace(/\D/g, "") || 0) > 0 ? (
+            <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                    Desconto (Valor Fixo)
+                  </p>
+                  <p className="text-sm font-semibold text-red-600">
+                    -{formatCurrency(totals.discountAmount)}
+                  </p>
+                </div>
+                <div className="border-t border-[#e8d5c9] pt-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                      Total com Desconto
+                    </p>
+                    <p className="text-lg font-bold text-[#2c1810]">
+                      {formatCurrency(totals.total)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </GenericForm>
       </ManagementPanelTemplate>
 
