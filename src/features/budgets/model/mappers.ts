@@ -10,13 +10,20 @@ import {
   buildEventTimes,
   budgetPaymentMethodOptions,
 } from "./form";
-import { formatCurrencyInput, parseCurrencyInput } from "./formatters";
+import { parseCurrencyInput } from "./formatters";
 import {
   buildBudgetServiceDescription,
   inferBudgetServiceType,
   inferServiceGenderFromDescription,
   sanitizeBudgetServiceDescription,
 } from "./service-items";
+
+function formatCurrencyFromDecimal(value: number): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value);
+}
 
 function toDecimal(value: string): number | undefined {
   return parseCurrencyInput(value);
@@ -87,7 +94,7 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
       budget.advancePercentage != null ? String(budget.advancePercentage) : "",
     displacementFee:
       budget.displacementFee != null && budget.displacementFee >= 0
-        ? formatCurrencyInput(String(Math.round(budget.displacementFee * 100)))
+        ? formatCurrencyFromDecimal(budget.displacementFee)
         : "0,00",
     items: (budget.items || []).map((item) => {
       const serviceType =
@@ -109,7 +116,7 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
             )
           : sanitizeBudgetServiceDescription(item.description),
         quantity: String(item.quantity),
-        unitPrice: formatCurrencyInput(String(item.unitPrice * 100)),
+        unitPrice: formatCurrencyFromDecimal(item.unitPrice),
       };
     }),
   };
