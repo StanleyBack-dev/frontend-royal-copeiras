@@ -92,6 +92,15 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
         : "",
     advancePercentage:
       budget.advancePercentage != null ? String(budget.advancePercentage) : "",
+    discountPercentage:
+      budget.discountPercentage != null
+        ? String(budget.discountPercentage)
+        : "",
+    discountType: budget.discountType || "",
+    discountAmount:
+      budget.discountAmount != null && budget.discountAmount >= 0
+        ? formatCurrencyFromDecimal(budget.discountAmount)
+        : "",
     displacementFee:
       budget.displacementFee != null && budget.displacementFee >= 0
         ? formatCurrencyFromDecimal(budget.displacementFee)
@@ -137,10 +146,33 @@ export function mapBudgetFormToPayload(
     .slice(0, eventDaysCount)
     .map((value) => value.trim());
   const items = values.items.map(mapBudgetItemFormToPayload);
-  const totalAmount = items.reduce(
+  const subtotal = items.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
     0,
   );
+  const displacementFeeValue = toDecimal(values.displacementFee) ?? 0;
+
+  const discountType = values.discountType || null;
+  const discountPercentage =
+    values.discountType === "percentage" && values.discountPercentage
+      ? Number(values.discountPercentage)
+      : undefined;
+  const discountAmountValue =
+    values.discountType === "amount" && values.discountAmount
+      ? toDecimal(values.discountAmount)
+      : undefined;
+
+  const baseTotal = subtotal + displacementFeeValue;
+  const resolvedDiscountAmount =
+    discountType === "percentage"
+      ? Math.max(
+          0,
+          Math.min(baseTotal, baseTotal * ((discountPercentage ?? 0) / 100)),
+        )
+      : discountType === "amount"
+        ? Math.max(0, Math.min(discountAmountValue ?? 0, baseTotal))
+        : 0;
+  const totalAmount = baseTotal - resolvedDiscountAmount;
 
   return {
     idLeads: values.idLeads.trim(),
@@ -155,8 +187,11 @@ export function mapBudgetFormToPayload(
     durationHours: Number(values.durationHours || 0),
     paymentMethod: values.paymentMethod.trim(),
     advancePercentage: Number(values.advancePercentage || 0),
-    displacementFee: toDecimal(values.displacementFee) ?? 0,
-    totalAmount: totalAmount + (toDecimal(values.displacementFee) ?? 0),
+    discountPercentage,
+    discountType,
+    discountAmount: discountAmountValue,
+    displacementFee: displacementFeeValue,
+    totalAmount,
     items,
   };
 }
@@ -164,6 +199,9 @@ export function mapBudgetFormToPayload(
 export function calculateBudgetTotals(
   items: BudgetItemFormValues[],
   displacementFee = "",
+  discountPercentage = "",
+  discountType: "percentage" | "amount" | "" = "",
+  discountAmount = "",
 ) {
   const subtotal = items.reduce((sum, item) => {
     const quantity = Number(item.quantity || 0);
@@ -172,10 +210,31 @@ export function calculateBudgetTotals(
   }, 0);
 
   const displacementFeeValue = toDecimal(displacementFee) ?? 0;
+  const baseTotal = subtotal + displacementFeeValue;
+
+  let calculatedDiscountAmount = 0;
+
+  if (discountType === "percentage") {
+    const discountPercentageValue = Math.min(
+      Math.max(Number(discountPercentage || 0), 0),
+      100,
+    );
+    calculatedDiscountAmount =
+      discountPercentageValue > 0
+        ? baseTotal * (discountPercentageValue / 100)
+        : 0;
+  } else if (discountType === "amount") {
+    const discountAmountValue = toDecimal(discountAmount) ?? 0;
+    calculatedDiscountAmount = Math.max(
+      0,
+      Math.min(discountAmountValue, baseTotal),
+    );
+  }
 
   return {
     subtotal,
     displacementFee: displacementFeeValue,
-    total: subtotal + displacementFeeValue,
+    discountAmount: calculatedDiscountAmount,
+    total: baseTotal - calculatedDiscountAmount,
   };
 }

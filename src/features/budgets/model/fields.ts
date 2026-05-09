@@ -2,6 +2,7 @@ import type { Lead } from "../../../api/leads/schema";
 import type { FormField } from "../../../components/organisms/GenericForm";
 import {
   budgetAdvancePercentageOptions,
+  budgetDiscountPercentageOptions,
   budgetDurationOptions,
   budgetPaymentMethodOptions,
   type BudgetFormValues,
@@ -168,11 +169,50 @@ export function getBudgetFormFields(
       label: budgetUiCopy.form.labels.advancePercentage,
       as: "select",
       options: [
-        { value: "", label: "Selecione a entrada" },
+        { value: "", label: "Sem entrada" },
         ...budgetAdvancePercentageOptions,
       ],
       required: true,
       disabled: disableAll,
     },
+    {
+      name: "discountType",
+      label: "Tipo de Desconto",
+      as: "select",
+      options: [
+        { value: "", label: "Sem desconto" },
+        { value: "percentage", label: "Desconto (%)" },
+        { value: "amount", label: "Desconto (R$)" },
+      ],
+      required: false,
+      disabled: disableAll,
+    },
+    ...(values.discountType === "percentage"
+      ? [
+          {
+            name: "discountPercentage",
+            label: budgetUiCopy.form.labels.discountPercentage,
+            as: "select" as const,
+            options: [
+              { value: "", label: "Selecione o desconto" },
+              ...budgetDiscountPercentageOptions,
+            ],
+            required: true,
+            disabled: disableAll,
+          },
+        ]
+      : []),
+    ...(values.discountType === "amount"
+      ? [
+          {
+            name: "discountAmount",
+            label: "Valor do Desconto (R$)",
+            placeholder: "Ex: R$ 150,00",
+            inputMode: "numeric" as const,
+            required: true,
+            disabled: disableAll,
+          },
+        ]
+      : []),
   ];
 }
