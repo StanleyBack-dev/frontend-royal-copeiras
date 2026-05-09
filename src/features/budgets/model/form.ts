@@ -8,7 +8,6 @@ import {
 } from "./constants";
 import { budgetValidationMessages } from "./messages";
 import {
-  budgetServiceTypeOptions,
   serviceGenderOptions,
   type BudgetServiceType,
   type ServiceGenderOption,
@@ -93,6 +92,7 @@ export const budgetAdvancePercentageOptions = Array.from(
 
 export interface BudgetItemFormValues {
   id?: string;
+  idPositions: string;
   serviceType: BudgetServiceType | "";
   gender: ServiceGenderOption | "";
   description: string;
@@ -122,6 +122,7 @@ export interface BudgetFormValues {
 }
 
 export const emptyBudgetItemFormValues: BudgetItemFormValues = {
+  idPositions: "",
   serviceType: "",
   gender: "",
   description: "",
@@ -201,11 +202,24 @@ const budgetFormSchemaBase = z.object({
   items: z.array(
     z.object({
       id: z.string().optional(),
-      serviceType: z.enum(budgetServiceTypeOptions).or(z.literal("")),
+      idPositions: z
+        .string()
+        .trim()
+        .min(1, budgetValidationMessages.itemServiceTypeRequired),
+      serviceType: z.string(),
       gender: z.enum(serviceGenderOptions).or(z.literal("")),
-      description: z.string(),
-      quantity: z.string(),
-      unitPrice: z.string(),
+      description: z
+        .string()
+        .trim()
+        .min(1, budgetValidationMessages.itemDescriptionRequired),
+      quantity: z
+        .string()
+        .trim()
+        .min(1, budgetValidationMessages.itemQuantityInvalid),
+      unitPrice: z
+        .string()
+        .trim()
+        .min(1, budgetValidationMessages.itemUnitPriceInvalid),
     }),
   ),
 });
@@ -324,25 +338,10 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
       return;
     }
 
-    if (data.items.some((item) => !item.description.trim())) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["items"],
-        message: budgetValidationMessages.itemDescriptionRequired,
-      });
-    }
-
-    if (data.items.some((item) => !item.serviceType.trim())) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["items"],
-        message: budgetValidationMessages.itemServiceTypeRequired,
-      });
-    }
-
-    const selectedCombos = data.items
-      .filter((item) => item.serviceType.trim())
-      .map((item) => `${item.serviceType.trim()}:${item.gender.trim()}`);
+    // Validate uniqueness of position + gender combinations
+    const selectedCombos = data.items.map(
+      (item) => `${item.idPositions.trim()}:${item.gender.trim()}`,
+    );
     const uniqueCombos = new Set(selectedCombos);
 
     if (selectedCombos.length !== uniqueCombos.size) {
@@ -353,19 +352,12 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
       });
     }
 
+    // Validate quantity is positive
     if (data.items.some((item) => Number(item.quantity) <= 0)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["items"],
         message: budgetValidationMessages.itemQuantityInvalid,
-      });
-    }
-
-    if (data.items.some((item) => !item.unitPrice.trim())) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["items"],
-        message: budgetValidationMessages.itemUnitPriceInvalid,
       });
     }
 

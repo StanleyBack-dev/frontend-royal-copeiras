@@ -64,6 +64,10 @@ export async function saveBudget({
         const parsedPayload = UpdateBudgetPayloadSchema.safeParse(formData);
 
         if (!parsedPayload.success) {
+          console.error(
+            "[DEBUG] UpdateBudgetPayloadSchema validation failed:",
+            parsedPayload.error.flatten().fieldErrors,
+          );
           throw new Error(budgetUiCopy.errors.invalidBudgetData);
         }
 
@@ -73,6 +77,11 @@ export async function saveBudget({
         const parsedPayload = CreateBudgetPayloadSchema.safeParse(formData);
 
         if (!parsedPayload.success) {
+          console.error(
+            "[DEBUG] CreateBudgetPayloadSchema validation failed:",
+            parsedPayload.error.flatten().fieldErrors,
+          );
+          console.error("[DEBUG] Payload data:", formData);
           throw new Error(budgetUiCopy.errors.invalidBudgetData);
         }
 

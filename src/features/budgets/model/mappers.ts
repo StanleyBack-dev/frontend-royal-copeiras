@@ -16,7 +16,6 @@ import {
   inferBudgetServiceType,
   inferServiceGenderFromDescription,
   sanitizeBudgetServiceDescription,
-  type BudgetServiceType,
 } from "./service-items";
 
 function toDecimal(value: string): number | undefined {
@@ -35,9 +34,11 @@ function mapBudgetItemFormToPayload(
     : item.description.trim();
 
   return {
+    idPositions: item.idPositions,
     description,
     quantity,
     unitPrice: toDecimal(item.unitPrice) ?? 0,
+    notes: "",
     sortOrder: index,
   };
 }
@@ -89,16 +90,15 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
         ? formatCurrencyInput(String(Math.round(budget.displacementFee * 100)))
         : "0,00",
     items: (budget.items || []).map((item) => {
-      const serviceType = inferBudgetServiceType(item.description);
+      const serviceType =
+        item.position || inferBudgetServiceType(item.description);
       const gender = serviceType
-        ? inferServiceGenderFromDescription(
-            item.description,
-            serviceType as BudgetServiceType,
-          )
+        ? inferServiceGenderFromDescription(item.description, serviceType)
         : "";
 
       return {
         id: item.idBudgetItems,
+        idPositions: item.idPositions || "",
         serviceType,
         gender,
         description: serviceType
@@ -136,22 +136,18 @@ export function mapBudgetFormToPayload(
   );
 
   return {
-    idLeads: values.idLeads || undefined,
+    idLeads: values.idLeads.trim(),
     status: values.status,
-    issueDate: values.issueDate || undefined,
-    validUntil: values.validUntil,
+    issueDate: values.issueDate.trim(),
+    validUntil: values.validUntil.trim(),
     eventDates,
     eventArrivalTimes,
     eventDepartureTimes,
     eventLocation: values.eventLocation.trim(),
-    guestCount: values.guestCount ? Number(values.guestCount) : undefined,
-    durationHours: values.durationHours
-      ? Number(values.durationHours)
-      : undefined,
+    guestCount: Number(values.guestCount || 0),
+    durationHours: Number(values.durationHours || 0),
     paymentMethod: values.paymentMethod.trim(),
-    advancePercentage: values.advancePercentage
-      ? Number(values.advancePercentage)
-      : undefined,
+    advancePercentage: Number(values.advancePercentage || 0),
     displacementFee: toDecimal(values.displacementFee) ?? 0,
     totalAmount: totalAmount + (toDecimal(values.displacementFee) ?? 0),
     items,
