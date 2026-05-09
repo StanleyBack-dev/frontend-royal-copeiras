@@ -37,7 +37,7 @@ export function mapEmployeeToFormValues(
     contactType: inferEmployeeContactType(employee.phone),
     email: employee.email || "",
     phone: employee.phone || "",
-    position: employee.position ?? "",
+    idPositions: employee.idPositions,
     isActive: employee.isActive,
   };
 }
@@ -60,7 +60,7 @@ export function mapEmployeeFormToValidationInput(values: EmployeeFormValues) {
       values.contactType === "mobile"
         ? onlyDigits(values.phone ?? "", EMPLOYEE_PHONE_MOBILE_DIGITS)
         : onlyDigits(values.phone ?? "", EMPLOYEE_PHONE_LANDLINE_DIGITS),
-    position: values.position,
+    idPositions: values.idPositions,
     isActive: values.isActive,
   };
 }
@@ -81,7 +81,7 @@ export function mapEmployeeFormToPayload(
       values.contactType === "mobile"
         ? onlyDigits(values.phone ?? "", EMPLOYEE_PHONE_MOBILE_DIGITS)
         : onlyDigits(values.phone ?? "", EMPLOYEE_PHONE_LANDLINE_DIGITS),
-    position: values.position,
+    idPositions: values.idPositions,
     isActive: values.isActive,
   };
 }

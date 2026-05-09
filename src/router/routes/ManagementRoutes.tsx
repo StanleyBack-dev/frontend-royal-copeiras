@@ -3,11 +3,13 @@ import type { ComponentType } from "react";
 import { Navigate, Route } from "react-router-dom";
 import { CustomersProviderOutlet } from "../../features/customers";
 import { EmployeesProviderOutlet } from "../../features/employees";
+import { PositionsProviderOutlet } from "../../features/positions";
 import { UsersProviderOutlet } from "../../features/users";
 import RequirePageAccessRoute from "../../features/auth/guards/RequirePageAccessRoute";
 import {
   customerRoutePaths,
   employeeRoutePaths,
+  positionRoutePaths,
   userRoutePaths,
 } from "../navigation";
 
@@ -15,6 +17,8 @@ const CustomerForm = lazy(() => import("../../pages/customers/CustomerForm"));
 const Customers = lazy(() => import("../../pages/customers/Customers"));
 const EmployeeForm = lazy(() => import("../../pages/employees/EmployeeForm"));
 const Employees = lazy(() => import("../../pages/employees/Employees"));
+const PositionForm = lazy(() => import("../../pages/positions/PositionForm"));
+const Positions = lazy(() => import("../../pages/positions/Positions"));
 const UserForm = lazy(() => import("../../pages/users/UserForm"));
 const Users = lazy(() => import("../../pages/users/Users"));
 
@@ -124,6 +128,43 @@ export function ManagementRoutes({ userId, loginPath }: ManagementRoutesProps) {
       <Route
         path={employeeRoutePaths.legacyEdit()}
         element={<Navigate to={employeeRoutePaths.edit()} replace />}
+      />
+
+      <Route element={<RequirePageAccessRoute view="positions" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={loginPath}
+              ProviderOutlet={PositionsProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={positionRoutePaths.list}
+            element={withPageSuspense(<Positions />)}
+          />
+          <Route
+            path={positionRoutePaths.create}
+            element={withPageSuspense(<PositionForm mode="create" />)}
+          />
+          <Route
+            path={positionRoutePaths.edit()}
+            element={withPageSuspense(<PositionForm mode="edit" />)}
+          />
+        </Route>
+      </Route>
+      <Route
+        path={positionRoutePaths.legacyList}
+        element={<Navigate to={positionRoutePaths.list} replace />}
+      />
+      <Route
+        path={positionRoutePaths.legacyCreate}
+        element={<Navigate to={positionRoutePaths.create} replace />}
+      />
+      <Route
+        path={positionRoutePaths.legacyEdit()}
+        element={<Navigate to={positionRoutePaths.edit()} replace />}
       />
 
       <Route element={<RequirePageAccessRoute view="users" />}>

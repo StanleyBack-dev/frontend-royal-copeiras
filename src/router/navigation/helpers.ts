@@ -2,6 +2,7 @@ import type { ActiveView } from "../../types/views";
 import {
   customerRoutePaths,
   employeeRoutePaths,
+  positionRoutePaths,
   routePaths,
   userRoutePaths,
   leadRoutePaths,
@@ -51,6 +52,13 @@ export function getActiveView(pathname: string): ActiveView {
   }
 
   if (
+    pathname.startsWith(positionRoutePaths.list) ||
+    pathname.startsWith(positionRoutePaths.legacyList)
+  ) {
+    return "positions";
+  }
+
+  if (
     pathname.startsWith(userRoutePaths.list) ||
     pathname.startsWith(userRoutePaths.legacyList)
   ) {
@@ -82,6 +90,8 @@ export function getPathForView(view: ActiveView) {
       return routePaths.clients;
     case "employees":
       return employeeRoutePaths.list;
+    case "positions":
+      return positionRoutePaths.list;
     case "users":
       return userRoutePaths.list;
     case "events":

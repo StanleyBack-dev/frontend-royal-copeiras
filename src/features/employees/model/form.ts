@@ -8,8 +8,6 @@ import {
   EMPLOYEE_NAME_MIN_LENGTH,
   EMPLOYEE_PHONE_LANDLINE_DIGITS,
   EMPLOYEE_PHONE_MOBILE_DIGITS,
-  EMPLOYEE_POSITION_MAX_LENGTH,
-  EMPLOYEE_POSITION_MIN_LENGTH,
 } from "./constants";
 import { employeeValidationMessages } from "./messages";
 
@@ -35,11 +33,7 @@ const employeeFormSchemaBase = z.object({
   phone: z.string().optional().or(z.literal("")),
   cpf: z.string().optional(),
   cnpj: z.string().optional(),
-  position: z
-    .string()
-    .trim()
-    .min(EMPLOYEE_POSITION_MIN_LENGTH, employeeValidationMessages.positionMin)
-    .max(EMPLOYEE_POSITION_MAX_LENGTH, employeeValidationMessages.positionMax),
+  idPositions: z.string().trim().min(1, employeeValidationMessages.positionMin),
   isActive: z.boolean(),
 });
 
@@ -107,6 +101,6 @@ export const emptyEmployeeFormValues: EmployeeFormValues = {
   contactType: "mobile",
   email: "",
   phone: "",
-  position: "",
+  idPositions: "",
   isActive: true,
 };

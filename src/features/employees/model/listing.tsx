@@ -20,7 +20,7 @@ export function filterEmployeesBySearch(employees: Employee[], search: string) {
   return employees.filter(
     (employee) =>
       employee.name.toLowerCase().includes(normalizedSearch) ||
-      employee.position.toLowerCase().includes(normalizedSearch) ||
+      (employee.position || "").toLowerCase().includes(normalizedSearch) ||
       (employee.email || "").toLowerCase().includes(normalizedSearch) ||
       (employee.phone || "").includes(search) ||
       (employee.document || "").includes(search),

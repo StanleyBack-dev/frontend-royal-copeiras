@@ -18,7 +18,7 @@ export function createEmployeesController() {
           requestId: req.requestId,
         },
       );
-      invalidateCacheByPrefix(`employees:list:${auth.userId}:`);
+      invalidateCacheByPrefix("employees:list:");
       res.status(201).json(employee);
     } catch (error) {
       const statusCode = error instanceof HttpError ? error.statusCode : 500;

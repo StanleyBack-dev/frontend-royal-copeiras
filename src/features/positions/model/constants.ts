@@ -1,0 +1,2 @@
+export const POSITION_NAME_MIN_LENGTH = 2;
+export const POSITION_NAME_MAX_LENGTH = 120;

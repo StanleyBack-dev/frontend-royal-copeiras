@@ -17,6 +17,10 @@ export const viewTitles: Record<
     title: "Funcionários",
     subtitle: "Gerenciar colaboradores",
   },
+  positions: {
+    title: "Cargos",
+    subtitle: "Gerenciar cargos da equipe",
+  },
   users: {
     title: "Usuários",
     subtitle: "Gerenciar usuários de acesso",

@@ -6,6 +6,7 @@ export {
   eventRoutePaths,
   customerRoutePaths,
   employeeRoutePaths,
+  positionRoutePaths,
   leadRoutePaths,
   routePaths,
   utilityRoutePaths,

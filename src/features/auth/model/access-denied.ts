@@ -27,6 +27,8 @@ export function getDeniedViewLabel(deniedView?: ActiveView): string {
       return "Clientes";
     case "employees":
       return "Funcionários";
+    case "positions":
+      return "Cargos";
     case "users":
       return "Usuários";
     case "events":

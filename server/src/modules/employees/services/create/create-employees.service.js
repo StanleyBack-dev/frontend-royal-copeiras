@@ -14,6 +14,7 @@ export class CreateEmployeesService {
             document
             email
             phone
+            idPositions
             position
             isActive
             createdAt
@@ -25,6 +26,7 @@ export class CreateEmployeesService {
     const sanitizedInput = { ...input };
     delete sanitizedInput.createdAt;
     delete sanitizedInput.updatedAt;
+    delete sanitizedInput.position;
 
     const data = await executeGraphql({
       query: mutation,
