@@ -4,12 +4,7 @@ import { useAuthSession } from "../context/useAuthSession";
 
 export default function RequireAuthenticatedRoute() {
   const location = useLocation();
-  const { isAuthenticated, requiresPasswordChange, isInitializing } =
-    useAuthSession();
-
-  if (isInitializing) {
-    return null;
-  }
+  const { isAuthenticated, requiresPasswordChange } = useAuthSession();
 
   if (!isAuthenticated) {
     return (

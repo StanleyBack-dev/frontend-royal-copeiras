@@ -7,10 +7,15 @@ import RequireAuthenticatedRoute from "./features/auth/guards/RequireAuthenticat
 import { useAuthSession } from "./features/auth/context/useAuthSession";
 import { AppShellRoutes } from "./router/routes/AppShellRoutes";
 import { AuthRoutes } from "./router/routes/AuthRoutes";
+import SplashScreen from "./pages/SplashScreen";
 
 export default function AppRouter() {
-  const { session } = useAuthSession();
+  const { session, isInitializing } = useAuthSession();
   const authenticatedUserId = session?.user.idUsers;
+
+  if (isInitializing) {
+    return <SplashScreen />;
+  }
 
   return (
     <BrowserRouter>
