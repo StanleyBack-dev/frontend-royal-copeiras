@@ -16,6 +16,7 @@ export class GetEmployeesService {
           items {
             idEmployees
             name
+            gender
             document
             email
             phone

@@ -11,6 +11,14 @@ import {
 } from "./constants";
 import type { EmployeeFormValues } from "./form";
 
+function resolveGender(values: EmployeeFormValues): "MALE" | "FEMALE" {
+  if (values.gender === "MALE" || values.gender === "FEMALE") {
+    return values.gender;
+  }
+
+  throw new Error("Genero invalido");
+}
+
 export function inferEmployeeContactType(phone?: string | null) {
   return onlyDigits(phone || "").length > EMPLOYEE_PHONE_LANDLINE_DIGITS
     ? "mobile"
@@ -30,6 +38,7 @@ export function mapEmployeeToFormValues(
 
   return {
     name: employee.name,
+    gender: (employee.gender ?? "") as EmployeeFormValues["gender"],
     cpf: type === "individual" ? (employee.document ?? "") : "",
     cnpj: type === "company" ? (employee.document ?? "") : "",
     createdAt: formatDateTimeDisplay(employee.createdAt),
@@ -45,6 +54,7 @@ export function mapEmployeeToFormValues(
 export function mapEmployeeFormToValidationInput(values: EmployeeFormValues) {
   return {
     name: values.name,
+    gender: resolveGender(values),
     cpf:
       values.type === "individual"
         ? onlyDigits(values.cpf ?? "", EMPLOYEE_DOCUMENT_CPF_DIGITS)
@@ -75,6 +85,7 @@ export function mapEmployeeFormToPayload(
 
   return {
     name: values.name,
+    gender: resolveGender(values),
     document: document || undefined,
     email: values.email,
     phone:

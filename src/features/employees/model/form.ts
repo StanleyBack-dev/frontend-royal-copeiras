@@ -12,6 +12,7 @@ import {
 import { employeeValidationMessages } from "./messages";
 
 export const employeeTypeOptions = ["individual", "company"] as const;
+export const employeeGenderOptions = ["", "MALE", "FEMALE"] as const;
 export const employeeContactTypeOptions = ["mobile", "landline"] as const;
 
 const employeeFormSchemaBase = z.object({
@@ -20,6 +21,9 @@ const employeeFormSchemaBase = z.object({
     .trim()
     .min(EMPLOYEE_NAME_MIN_LENGTH, employeeValidationMessages.nameRequired)
     .max(EMPLOYEE_NAME_MAX_LENGTH, employeeValidationMessages.nameMax),
+  gender: z
+    .enum(employeeGenderOptions)
+    .refine((value) => value !== "", employeeValidationMessages.genderRequired),
   type: z.enum(employeeTypeOptions),
   contactType: z.enum(employeeContactTypeOptions),
   email: z
@@ -88,7 +92,11 @@ export const employeeFormSchema = employeeFormSchemaBase.superRefine(
   },
 );
 
-export type EmployeeFormValues = z.infer<typeof employeeFormSchema> & {
+export type EmployeeFormValues = Omit<
+  z.infer<typeof employeeFormSchema>,
+  "gender"
+> & {
+  gender: (typeof employeeGenderOptions)[number];
   createdAt: string;
 };
 
@@ -97,6 +105,7 @@ export const emptyEmployeeFormValues: EmployeeFormValues = {
   cpf: "",
   cnpj: "",
   createdAt: "",
+  gender: "",
   type: "individual",
   contactType: "mobile",
   email: "",

@@ -11,6 +11,7 @@ export class UpdateEmployeesService {
           data {
             idEmployees
             name
+            gender
             document
             email
             phone

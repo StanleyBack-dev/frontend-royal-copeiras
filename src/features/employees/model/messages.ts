@@ -17,6 +17,7 @@ export const employeeUiCopy = {
       name: "Nome",
       createdAt: "Data de Criação",
       type: "Tipo",
+      gender: "Gênero",
       cpf: "CPF",
       cnpj: "CNPJ",
       contactType: "Tipo de Telefone",
@@ -37,6 +38,8 @@ export const employeeUiCopy = {
     options: {
       person: "Pessoa Física",
       company: "Empresa",
+      male: "Masculino",
+      female: "Feminino",
       mobile: "Móvel",
       landline: "Fixo",
     },
@@ -49,6 +52,7 @@ export const employeeUiCopy = {
     columns: {
       name: "Nome",
       document: "Documento",
+      gender: "Gênero",
       position: "Cargo",
       email: "Email",
       phone: "Telefone",
@@ -87,6 +91,7 @@ export const employeeValidationMessages = {
   emailInvalid: "E-mail inválido",
   phoneInvalid: "Telefone móvel deve ter 11 dígitos e fixo deve ter 10 dígitos",
   positionRequired: "Cargo obrigatório",
+  genderRequired: "Gênero obrigatório",
   positionMin: `Cargo deve ter pelo menos ${EMPLOYEE_POSITION_MIN_LENGTH} caracteres`,
   positionMax: `Cargo deve ter no máximo ${EMPLOYEE_POSITION_MAX_LENGTH} caracteres`,
   cpfInvalid: `CPF deve ter ${EMPLOYEE_DOCUMENT_CPF_DIGITS} dígitos`,
