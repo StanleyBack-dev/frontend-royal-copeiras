@@ -168,20 +168,6 @@ export function useEvents() {
     });
   }, [items, search, activeStatusTab]);
 
-  const columns = useMemo(
-    () =>
-      getEventTableColumns(
-        (item) => {
-          navigate(eventRoutePaths.detail(item.idEvents));
-        },
-        (item, status) => {
-          void handleUpdateEventStatus(item, status);
-        },
-        updatingEventStatusIds,
-      ),
-    [navigate, updatingEventStatusIds, handleUpdateEventStatus],
-  );
-
   function setFilters(partial: Partial<EventFilters>) {
     setFiltersState((prev) => ({ ...prev, ...partial }));
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
@@ -263,65 +249,85 @@ export function useEvents() {
     }
   }
 
-  async function handleUpdateEvent(
-    idEvents: string,
-    payload: { overtimeMinutes?: number; status?: EventStatus },
-  ) {
-    try {
-      await updateEvent(idEvents, payload);
-      showSuccess(
-        eventUiCopy.success.eventUpdated,
-        eventUiCopy.success.eventUpdated,
-      );
-      await load();
-    } catch (error) {
-      const message = getHttpErrorMessage(
-        error,
-        eventUiCopy.errors.updateFallback,
-      );
-      showError(eventUiCopy.errors.updateFallback, message);
-      throw error;
-    }
-  }
+  const handleUpdateEvent = useCallback(
+    async (
+      idEvents: string,
+      payload: { overtimeMinutes?: number; status?: EventStatus },
+    ) => {
+      try {
+        await updateEvent(idEvents, payload);
+        showSuccess(
+          eventUiCopy.success.eventUpdated,
+          eventUiCopy.success.eventUpdated,
+        );
+        await load();
+      } catch (error) {
+        const message = getHttpErrorMessage(
+          error,
+          eventUiCopy.errors.updateFallback,
+        );
+        showError(eventUiCopy.errors.updateFallback, message);
+        throw error;
+      }
+    },
+    [load, showError, showSuccess],
+  );
 
-  async function handleUpdateEventStatus(item: EventItem, status: EventStatus) {
-    const currentStatus = item.status;
-    if (currentStatus === status) {
-      return;
-    }
+  const handleUpdateEventStatus = useCallback(
+    async (item: EventItem, status: EventStatus) => {
+      const currentStatus = item.status;
+      if (currentStatus === status) {
+        return;
+      }
 
-    setUpdatingEventStatusIds((prev) => {
-      const next = new Set(prev);
-      next.add(item.idEvents);
-      return next;
-    });
+      setUpdatingEventStatusIds((prev) => {
+        const next = new Set(prev);
+        next.add(item.idEvents);
+        return next;
+      });
 
-    setItems((prev) =>
-      prev.map((eventItem) =>
-        eventItem.idEvents === item.idEvents
-          ? { ...eventItem, status }
-          : eventItem,
-      ),
-    );
-
-    try {
-      await handleUpdateEvent(item.idEvents, { status });
-    } catch {
       setItems((prev) =>
         prev.map((eventItem) =>
           eventItem.idEvents === item.idEvents
-            ? { ...eventItem, status: currentStatus }
+            ? { ...eventItem, status }
             : eventItem,
         ),
       );
-    } finally {
-      setUpdatingEventStatusIds((prev) => {
-        const next = new Set(prev);
-        next.delete(item.idEvents);
-        return next;
-      });
-    }
-  }
+
+      try {
+        await handleUpdateEvent(item.idEvents, { status });
+      } catch {
+        setItems((prev) =>
+          prev.map((eventItem) =>
+            eventItem.idEvents === item.idEvents
+              ? { ...eventItem, status: currentStatus }
+              : eventItem,
+          ),
+        );
+      } finally {
+        setUpdatingEventStatusIds((prev) => {
+          const next = new Set(prev);
+          next.delete(item.idEvents);
+          return next;
+        });
+      }
+    },
+    [handleUpdateEvent],
+  );
+
+  const columns = useMemo(
+    () =>
+      getEventTableColumns(
+        (item) => {
+          navigate(eventRoutePaths.detail(item.idEvents));
+        },
+        (item, status) => {
+          void handleUpdateEventStatus(item, status);
+        },
+        updatingEventStatusIds,
+      ),
+    [navigate, updatingEventStatusIds, handleUpdateEventStatus],
+  );
 
   return {
     items: filteredItems,
