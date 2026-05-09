@@ -31,6 +31,7 @@ export const primaryNavigationItems: NavigationItem[] = [
   { id: "events", label: "Eventos", icon: <EventsIcon size={20} /> },
   { id: "clients", label: "Clientes", icon: <ClientsIcon size={20} /> },
   { id: "employees", label: "Funcionários", icon: <EmployeesIcon size={20} /> },
+  { id: "positions", label: "Cargos", icon: <EmployeesIcon size={20} /> },
   { id: "users", label: "Usuários", icon: <UsersIcon size={20} /> },
   { id: "finances", label: "Finanças", icon: <FinancesIcon size={20} /> },
   { id: "debts", label: "Dívidas", icon: <DebtsIcon size={20} /> },

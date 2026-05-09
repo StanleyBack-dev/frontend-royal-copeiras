@@ -6,6 +6,7 @@ export type ActiveView =
   | "signatures"
   | "clients"
   | "employees"
+  | "positions"
   | "users"
   | "events"
   | "finances"

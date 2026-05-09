@@ -8,6 +8,7 @@ export const routePaths: Record<ActiveView, string> = {
   signatures: "/assinaturas",
   clients: "/clientes",
   employees: "/funcionarios",
+  positions: "/cargos",
   users: "/usuarios",
   events: "/eventos",
   finances: "/financas",
@@ -33,6 +34,15 @@ export const employeeRoutePaths = {
   legacyList: "/employees",
   legacyCreate: "/employees/new",
   legacyEdit: (id = ":id") => `/employees/${id}/edit`,
+};
+
+export const positionRoutePaths = {
+  list: "/cargos",
+  create: "/cargos/new",
+  edit: (id = ":id") => `/cargos/${id}/edit`,
+  legacyList: "/positions",
+  legacyCreate: "/positions/new",
+  legacyEdit: (id = ":id") => `/positions/${id}/edit`,
 };
 
 export const userRoutePaths = {

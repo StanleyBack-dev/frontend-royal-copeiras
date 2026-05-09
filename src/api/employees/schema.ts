@@ -5,7 +5,6 @@ import {
   EMPLOYEE_EMAIL_MAX_LENGTH,
   EMPLOYEE_EMAIL_MIN_LENGTH,
   EMPLOYEE_NAME_MAX_LENGTH,
-  EMPLOYEE_POSITION_MAX_LENGTH,
 } from "../../features/employees/model/constants";
 import { employeeValidationMessages } from "../../features/employees/model/messages";
 
@@ -21,7 +20,8 @@ export const EmployeeSchema = z.object({
     .optional()
     .or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
-  position: z.string().trim().min(1).max(EMPLOYEE_POSITION_MAX_LENGTH),
+  idPositions: z.string().trim().min(1),
+  position: z.string().trim().optional().nullable(),
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -58,7 +58,7 @@ export const CreateEmployeePayloadSchema = z.object({
     .optional()
     .or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
-  position: z.string().trim().min(1).max(EMPLOYEE_POSITION_MAX_LENGTH),
+  idPositions: z.string().trim().min(1),
   isActive: z.boolean().optional(),
 });
 

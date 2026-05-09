@@ -19,7 +19,7 @@ export function updateEmployeesController() {
           requestId: req.requestId,
         },
       );
-      invalidateCacheByPrefix(`employees:list:${auth.userId}:`);
+      invalidateCacheByPrefix("employees:list:");
 
       res.json(employee);
     } catch (error) {

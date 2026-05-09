@@ -18,6 +18,7 @@ export const PageAccessKeySchema = z.enum([
   "CONTRACTS",
   "CLIENTS",
   "EMPLOYEES",
+  "POSITIONS",
   "USERS",
   "EVENTS",
   "FINANCES",

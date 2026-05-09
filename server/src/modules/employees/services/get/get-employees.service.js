@@ -19,6 +19,7 @@ export class GetEmployeesService {
             document
             email
             phone
+            idPositions
             position
             isActive
             createdAt
@@ -33,7 +34,7 @@ export class GetEmployeesService {
       }
     `;
 
-    const cacheKey = buildCacheKey("employees:list", userId, input);
+    const cacheKey = buildCacheKey("employees:list", "global", input);
 
     return getOrSetCache(
       cacheKey,
