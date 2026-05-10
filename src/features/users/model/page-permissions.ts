@@ -16,6 +16,7 @@ export const pagePermissionOptions: PagePermissionOption[] = [
   { key: "POSITIONS", label: "Cargos" },
   { key: "USERS", label: "Usuários" },
   { key: "EVENTS", label: "Eventos" },
+  { key: "PAYMENTS", label: "Pagamentos" },
   { key: "FINANCES", label: "Finanças" },
   { key: "DEBTS", label: "Dívidas" },
   { key: "INVESTMENTS", label: "Investimentos" },

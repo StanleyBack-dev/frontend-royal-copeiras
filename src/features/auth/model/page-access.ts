@@ -9,7 +9,7 @@ const pageAccessByView: Partial<Record<ActiveView, PageAccessKey>> = {
   budgets: "BUDGETS",
   contracts: "CONTRACTS",
   finances: "FINANCES",
-  payments: "FINANCES",
+  payments: "PAYMENTS",
   clients: "CLIENTS",
   employees: "EMPLOYEES",
   positions: "POSITIONS",
