@@ -34,6 +34,7 @@ export const EventServiceBreakdownSchema = z.object({
 
 export const EventSchema = z.object({
   idEvents: z.string(),
+  eventNumber: z.string().nullable().optional(),
   idContracts: z.string(),
   idBudgets: z.string(),
   idLeads: z.string().nullable().optional(),

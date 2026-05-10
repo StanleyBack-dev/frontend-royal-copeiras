@@ -5,13 +5,15 @@ import Select from "@/components/atoms/Select";
 import SearchIcon from "@/components/atoms/icons/SearchIcon";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
 import { colors } from "@/config";
-import { contractUiCopy, useContractsList } from "@/features/contracts";
-import { useContractsContext } from "@/features/contracts/context/useContractsContext";
+import { paymentUiCopy, usePaymentsList } from "@/features/payments";
+import { usePaymentsContext } from "@/features/payments/context/usePaymentsContext";
 
-export default function Contracts() {
+export default function Payments() {
   const {
-    contracts,
+    payments,
     budgets,
+    contracts,
+    events,
     loading,
     pagination,
     filters,
@@ -20,38 +22,37 @@ export default function Contracts() {
     clearFilters,
     nextPage,
     prevPage,
-  } = useContractsContext();
-  const { search, setSearch, filteredContracts, columns } = useContractsList({
+  } = usePaymentsContext();
+  const { search, setSearch, filteredPayments, columns } = usePaymentsList({
+    payments,
+    budgets,
     contracts,
+    events,
   });
 
   const statusOptions = [
     { value: "", label: "Todos os status" },
-    { value: "draft", label: contractUiCopy.form.options.draft },
-    { value: "generated", label: contractUiCopy.form.options.generated },
     {
-      value: "pending_signature",
-      label: contractUiCopy.form.options.pending_signature,
+      value: "pendente",
+      label: paymentUiCopy.form.options.statuses.pendente,
     },
-    { value: "signed", label: contractUiCopy.form.options.signed },
+    { value: "parcial", label: paymentUiCopy.form.options.statuses.parcial },
+    { value: "pago", label: paymentUiCopy.form.options.statuses.pago },
     {
-      value: "closed_without_signature",
-      label: contractUiCopy.form.options.closed_without_signature,
+      value: "cancelado",
+      label: paymentUiCopy.form.options.statuses.cancelado,
     },
-    { value: "rejected", label: contractUiCopy.form.options.rejected },
-    { value: "expired", label: contractUiCopy.form.options.expired },
-    { value: "canceled", label: contractUiCopy.form.options.canceled },
   ];
 
   return (
     <ManagementPanelTemplate
-      title={contractUiCopy.list.title}
-      description={contractUiCopy.list.description}
+      title={paymentUiCopy.list.title}
+      description={paymentUiCopy.list.description}
     >
       <FilterBar
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder={contractUiCopy.list.searchPlaceholder}
+        searchPlaceholder={paymentUiCopy.list.searchPlaceholder}
         searchIcon={
           <SearchIcon size={16} style={{ color: colors.brown[300] }} />
         }
@@ -72,21 +73,38 @@ export default function Contracts() {
           void setFilters({ endDate: value });
         }}
         extraFilters={
-          <Select
-            label="Orçamento"
-            value={filters.idBudgets}
-            onChange={(event) => {
-              void setFilters({ idBudgets: event.target.value });
-            }}
-            wrapperClassName="xl:col-span-1"
-          >
-            <option value="">Todos os orçamentos</option>
-            {budgets.map((budget) => (
-              <option key={budget.idBudgets} value={budget.idBudgets}>
-                {budget.budgetNumber}
-              </option>
-            ))}
-          </Select>
+          <>
+            <Select
+              label="Orçamento"
+              value={filters.idBudgets}
+              onChange={(event) => {
+                void setFilters({ idBudgets: event.target.value });
+              }}
+              wrapperClassName="xl:col-span-1"
+            >
+              <option value="">Todos os orçamentos</option>
+              {budgets.map((budget) => (
+                <option key={budget.idBudgets} value={budget.idBudgets}>
+                  {budget.budgetNumber}
+                </option>
+              ))}
+            </Select>
+            <Select
+              label="Contrato"
+              value={filters.idContracts}
+              onChange={(event) => {
+                void setFilters({ idContracts: event.target.value });
+              }}
+              wrapperClassName="xl:col-span-1"
+            >
+              <option value="">Todos os contratos</option>
+              {contracts.map((contract) => (
+                <option key={contract.idContracts} value={contract.idContracts}>
+                  {contract.contractNumber}
+                </option>
+              ))}
+            </Select>
+          </>
         }
         onClear={() => {
           void clearFilters();
@@ -95,7 +113,8 @@ export default function Contracts() {
           filters.status ||
           filters.startDate ||
           filters.endDate ||
-          filters.idBudgets,
+          filters.idBudgets ||
+          filters.idContracts,
         )}
       />
 
@@ -109,10 +128,10 @@ export default function Contracts() {
       ) : (
         <>
           <DataTable
-            data={filteredContracts}
+            data={filteredPayments}
             columns={columns}
-            emptyMessage={contractUiCopy.list.emptyMessage}
-            getId={(contract) => contract.idContracts}
+            emptyMessage={paymentUiCopy.list.emptyMessage}
+            getId={(payment) => payment.idPayments}
           />
           <div className="mt-4 flex items-center justify-between text-sm text-brown-700">
             <span>

@@ -7,6 +7,7 @@ import {
   authRoutePaths,
   budgetRoutePaths,
   contractRoutePaths,
+  paymentRoutePaths,
   signatureRoutePaths,
   eventRoutePaths,
   leadRoutePaths,
@@ -16,6 +17,7 @@ import {
 import RequirePageAccessRoute from "../../features/auth/guards/RequirePageAccessRoute";
 import { BudgetsProviderOutlet } from "../../features/budgets";
 import { ContractsProviderOutlet } from "../../features/contracts";
+import { PaymentsProviderOutlet } from "../../features/payments";
 import { SignaturesProviderOutlet } from "../../features/signatures";
 import { LeadsProviderOutlet } from "../../features/leads";
 import { EventsProviderOutlet } from "../../features/events";
@@ -28,10 +30,12 @@ const BudgetForm = lazy(() => import("../../pages/budgets/BudgetForm"));
 const Budgets = lazy(() => import("../../pages/budgets/Budgets"));
 const ContractForm = lazy(() => import("../../pages/contracts/ContractForm"));
 const Contracts = lazy(() => import("../../pages/contracts/Contracts"));
+const Finance = lazy(() => import("../../pages/Finance"));
 const Signatures = lazy(() => import("../../pages/signatures/Signatures"));
 const Events = lazy(() => import("../../pages/events/Events"));
 const EventDetail = lazy(() => import("../../pages/events/EventDetail"));
-const Finance = lazy(() => import("../../pages/Finance"));
+const PaymentForm = lazy(() => import("../../pages/payments/PaymentForm"));
+const Payments = lazy(() => import("../../pages/payments/Payments"));
 const Investments = lazy(() => import("../../pages/Investments"));
 const LeadForm = lazy(() => import("../../pages/leads/LeadForm"));
 const Leads = lazy(() => import("../../pages/leads/Leads"));
@@ -231,6 +235,30 @@ export function AppShellRoutes({ userId }: AppShellRoutesProps) {
           path={routePaths.finances}
           element={withPageSuspense(<Finance />)}
         />
+      </Route>
+      <Route element={<RequirePageAccessRoute view="payments" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={authRoutePaths.login}
+              ProviderOutlet={PaymentsProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={paymentRoutePaths.list}
+            element={withPageSuspense(<Payments />)}
+          />
+          <Route
+            path={paymentRoutePaths.create}
+            element={withPageSuspense(<PaymentForm mode="create" />)}
+          />
+          <Route
+            path={paymentRoutePaths.edit()}
+            element={withPageSuspense(<PaymentForm mode="edit" />)}
+          />
+        </Route>
       </Route>
       <Route element={<RequirePageAccessRoute view="debts" />}>
         <Route path={routePaths.debts} element={withPageSuspense(<Debts />)} />

@@ -73,7 +73,7 @@ export default function GenericForm<T extends object>({
 
   return (
     <form
-      className="mx-auto w-full max-w-3xl rounded-2xl border bg-white p-4 shadow-2xl sm:p-6 lg:p-8"
+      className="w-full rounded-2xl border bg-white p-4 shadow-2xl sm:p-6 lg:p-8"
       style={{ borderColor: "#e8d5c9" }}
       onSubmit={onSubmit}
     >

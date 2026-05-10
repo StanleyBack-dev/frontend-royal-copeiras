@@ -10,6 +10,7 @@ import usersRoutes from "./modules/users/routes.js";
 import observabilityRoutes from "./modules/observability/routes.js";
 import signatureRoutes from "./modules/signature/routes.js";
 import eventsRoutes from "./modules/events/routes.js";
+import paymentsRoutes from "./modules/payments/routes.js";
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use("/users", usersRoutes);
 router.use("/observability", observabilityRoutes);
 router.use("/signature", signatureRoutes);
 router.use("/events", eventsRoutes);
+router.use("/payments", paymentsRoutes);
 
 export default router;

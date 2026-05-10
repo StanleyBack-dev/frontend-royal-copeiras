@@ -10,6 +10,7 @@ export class GetEventsService {
           code
           items {
             idEvents
+            eventNumber
             idContracts
             idBudgets
             idLeads

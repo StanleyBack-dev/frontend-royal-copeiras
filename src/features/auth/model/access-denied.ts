@@ -27,14 +27,16 @@ export function getDeniedViewLabel(deniedView?: ActiveView): string {
       return "Clientes";
     case "employees":
       return "Funcionários";
+    case "finances":
+      return "Finanças";
     case "positions":
       return "Cargos";
     case "users":
       return "Usuários";
     case "events":
       return "Eventos";
-    case "finances":
-      return "Finanças";
+    case "payments":
+      return "Pagamentos";
     case "debts":
       return "Dívidas";
     case "investments":
