@@ -104,6 +104,11 @@ export function getEventTableColumns(
       ),
     },
     {
+      key: "eventNumber",
+      label: eventUiCopy.list.columns.eventNumber,
+      render: (item) => item.eventNumber || "-",
+    },
+    {
       key: "contractNumber",
       label: eventUiCopy.list.columns.contractNumber,
       render: (item) => item.contractNumber || "-",

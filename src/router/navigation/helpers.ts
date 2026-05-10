@@ -8,6 +8,7 @@ import {
   leadRoutePaths,
   budgetRoutePaths,
   contractRoutePaths,
+  paymentRoutePaths,
   signatureRoutePaths,
 } from "./paths";
 
@@ -35,6 +36,14 @@ export function getActiveView(pathname: string): ActiveView {
 
   if (pathname.startsWith(signatureRoutePaths.list)) {
     return "signatures";
+  }
+
+  if (pathname.startsWith(routePaths.finances)) {
+    return "finances";
+  }
+
+  if (pathname.startsWith(paymentRoutePaths.list)) {
+    return "payments";
   }
 
   if (
@@ -66,7 +75,7 @@ export function getActiveView(pathname: string): ActiveView {
   }
 
   if (pathname.startsWith(routePaths.events)) return "events";
-  if (pathname.startsWith(routePaths.finances)) return "finances";
+
   if (pathname.startsWith(routePaths.debts)) return "debts";
   if (pathname.startsWith(routePaths.investments)) return "investments";
   if (pathname.startsWith(routePaths.profile)) return "profile";
@@ -86,6 +95,10 @@ export function getPathForView(view: ActiveView) {
       return contractRoutePaths.list;
     case "signatures":
       return signatureRoutePaths.list;
+    case "finances":
+      return routePaths.finances;
+    case "payments":
+      return paymentRoutePaths.list;
     case "clients":
       return routePaths.clients;
     case "employees":
@@ -96,8 +109,6 @@ export function getPathForView(view: ActiveView) {
       return userRoutePaths.list;
     case "events":
       return routePaths.events;
-    case "finances":
-      return routePaths.finances;
     case "debts":
       return routePaths.debts;
     case "investments":

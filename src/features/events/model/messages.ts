@@ -6,6 +6,7 @@ export const eventUiCopy = {
     searchPlaceholder: "Buscar por contrato, local ou orçamento",
     emptyMessage: "Nenhum evento encontrado.",
     columns: {
+      eventNumber: "Evento",
       contractNumber: "Contrato",
       budgetNumber: "Orçamento",
       status: "Status",
