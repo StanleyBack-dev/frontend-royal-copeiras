@@ -71,7 +71,7 @@ export default function UserForm({ mode }: { mode: "create" | "edit" }) {
 
     loadedPermissionsForUserRef.current = editing.idUsers;
 
-    void fetchUserPagePermissions(currentUserId)
+    void fetchUserPagePermissions(editing.idUsers)
       .then((permissions) => {
         setForm({
           ...form,
