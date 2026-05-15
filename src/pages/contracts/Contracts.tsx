@@ -1,12 +1,16 @@
 import DataTable from "@/components/organisms/DataTable";
 import FilterBar from "@/components/molecules/FilterBar";
 import ListFiltersPanel from "@/components/molecules/ListFiltersPanel";
+import Button from "@/components/atoms/Button";
 import Select from "@/components/atoms/Select";
 import SearchIcon from "@/components/atoms/icons/SearchIcon";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
 import { colors } from "@/config";
+import { Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { contractUiCopy, useContractsList } from "@/features/contracts";
 import { useContractsContext } from "@/features/contracts/context/useContractsContext";
+import { contractRoutePaths } from "@/router";
 
 export default function Contracts() {
   const {
@@ -24,6 +28,8 @@ export default function Contracts() {
   const { search, setSearch, filteredContracts, columns } = useContractsList({
     contracts,
   });
+
+  const navigate = useNavigate();
 
   const statusOptions = [
     { value: "", label: "Todos os status" },
@@ -54,6 +60,19 @@ export default function Contracts() {
         searchPlaceholder={contractUiCopy.list.searchPlaceholder}
         searchIcon={
           <SearchIcon size={16} style={{ color: colors.brown[300] }} />
+        }
+        actions={
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Button
+              type="button"
+              variant="primary"
+              leftIcon={<Plus size={16} />}
+              className="flex-1 sm:flex-none"
+              onClick={() => navigate(contractRoutePaths.create)}
+            >
+              {contractUiCopy.list.newAction}
+            </Button>
+          </div>
         }
       />
 

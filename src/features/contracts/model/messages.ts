@@ -5,7 +5,7 @@ export const contractUiCopy = {
       "Gerencie os contratos vinculados a orçamentos aprovados e acompanhe o ciclo de assinatura.",
     searchPlaceholder: "Buscar por número ou orçamento",
     emptyMessage: "Nenhum contrato encontrado.",
-    newAction: "Novo contrato",
+    newAction: "Novo Contrato",
     columns: {
       contractNumber: "Contrato",
       budgetNumber: "Orçamento",
