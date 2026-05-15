@@ -16,6 +16,7 @@ import {
   inferBudgetServiceType,
   inferServiceGenderFromDescription,
   sanitizeBudgetServiceDescription,
+  mapGenderToEnglish,
 } from "./service-items";
 
 function formatCurrencyFromDecimal(value: number): string {
@@ -40,9 +41,15 @@ function mapBudgetItemFormToPayload(
     ? buildBudgetServiceDescription(item.serviceType, quantity, effectiveGender)
     : item.description.trim();
 
+  // Send canonical english tokens to API
+  const genderForApi = item.gender
+    ? mapGenderToEnglish(item.gender)
+    : undefined;
+
   return {
     idPositions: item.idPositions,
     description,
+    gender: genderForApi,
     quantity,
     unitPrice: toDecimal(item.unitPrice) ?? 0,
     notes: "",
@@ -108,9 +115,18 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
     items: (budget.items || []).map((item) => {
       const serviceType =
         item.position || inferBudgetServiceType(item.description);
-      const gender = serviceType
-        ? inferServiceGenderFromDescription(item.description, serviceType)
-        : "";
+
+      // Prefer explicit serviceGender returned by API (english), fallback to inference from description
+      const genderFromApi = item.serviceGender;
+      const gender = genderFromApi
+        ? genderFromApi.toString().toLowerCase() === "masculine"
+          ? "Masculino"
+          : genderFromApi.toString().toLowerCase() === "feminine"
+            ? "Feminino"
+            : ""
+        : serviceType
+          ? inferServiceGenderFromDescription(item.description, serviceType)
+          : "";
 
       return {
         id: item.idBudgetItems,

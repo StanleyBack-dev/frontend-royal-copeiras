@@ -159,6 +159,21 @@ function normalizeText(value: string): string {
     .toLowerCase();
 }
 
+/** Map Portuguese or English gender labels to canonical english tokens used by the API */
+export function mapGenderToEnglish(
+  value?: string | null,
+): "masculine" | "feminine" | undefined {
+  if (!value) return undefined;
+  const v = value
+    .toString()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+  if (v.includes("mascul")) return "masculine";
+  if (v.includes("femin")) return "feminine";
+  return undefined;
+}
+
 function getDefaultServiceGender(type: string): ServiceGenderOption {
   return DEFAULT_SERVICE_GENDER[type] ?? "Masculino";
 }

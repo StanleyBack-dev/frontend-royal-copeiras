@@ -53,6 +53,7 @@ export const BudgetItemSchema = z.object({
   totalPrice: z.number().min(0),
   notes: nullableStringToEmpty(),
   sortOrder: z.number().int().min(0),
+  serviceGender: z.string().optional().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -60,8 +61,23 @@ export const BudgetItemSchema = z.object({
 export const CreateBudgetItemPayloadSchema = z.object({
   idPositions: uuidCanonicalString(),
   description: stringTrimmed(1),
-  quantity: z.number().int().min(1),
-  unitPrice: z.number().min(0),
+  // Accept both Portuguese and canonical english tokens
+  gender: z.enum(["Masculino", "Feminino", "masculine", "feminine"]).optional(),
+  // Allow quantity as string or number from form inputs
+  quantity: z.preprocess((val) => {
+    if (typeof val === "string")
+      return Number(val.replace(/\./g, "").replace(",", "."));
+    return val;
+  }, z.number().int().min(1)),
+  // Accept unitPrice as string (e.g., "1.234,56") or number
+  unitPrice: z.preprocess((val) => {
+    if (typeof val === "string") {
+      const normalized = val.replace(/\./g, "").replace(",", ".").trim();
+      const n = Number(normalized);
+      return Number.isNaN(n) ? undefined : n;
+    }
+    return val;
+  }, z.number().min(0)),
   notes: z.string().optional().or(z.literal("")),
   sortOrder: z.number().int().min(0).optional(),
 });
