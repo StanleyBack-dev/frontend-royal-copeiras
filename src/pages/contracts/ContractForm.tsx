@@ -16,7 +16,9 @@ import {
   inferBudgetServiceType,
   getServiceLabels,
   buildBudgetServiceDescription,
+  getServiceGender,
 } from "@/features/budgets/model/service-items";
+import type { BudgetServiceType } from "@/features/budgets/model/service-items";
 import { formatCurrencyExtended, formatDateTimeDisplay } from "@/utils/format";
 import {
   FileSignature,
@@ -277,12 +279,144 @@ function buildDefaultContractBody(budget: Budget | null) {
       ? `\n1.4. O presente contrato inclui uma taxa de deslocamento no valor de ${displacementFeeLabel}, referente ao deslocamento da equipe ao local do evento, conforme acordado entre as partes.`
       : "";
 
-  return `CLÁUSULA 1ª - SERVIÇOS CONTRATADOS:
+  function numberToPtWords(
+    n: number,
+    gender: "masculine" | "feminine" = "masculine",
+  ) {
+    if (!Number.isFinite(n)) return String(n);
+    const num = Math.abs(Math.trunc(n));
 
-1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada, consistentes na disponibilização de:
-${servicesBlock}  
-1.2. Pelo período de ${eventHours} horas consecutivas.
-1.3. O evento está previsto para ocorrer ${eventDatesText}, ${eventScheduleText}, no local ${eventLocationText}.${displacementClause}\n\nCLAUSULA 2a - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}${displacementFee > 0 ? `, sendo ${displacementFeeLabel} referente à taxa de deslocamento` : ""}.\n2.2. O pagamento deverá ser realizado à vista, via pix (CNPJ 64.062.038/0001-71) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n2.3. Caso a prestação dos serviços ultrapasse o horário previamente acordado, será necessário contratar horas adicionais, no valor de R$ 90,00 (noventa reais) por hora extra, por profissional.\n\nCLAUSULA 3a - RESPONSABILIDADES DO CONTRATANTE:\n\n3.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n3.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLAUSULA 4a - RESPONSABILIDADES DA CONTRATADA:\n\n4.1. A Royal Copeiras compromete-se a prestar os serviços contratados com profissional qualificada e devidamente treinada para atender as necessidades do evento.\n4.2. A contratada se compromete a garantir a pontualidade e a boa apresentação da equipe durante todo o evento.\n4.3. A contratada se responsabiliza pela supervisão e acompanhamento da equipe para assegurar o cumprimento das atividades conforme o acordado neste contrato.\n\nCLAUSULA 5a - CANCELAMENTO E REEMBOLSO:\n\n5.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n5.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n5.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLAUSULA 6a - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n6.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n6.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da Royal Copeiras.\n6.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLAUSULA 7a - VIGÊNCIA:\n\n7.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLAUSULA 8a - CONDIÇÕES GERAIS:\n\n8.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nCLAUSULA 9a - DOS MATERIAIS DE LIMPEZA:\n\n9.1. A CONTRATADA se responsabiliza por disponibilizar, para a adequada execução dos serviços durante o evento, os seguintes materiais de limpeza: desinfetante, aromatizante de ambiente (cheirinho de banheiro), pano de chão, rodo, vassoura, pá de lixo, sacos de lixo, luvas e álcool.\n9.2. Caso o CONTRATANTE deseje a inclusão de papel toalha e papel higiênico, este valor será cobrado à parte e adicionado ao valor total do serviço. Ressalta-se que os materiais mencionados acima serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe Royal Copeiras`;
+    const unitsMasculine: Record<number, string> = {
+      0: "zero",
+      1: "um",
+      2: "dois",
+      3: "três",
+      4: "quatro",
+      5: "cinco",
+      6: "seis",
+      7: "sete",
+      8: "oito",
+      9: "nove",
+      10: "dez",
+      11: "onze",
+      12: "doze",
+      13: "treze",
+      14: "quatorze",
+      15: "quinze",
+      16: "dezesseis",
+      17: "dezessete",
+      18: "dezoito",
+      19: "dezenove",
+    };
+
+    const unitsFeminine: Record<number, string> = {
+      ...unitsMasculine,
+      1: "uma",
+      2: "duas",
+    };
+
+    const tens: Record<number, string> = {
+      20: "vinte",
+      30: "trinta",
+      40: "quarenta",
+      50: "cinquenta",
+      60: "sessenta",
+      70: "setenta",
+      80: "oitenta",
+      90: "noventa",
+    };
+
+    const hundreds: Record<number, string> = {
+      100: "cem",
+      200: "duzentos",
+      300: "trezentos",
+      400: "quatrocentos",
+      500: "quinhentos",
+      600: "seiscentos",
+      700: "setecentos",
+      800: "oitocentos",
+      900: "novecentos",
+    };
+
+    const units = gender === "feminine" ? unitsFeminine : unitsMasculine;
+
+    function belowThousand(value: number): string {
+      if (value === 0) return "";
+      if (value < 20) return units[value];
+      if (value < 100) {
+        const t = Math.floor(value / 10) * 10;
+        const r = value % 10;
+        return r === 0 ? tens[t] : `${tens[t]} e ${units[r]}`;
+      }
+      if (value < 1000) {
+        const h = Math.floor(value / 100) * 100;
+        const r = value % 100;
+        if (value === 100) return "cem";
+        const hText = hundreds[h] || "";
+        if (r === 0) return hText;
+        return `${hText} e ${belowThousand(r)}`;
+      }
+      return "";
+    }
+
+    if (num < 1000) return belowThousand(num);
+
+    if (num < 1000000) {
+      const thousands = Math.floor(num / 1000);
+      const rest = num % 1000;
+      const thousandsText =
+        thousands === 1 ? "mil" : `${belowThousand(thousands)} mil`;
+      if (rest === 0) return thousandsText;
+      const sep = rest < 100 ? " e " : " ";
+      return `${thousandsText}${sep}${belowThousand(rest)}`;
+    }
+
+    // fallback for larger numbers
+    return String(n);
+  }
+
+  const guestCount =
+    typeof budget?.guestCount === "number" &&
+    Number.isFinite(budget.guestCount) &&
+    budget.guestCount > 0
+      ? budget.guestCount
+      : undefined;
+
+  const guestCountLabel = guestCount
+    ? `${guestCount} (${numberToPtWords(guestCount)}) convidados`
+    : null;
+
+  const replacementList = items.length
+    ? items
+        .map((it) => {
+          const qty =
+            it.quantity && Number.isFinite(it.quantity) && it.quantity > 0
+              ? it.quantity
+              : 1;
+          const serviceType = inferBudgetServiceType(
+            it.description,
+          ) as BudgetServiceType;
+          const labels = serviceType ? getServiceLabels(serviceType) : null;
+          const label = labels
+            ? qty === 1
+              ? labels.singular
+              : labels.plural
+            : String(it.description || "serviço").toLowerCase() +
+              (qty === 1 ? "" : "s");
+          const gender = serviceType
+            ? getServiceGender(serviceType)
+            : String(label).toLowerCase().endsWith("a")
+              ? "feminine"
+              : "masculine";
+          const qtyWords = numberToPtWords(qty, gender);
+          return `${qty} (${qtyWords}) ${label}`;
+        })
+        .join(", ")
+    : "copeira, garçom, recepcionista, segurança ou similares";
+
+  const replacementClause = `\n5.4. A contratada responsabiliza-se pela substituição de qualquer profissional contratado ${replacementList} em caso de ausência, atraso ou impossibilidade de comparecimento, sem custos adicionais à contratante.`;
+
+  return `CLÁUSULA 1ª - SERVIÇOS CONTRATADOS:\n\n1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada, consistentes na disponibilização de:\n${servicesBlock}  \n1.2. Pelo período de ${eventHours} horas consecutivas.\n1.3. O evento está previsto para ocorrer ${eventDatesText}, ${eventScheduleText}, ${guestCountLabel ? `com previsão de ${guestCountLabel},` : ""} no local ${eventLocationText}.${displacementClause}\n\nCLAUSULA 2ª - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}${displacementFee > 0 ? `, sendo ${displacementFeeLabel} referente à taxa de deslocamento` : ""}.\n2.2. O pagamento deverá ser realizado à vista, via pix (CNPJ 64.062.038/0001-71) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n2.3. Caso a prestação dos serviços ultrapasse o horário previamente acordado, será necessário contratar horas adicionais, no valor de R$ 90,00 (noventa reais) por hora extra, por profissional.\n\nCLAUSULA 3ª - DOS MATERIAIS DE LIMPEZA:\n\n3.1. A contratada se responsabiliza por disponibilizar, para a adequada execução dos serviços durante o evento, os seguintes materiais de limpeza: desinfetante, aromatizante de ambiente (cheirinho de banheiro), pano de chão, rodo, vassoura, pá de lixo, sacos de lixo, luvas e álcool.\n3.2. Caso o contratante deseje a inclusão de papel toalha e papel higiênico, este valor será cobrado à parte e adicionado ao valor total do serviço. Ressalta-se que os materiais mencionados acima serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.\n\nCLAUSULA 4ª - RESPONSABILIDADES DO CONTRATANTE:\n\n4.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n4.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLAUSULA 5ª - RESPONSABILIDADES DA CONTRATADA:\n\n5.1. A Royal Copeiras compromete-se a prestar os serviços contratados com profissional qualificada e devidamente treinada para atender as necessidades do evento.\n5.2. A contratada se compromete a garantir a pontualidade e a boa apresentação da equipe durante todo o evento.\n5.3. A contratada se responsabiliza pela supervisão e acompanhamento da equipe para assegurar o cumprimento das atividades conforme o acordado neste contrato.${replacementClause}\n\nCLAUSULA 6ª - CANCELAMENTO E REEMBOLSO:\n\n6.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n6.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n6.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLAUSULA 7ª - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n7.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n7.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da Royal Copeiras.\n7.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLAUSULA 8ª - VIGÊNCIA:\n\n8.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLAUSULA 9ª - CONDIÇÕES GERAIS:\n\n9.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe Royal Copeiras`;
 }
 
 function buildDefaultFormValues(initialBudgetId?: string): ContractFormValues {
