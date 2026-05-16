@@ -47,14 +47,16 @@ export function getContractTableColumns(): DataTableColumn<Contract>[] {
       key: "actions",
       label: contractUiCopy.list.columns.actions,
       render: (contract) => (
-        <Link
-          to={contractRoutePaths.edit(contract.idContracts)}
-          title="Editar contrato"
-          className="hover:text-yellow-700"
-          style={{ display: "flex", alignItems: "center" }}
-        >
-          <EditIcon size={18} />
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Link
+            to={contractRoutePaths.edit(contract.idContracts)}
+            title="Editar contrato"
+            className="hover:text-yellow-700"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <EditIcon size={18} />
+          </Link>
+        </div>
       ),
     },
     {

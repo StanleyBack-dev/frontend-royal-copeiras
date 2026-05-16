@@ -26,6 +26,7 @@ import {
   Mail,
   MessageCircle,
   RotateCcw,
+  X,
   Save,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -480,6 +481,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const [confirmSendSignature, setConfirmSendSignature] = useState(false);
   const [confirmCloseWithoutSignature, setConfirmCloseWithoutSignature] =
     useState(false);
+  const [confirmCancelContract, setConfirmCancelContract] = useState(false);
 
   useEffect(() => {
     if (mode === "edit" && editing) {
@@ -741,6 +743,21 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     });
   }
 
+  async function handleCancelContract() {
+    if (!editing?.idContracts) {
+      return;
+    }
+
+    try {
+      await updateContract(editing.idContracts, { status: "canceled" });
+      updateLocalStatus("canceled");
+      showSuccess("Contrato cancelado com sucesso");
+    } catch (error) {
+      const message = getHttpErrorMessage(error, "Erro ao cancelar contrato");
+      showError("Erro ao cancelar contrato", message);
+    }
+  }
+
   const formGuidanceContent =
     isNonDraftLocked || editing?.sentAt ? (
       <div className="space-y-4">
@@ -802,7 +819,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
               navigate(contractRoutePaths.list);
             }}
           >
-            Cancelar
+            Voltar
           </Button>
           <Button
             type="button"
@@ -1026,24 +1043,68 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
                 }}
                 onCancel={() => setConfirmCloseWithoutSignature(false)}
               />
+              <ConfirmDialog
+                open={confirmCancelContract}
+                title="Cancelar contrato"
+                description={
+                  <p>
+                    Você está prestes a cancelar este contrato. Essa ação é
+                    irreversível.
+                    <br />
+                    <br />
+                    Ao cancelar o contrato, o orçamento vinculado será
+                    automaticamente cancelado. Para gerar um novo contrato será
+                    necessário criar um novo orçamento aprovado e então gerar o
+                    contrato novamente.
+                    <br />
+                    <br />
+                    Deseja continuar?
+                  </p>
+                }
+                confirmLabel="Sim, cancelar contrato"
+                cancelLabel="Voltar"
+                variant="warning"
+                onConfirm={() => {
+                  setConfirmCancelContract(false);
+                  void handleCancelContract();
+                }}
+                onCancel={() => setConfirmCancelContract(false)}
+              />
             </>
           ) : null}
 
           {isNonDraftLocked && isGenerated ? (
-            <button
-              type="button"
-              onClick={() => {
-                void handleRevertToDraft();
-              }}
-              disabled={!editing?.idContracts || !session?.user.idUsers}
-              className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-              title="Voltar ao rascunho"
-            >
-              <RotateCcw size={32} className="text-[#C9A227]" />
-              <span className="text-center text-xs font-semibold text-[#2C1810]">
-                Voltar
-              </span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmCancelContract(true);
+                }}
+                disabled={!editing?.idContracts || !session?.user.idUsers}
+                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#feece8] disabled:cursor-not-allowed disabled:opacity-50"
+                title="Cancelar contrato"
+              >
+                <X size={32} className="text-[#C94A27]" />
+                <span className="text-center text-xs font-semibold text-[#2C1810]">
+                  Cancelar
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  void handleRevertToDraft();
+                }}
+                disabled={!editing?.idContracts || !session?.user.idUsers}
+                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
+                title="Voltar ao rascunho"
+              >
+                <RotateCcw size={32} className="text-[#C9A227]" />
+                <span className="text-center text-xs font-semibold text-[#2C1810]">
+                  Voltar
+                </span>
+              </button>
+            </>
           ) : null}
         </div>
       </div>
