@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import type { DataTableColumn } from "@/components/organisms/DataTable";
 import EditIcon from "@/components/atoms/icons/EditIcon";
-import { Plus } from "lucide-react";
 import { colors } from "@/config";
 import type { Contract } from "@/api/contracts/schema";
 import { contractRoutePaths, budgetRoutePaths } from "@/router";
