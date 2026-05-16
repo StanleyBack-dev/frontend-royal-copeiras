@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { DataTableColumn } from "@/components/organisms/DataTable";
 import EditIcon from "@/components/atoms/icons/EditIcon";
+import { Plus } from "lucide-react";
 import { colors } from "@/config";
 import type { Contract } from "@/api/contracts/schema";
 import { contractRoutePaths, budgetRoutePaths } from "@/router";
@@ -47,14 +48,16 @@ export function getContractTableColumns(): DataTableColumn<Contract>[] {
       key: "actions",
       label: contractUiCopy.list.columns.actions,
       render: (contract) => (
-        <Link
-          to={contractRoutePaths.edit(contract.idContracts)}
-          title="Editar contrato"
-          className="hover:text-yellow-700"
-          style={{ display: "flex", alignItems: "center" }}
-        >
-          <EditIcon size={18} />
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Link
+            to={contractRoutePaths.edit(contract.idContracts)}
+            title="Editar contrato"
+            className="hover:text-yellow-700"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <EditIcon size={18} />
+          </Link>
+        </div>
       ),
     },
     {
