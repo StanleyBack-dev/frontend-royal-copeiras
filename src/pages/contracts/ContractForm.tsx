@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { getSignatures } from "@/api/signature/methods";
+import { cancelSignatureRequest } from "@/api/signature/methods/cancel-request";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import LoadingOverlay from "@/components/molecules/LoadingOverlay";
 
@@ -475,6 +476,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const isNonDraftLocked =
     mode === "edit" && Boolean(editing && editing.status !== "draft");
   const isGenerated = editing?.status === "generated";
+  const isPendingSignature = editing?.status === "pending_signature";
   const leadHasEmail = Boolean(selectedLead?.email);
   const leadHasPhone = Boolean(selectedLead?.phone);
   const [confirmSendEmail, setConfirmSendEmail] = useState(false);
@@ -482,6 +484,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const [confirmCloseWithoutSignature, setConfirmCloseWithoutSignature] =
     useState(false);
   const [confirmCancelContract, setConfirmCancelContract] = useState(false);
+  const [cancellingContract, setCancellingContract] = useState(false);
 
   useEffect(() => {
     if (mode === "edit" && editing) {
@@ -748,13 +751,44 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       return;
     }
 
+    setCancellingContract(true);
     try {
+      // If there's a pending signature request, try to cancel the envelope first
+      if (editing.status === "pending_signature") {
+        try {
+          const sigRes = await getSignatures({
+            idContracts: editing.idContracts,
+            limit: 10,
+          });
+          const envelopeId =
+            sigRes.items && sigRes.items.length
+              ? sigRes.items[0].envelopeId
+              : undefined;
+          if (envelopeId) {
+            try {
+              await cancelSignatureRequest(envelopeId);
+            } catch (err) {
+              const msg = getHttpErrorMessage(
+                err,
+                "Falha ao cancelar solicitação de assinatura",
+              );
+              showError("Erro ao cancelar solicitação de assinatura", msg);
+              // continue to attempt contract cancel even if envelope cancel failed
+            }
+          }
+        } catch (err) {
+          // ignore signature listing errors, continue to cancel contract
+        }
+      }
+
       await updateContract(editing.idContracts, { status: "canceled" });
       updateLocalStatus("canceled");
       showSuccess("Contrato cancelado com sucesso");
     } catch (error) {
       const message = getHttpErrorMessage(error, "Erro ao cancelar contrato");
       showError("Erro ao cancelar contrato", message);
+    } finally {
+      setCancellingContract(false);
     }
   }
 
@@ -838,12 +872,15 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       <LoadingOverlay
         open={
           pdfActions.sendingSignatureRequest ||
-          pdfActions.closingWithoutSignature
+          pdfActions.closingWithoutSignature ||
+          cancellingContract
         }
         label={
-          pdfActions.closingWithoutSignature
-            ? "Encerrando contrato..."
-            : "Enviando para assinatura..."
+          cancellingContract
+            ? "Cancelando contrato..."
+            : pdfActions.closingWithoutSignature
+              ? "Encerrando contrato..."
+              : "Enviando para assinatura..."
         }
       />
       <div className="mb-6 flex justify-center">
@@ -884,7 +921,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
             </button>
           ) : null}
 
-          {isNonDraftLocked && isGenerated ? (
+          {isNonDraftLocked && (isGenerated || isPendingSignature) ? (
             <>
               <button
                 type="button"
@@ -954,51 +991,55 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
                 </span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmSendSignature(true);
-                }}
-                disabled={
-                  !editing?.idContracts ||
-                  !leadHasEmail ||
-                  !session?.user.idUsers ||
-                  pdfActions.sendingSignatureRequest
-                }
-                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-                title={
-                  leadHasEmail
-                    ? "Enviar para assinatura online"
-                    : "Lead sem e-mail cadastrado"
-                }
-              >
-                <FileSignature size={32} className="text-[#C9A227]" />
-                <span className="text-center text-xs font-semibold text-[#2C1810]">
-                  {pdfActions.sendingSignatureRequest
-                    ? "Enviando..."
-                    : "Assinatura"}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmCloseWithoutSignature(true);
-                }}
-                disabled={
-                  !editing?.idContracts ||
-                  !session?.user.idUsers ||
-                  pdfActions.closingWithoutSignature
-                }
-                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-                title="Encerrar sem gerar assinaturas"
-              >
-                <FileSignature size={32} className="text-[#7a4430]" />
-                <span className="text-center text-xs font-semibold text-[#2C1810]">
-                  {pdfActions.closingWithoutSignature
-                    ? "Encerrando..."
-                    : "Encerrar"}
-                </span>
-              </button>
+              {isGenerated ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmSendSignature(true);
+                    }}
+                    disabled={
+                      !editing?.idContracts ||
+                      !leadHasEmail ||
+                      !session?.user.idUsers ||
+                      pdfActions.sendingSignatureRequest
+                    }
+                    className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
+                    title={
+                      leadHasEmail
+                        ? "Enviar para assinatura online"
+                        : "Lead sem e-mail cadastrado"
+                    }
+                  >
+                    <FileSignature size={32} className="text-[#C9A227]" />
+                    <span className="text-center text-xs font-semibold text-[#2C1810]">
+                      {pdfActions.sendingSignatureRequest
+                        ? "Enviando..."
+                        : "Assinatura"}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmCloseWithoutSignature(true);
+                    }}
+                    disabled={
+                      !editing?.idContracts ||
+                      !session?.user.idUsers ||
+                      pdfActions.closingWithoutSignature
+                    }
+                    className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
+                    title="Encerrar sem gerar assinaturas"
+                  >
+                    <FileSignature size={32} className="text-[#7a4430]" />
+                    <span className="text-center text-xs font-semibold text-[#2C1810]">
+                      {pdfActions.closingWithoutSignature
+                        ? "Encerrando..."
+                        : "Encerrar"}
+                    </span>
+                  </button>
+                </>
+              ) : null}
               <ConfirmDialog
                 open={confirmSendSignature}
                 title="Enviar para assinatura"
@@ -1073,14 +1114,18 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
             </>
           ) : null}
 
-          {isNonDraftLocked && isGenerated ? (
+          {isNonDraftLocked && (isGenerated || isPendingSignature) ? (
             <>
               <button
                 type="button"
                 onClick={() => {
                   setConfirmCancelContract(true);
                 }}
-                disabled={!editing?.idContracts || !session?.user.idUsers}
+                disabled={
+                  !editing?.idContracts ||
+                  !session?.user.idUsers ||
+                  cancellingContract
+                }
                 className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#feece8] disabled:cursor-not-allowed disabled:opacity-50"
                 title="Cancelar contrato"
               >
@@ -1090,20 +1135,22 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
                 </span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => {
-                  void handleRevertToDraft();
-                }}
-                disabled={!editing?.idContracts || !session?.user.idUsers}
-                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-                title="Voltar ao rascunho"
-              >
-                <RotateCcw size={32} className="text-[#C9A227]" />
-                <span className="text-center text-xs font-semibold text-[#2C1810]">
-                  Voltar
-                </span>
-              </button>
+              {!isPendingSignature ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleRevertToDraft();
+                  }}
+                  disabled={!editing?.idContracts || !session?.user.idUsers}
+                  className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
+                  title="Voltar ao rascunho"
+                >
+                  <RotateCcw size={32} className="text-[#C9A227]" />
+                  <span className="text-center text-xs font-semibold text-[#2C1810]">
+                    Voltar
+                  </span>
+                </button>
+              ) : null}
             </>
           ) : null}
         </div>
