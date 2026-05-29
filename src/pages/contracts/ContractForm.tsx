@@ -776,7 +776,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
               // continue to attempt contract cancel even if envelope cancel failed
             }
           }
-        } catch (err) {
+        } catch {
           // ignore signature listing errors, continue to cancel contract
         }
       }
