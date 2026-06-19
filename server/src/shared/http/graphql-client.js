@@ -18,6 +18,59 @@ const graphqlHttp = axios.create({
   },
 });
 
+function isObject(value) {
+  return typeof value === "object" && value !== null;
+}
+
+function extractGraphqlError(payload, fallbackMessage) {
+  if (!isObject(payload)) {
+    return {
+      message: fallbackMessage,
+      statusCode: undefined,
+      code: undefined,
+      details: undefined,
+    };
+  }
+
+  const firstGraphqlError = Array.isArray(payload.errors)
+    ? payload.errors[0]
+    : undefined;
+
+  if (!isObject(firstGraphqlError)) {
+    const payloadMessage =
+      typeof payload.message === "string" ? payload.message : fallbackMessage;
+    const payloadStatusCode =
+      typeof payload.statusCode === "number" ? payload.statusCode : undefined;
+    const payloadCode =
+      typeof payload.code === "string" ? payload.code : undefined;
+    const payloadDetails = "details" in payload ? payload.details : undefined;
+
+    return {
+      message: payloadMessage,
+      statusCode: payloadStatusCode,
+      code: payloadCode,
+      details: payloadDetails,
+    };
+  }
+
+  const extensions = isObject(firstGraphqlError.extensions)
+    ? firstGraphqlError.extensions
+    : {};
+
+  return {
+    message:
+      typeof firstGraphqlError.message === "string"
+        ? firstGraphqlError.message
+        : fallbackMessage,
+    statusCode:
+      typeof extensions.statusCode === "number"
+        ? extensions.statusCode
+        : undefined,
+    code: typeof extensions.code === "string" ? extensions.code : undefined,
+    details: "details" in extensions ? extensions.details : undefined,
+  };
+}
+
 function shouldRetry(error) {
   if (!axios.isAxiosError(error)) {
     return false;
@@ -150,9 +203,11 @@ export async function executeGraphql({
     const payload = response.data;
 
     if (payload?.errors?.length) {
-      const firstError = payload.errors[0];
-      const message = firstError?.message || "Upstream GraphQL error.";
-      throw new HttpError(502, message);
+      const metadata = extractGraphqlError(payload, "Upstream GraphQL error.");
+      throw new HttpError(metadata.statusCode ?? 502, metadata.message, {
+        code: metadata.code,
+        details: metadata.details,
+      });
     }
 
     if (!payload?.data) {
@@ -202,22 +257,26 @@ export async function executeGraphql({
 
     if (axios.isAxiosError(error)) {
       const status = error.response?.status ?? 502;
-      const upstreamMessage =
-        error.response?.data?.errors?.[0]?.message ||
-        error.response?.data?.message ||
-        error.message ||
-        "GraphQL request failed.";
+      const metadata = extractGraphqlError(
+        error.response?.data,
+        error.message || "GraphQL request failed.",
+      );
+      const statusCode = metadata.statusCode ?? status;
+      const upstreamMessage = metadata.message;
 
       logEvent("error", "graphql.request.error", {
         requestId,
         operationName,
         durationMs,
-        statusCode: status,
+        statusCode,
         message: upstreamMessage,
         upstream: summarizePayload(error.response?.data),
       });
 
-      throw new HttpError(status, upstreamMessage);
+      throw new HttpError(statusCode, upstreamMessage, {
+        code: metadata.code,
+        details: metadata.details,
+      });
     }
 
     logEvent("error", "graphql.request.error", {
