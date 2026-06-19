@@ -41,7 +41,8 @@ function extractGraphqlError(payload, fallbackMessage) {
       typeof payload.message === "string" ? payload.message : fallbackMessage;
     const payloadStatusCode =
       typeof payload.statusCode === "number" ? payload.statusCode : undefined;
-    const payloadCode = typeof payload.code === "string" ? payload.code : undefined;
+    const payloadCode =
+      typeof payload.code === "string" ? payload.code : undefined;
     const payloadDetails = "details" in payload ? payload.details : undefined;
 
     return {
