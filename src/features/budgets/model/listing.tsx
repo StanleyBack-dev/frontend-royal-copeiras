@@ -76,6 +76,11 @@ export function getBudgetTableColumns(
       ),
     },
     {
+      key: "lead",
+      label: budgetUiCopy.list.columns.lead,
+      render: (budget) => resolveLeadName(budget.idLeads),
+    },
+    {
       key: "contract",
       label: budgetUiCopy.list.columns.contract,
       render: (budget) => {
@@ -97,11 +102,6 @@ export function getBudgetTableColumns(
           </Link>
         );
       },
-    },
-    {
-      key: "lead",
-      label: budgetUiCopy.list.columns.lead,
-      render: (budget) => resolveLeadName(budget.idLeads),
     },
     {
       key: "status",

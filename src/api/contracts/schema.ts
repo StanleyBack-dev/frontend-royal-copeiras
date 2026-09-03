@@ -6,6 +6,35 @@ const nullableStringToOptional = () =>
     z.string().optional(),
   );
 
+const optionalContractText = () =>
+  z.preprocess(
+    (value) => (value == null ? undefined : value),
+    z.string().optional().or(z.literal("")),
+  );
+
+/** CONTRATADA identity frozen into the contract (source: company profile). */
+export const ContractPartySchema = z.object({
+  legalName: optionalContractText(),
+  tradeName: optionalContractText(),
+  document: optionalContractText(),
+  stateRegistration: optionalContractText(),
+  municipalRegistration: optionalContractText(),
+  email: optionalContractText(),
+  phone: optionalContractText(),
+  address: optionalContractText(),
+  addressCity: optionalContractText(),
+  addressState: optionalContractText(),
+  addressZipCode: optionalContractText(),
+  representativeName: optionalContractText(),
+  representativeRole: optionalContractText(),
+  representativeDocument: optionalContractText(),
+  pixKey: optionalContractText(),
+  pixKeyType: optionalContractText(),
+  issueCity: optionalContractText(),
+});
+
+export const ContractPartyPayloadSchema = ContractPartySchema;
+
 export const contractStatusOptions = [
   "draft",
   "generated",
@@ -35,6 +64,10 @@ export const ContractSchema = z.object({
   sentVia: nullableStringToOptional(),
   sentAt: nullableStringToOptional(),
   notes: nullableStringToOptional(),
+  contractor: z.preprocess(
+    (value) => (value == null ? undefined : value),
+    ContractPartySchema.optional(),
+  ),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -45,6 +78,7 @@ export const CreateContractPayloadSchema = z.object({
   issueDate: z.string().trim().min(1),
   body: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
+  contractor: ContractPartyPayloadSchema.optional(),
 });
 
 export const UpdateContractPayloadSchema = z.object({
@@ -57,9 +91,11 @@ export const UpdateContractPayloadSchema = z.object({
   sentVia: z.string().optional().or(z.literal("")),
   sentAt: z.string().optional().or(z.literal("")),
   notes: z.string().optional().or(z.literal("")),
+  contractor: ContractPartyPayloadSchema.optional(),
 });
 
 export type Contract = z.infer<typeof ContractSchema>;
+export type ContractParty = z.infer<typeof ContractPartySchema>;
 export type ContractStatus = (typeof contractStatusOptions)[number];
 export type CreateContractPayload = z.infer<typeof CreateContractPayloadSchema>;
 export type UpdateContractPayload = z.infer<typeof UpdateContractPayloadSchema>;

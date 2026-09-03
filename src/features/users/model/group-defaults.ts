@@ -12,9 +12,6 @@ export const defaultByGroup: Record<UserGroup, PageAccessKey[]> = {
     "POSITIONS",
     "EVENTS",
     "PAYMENTS",
-    "FINANCES",
-    "DEBTS",
-    "INVESTMENTS",
   ],
   ADMIN_MASTER: [
     "DASHBOARD",
@@ -27,9 +24,6 @@ export const defaultByGroup: Record<UserGroup, PageAccessKey[]> = {
     "USERS",
     "EVENTS",
     "PAYMENTS",
-    "FINANCES",
-    "DEBTS",
-    "INVESTMENTS",
   ],
 };
 

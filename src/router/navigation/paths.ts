@@ -6,17 +6,13 @@ export const routePaths: Record<ActiveView, string> = {
   budgets: "/orcamentos",
   contracts: "/contratos",
   signatures: "/assinaturas",
-  finances: "/financas",
   payments: "/pagamentos",
   clients: "/clientes",
   employees: "/funcionarios",
   positions: "/cargos",
   users: "/usuarios",
   events: "/eventos",
-  debts: "/dividas",
-  investments: "/investimentos",
   profile: "/perfil",
-  settings: "/configuracoes",
 };
 
 export const customerRoutePaths = {

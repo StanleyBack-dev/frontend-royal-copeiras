@@ -8,6 +8,7 @@ export const contractUiCopy = {
     newAction: "Novo Contrato",
     columns: {
       contractNumber: "Contrato",
+      lead: "Lead",
       budgetNumber: "Orçamento",
       status: "Status",
       createdAt: "Criação",

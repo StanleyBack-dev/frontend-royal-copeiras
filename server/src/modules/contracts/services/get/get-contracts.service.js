@@ -8,6 +8,7 @@ import {
   mapContractInputToGraphql,
   mapContractListResponseFromGraphql,
 } from "../shared/contract-enum-mapper.js";
+import { CONTRACT_CONTRACTOR_FIELDS } from "../shared/contract-graphql-fields.js";
 
 export class GetContractsService {
   async findAll(userId, input = {}, context = {}) {
@@ -34,6 +35,7 @@ export class GetContractsService {
             sentVia
             sentAt
             notes
+            ${CONTRACT_CONTRACTOR_FIELDS}
             createdAt
             updatedAt
           }

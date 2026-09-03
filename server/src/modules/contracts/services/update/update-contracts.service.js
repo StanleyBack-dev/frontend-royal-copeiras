@@ -3,6 +3,7 @@ import {
   mapContractInputToGraphql,
   mapContractMutationResponseFromGraphql,
 } from "../shared/contract-enum-mapper.js";
+import { CONTRACT_CONTRACTOR_FIELDS } from "../shared/contract-graphql-fields.js";
 
 export class UpdateContractsService {
   async updateContract(userId, idContracts, input, context = {}) {
@@ -29,6 +30,7 @@ export class UpdateContractsService {
             sentVia
             sentAt
             notes
+            ${CONTRACT_CONTRACTOR_FIELDS}
             createdAt
             updatedAt
           }

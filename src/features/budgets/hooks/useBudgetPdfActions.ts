@@ -6,7 +6,7 @@ import {
 } from "../../../api/budgets/methods";
 import { getHttpErrorMessage } from "../../../api/shared/http-error";
 import { useToast } from "../../../shared/toast/useToast";
-import { openBase64FileInNewTab } from "../../../utils/file";
+import { renderBase64FileInWindow } from "../../../utils/file";
 
 interface UseBudgetPdfActionsParams {
   userId: string;
@@ -39,6 +39,17 @@ export function useBudgetPdfActions({
   const { showError, showSuccess } = useToast();
 
   async function preview(draft?: CreateBudgetPayload) {
+    // Open the tab synchronously (still inside the click gesture) so the
+    // browser does not treat it as a blocked pop-up after the await below.
+    const previewWindow = window.open("about:blank", "_blank");
+    if (!previewWindow) {
+      showError(
+        "Falha ao abrir preview em nova aba",
+        "O navegador bloqueou a nova aba. Libere pop-ups para este site e tente novamente.",
+      );
+      return null;
+    }
+
     setPreviewing(true);
 
     try {
@@ -47,18 +58,11 @@ export function useBudgetPdfActions({
         budgetNumber: budgetNumber || undefined,
         draft: budgetId ? undefined : draft,
       });
-      const opened = openBase64FileInNewTab(pdf.base64Content, pdf.mimeType);
-
-      if (!opened) {
-        showError(
-          "Falha ao abrir preview em nova aba",
-          "O navegador bloqueou pop-up. Tente liberar pop-ups para este site.",
-        );
-      }
-
+      renderBase64FileInWindow(previewWindow, pdf.base64Content, pdf.mimeType);
       showSuccess("Preview do orçamento gerado com sucesso");
       return pdf;
     } catch (error) {
+      previewWindow.close();
       const message = getHttpErrorMessage(
         error,
         "Erro ao gerar preview do PDF",

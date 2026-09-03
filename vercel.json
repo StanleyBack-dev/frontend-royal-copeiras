@@ -1,4 +1,9 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "master": false
+    }
+  },
   "functions": {
     "api/[...all].js": {
       "includeFiles": "server/**"

@@ -22,9 +22,6 @@ export const PageAccessKeySchema = z.enum([
   "USERS",
   "EVENTS",
   "PAYMENTS",
-  "FINANCES",
-  "DEBTS",
-  "INVESTMENTS",
 ]);
 
 export const UserSchema = z.object({
