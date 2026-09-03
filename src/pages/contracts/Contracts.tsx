@@ -16,6 +16,7 @@ export default function Contracts() {
   const {
     contracts,
     budgets,
+    leads,
     loading,
     pagination,
     filters,
@@ -27,6 +28,8 @@ export default function Contracts() {
   } = useContractsContext();
   const { search, setSearch, filteredContracts, columns } = useContractsList({
     contracts,
+    leads,
+    budgets,
   });
 
   const navigate = useNavigate();

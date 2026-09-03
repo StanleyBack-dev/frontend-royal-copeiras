@@ -8,15 +8,12 @@ const pageAccessByView: Partial<Record<ActiveView, PageAccessKey>> = {
   leads: "LEADS",
   budgets: "BUDGETS",
   contracts: "CONTRACTS",
-  finances: "FINANCES",
   payments: "PAYMENTS",
   clients: "CLIENTS",
   employees: "EMPLOYEES",
   positions: "POSITIONS",
   users: "USERS",
   events: "EVENTS",
-  debts: "DEBTS",
-  investments: "INVESTMENTS",
 };
 
 export function getGroupDefaultPagePermissions(
@@ -29,7 +26,7 @@ export function hasPageAccess(
   view: ActiveView,
   pagePermissions: PageAccessKey[],
 ): boolean {
-  if (view === "profile" || view === "settings") {
+  if (view === "profile") {
     return true;
   }
 
@@ -39,8 +36,4 @@ export function hasPageAccess(
   }
 
   return pagePermissions.includes(requiredPermission);
-}
-
-export function isRoutedView(view: ActiveView): boolean {
-  return view !== "profile" && view !== "settings";
 }

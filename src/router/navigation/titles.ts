@@ -12,7 +12,6 @@ export const viewTitles: Record<
     title: "Assinaturas",
     subtitle: "Acompanhar solicitacoes de assinatura",
   },
-  finances: { title: "Finanças", subtitle: "Controle financeiro" },
   payments: { title: "Pagamentos", subtitle: "Controle de pagamentos" },
   clients: { title: "Clientes", subtitle: "Gerenciar clientes" },
   employees: {
@@ -28,8 +27,5 @@ export const viewTitles: Record<
     subtitle: "Gerenciar usuários de acesso",
   },
   events: { title: "Eventos", subtitle: "Agenda e histórico de eventos" },
-  debts: { title: "Dívidas", subtitle: "Contas a pagar e receber" },
-  investments: { title: "Investimentos", subtitle: "Gestão de investimentos" },
   profile: { title: "Perfil", subtitle: "Informações da empresa" },
-  settings: { title: "Configurações", subtitle: "Preferências do sistema" },
 };

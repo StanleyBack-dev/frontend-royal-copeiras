@@ -41,7 +41,9 @@ export function filterContractsBySearch(contracts: Contract[], search: string) {
   });
 }
 
-export function getContractTableColumns(): DataTableColumn<Contract>[] {
+export function getContractTableColumns(
+  resolveLeadName?: (contract: Contract) => string,
+): DataTableColumn<Contract>[] {
   return [
     {
       key: "actions",
@@ -67,6 +69,11 @@ export function getContractTableColumns(): DataTableColumn<Contract>[] {
           {contract.contractNumber}
         </span>
       ),
+    },
+    {
+      key: "lead",
+      label: contractUiCopy.list.columns.lead,
+      render: (contract) => resolveLeadName?.(contract) || "-",
     },
     {
       key: "budgetNumber",

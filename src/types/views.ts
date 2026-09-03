@@ -4,14 +4,10 @@ export type ActiveView =
   | "budgets"
   | "contracts"
   | "signatures"
-  | "finances"
   | "payments"
   | "clients"
   | "employees"
   | "positions"
   | "users"
   | "events"
-  | "debts"
-  | "investments"
-  | "profile"
-  | "settings";
+  | "profile";

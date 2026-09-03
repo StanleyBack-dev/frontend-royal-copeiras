@@ -1,0 +1,23 @@
+export const COMPANY_PROFILE_FIELDS = `
+  idCompanyProfile
+  legalName
+  tradeName
+  document
+  stateRegistration
+  municipalRegistration
+  email
+  phone
+  address
+  addressCity
+  addressState
+  addressZipCode
+  representativeName
+  representativeRole
+  representativeDocument
+  pixKey
+  pixKeyType
+  issueCity
+  website
+  createdAt
+  updatedAt
+`;

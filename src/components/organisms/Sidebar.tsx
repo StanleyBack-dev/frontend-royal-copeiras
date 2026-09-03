@@ -1,11 +1,18 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { colors, typography } from "../../config";
 import CrownIcon from "../atoms/icons/CrownIcon";
-import { ChevronRight } from "lucide-react";
+import ConfirmDialog from "../molecules/ConfirmDialog";
+import { ChevronDown, ChevronRight, LogOut } from "lucide-react";
 import type { ActiveView } from "../../types/views";
-import { useAuthSession } from "../../features/auth";
+import { logoutCurrentSession, useAuthSession } from "../../features/auth";
+import { authRoutePaths } from "../../router";
+import { useToast } from "../../shared/toast/useToast";
+import { AuthApiError } from "../../api/auth/methods/http-error";
 import {
   primaryNavigationItems,
   secondaryNavigationItems,
+  type NavigationItem,
 } from "../../router/navigation";
 
 interface SidebarProps {
@@ -15,17 +22,100 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+interface NavButtonProps {
+  label: string;
+  icon: React.ReactNode;
+  isActive?: boolean;
+  loading?: boolean;
+  onClick: () => void;
+}
+
+function NavButton({
+  label,
+  icon,
+  isActive,
+  loading,
+  onClick,
+}: NavButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      className="relative flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all duration-200 disabled:opacity-60"
+      style={
+        isActive
+          ? {
+              background: "linear-gradient(135deg, #C9A227, #a8811a)",
+              color: "#fff",
+            }
+          : { color: "#c4a882" }
+      }
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          (e.currentTarget as HTMLButtonElement).style.background = "#3D2314";
+          (e.currentTarget as HTMLButtonElement).style.color = "#fff";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          (e.currentTarget as HTMLButtonElement).style.background =
+            "transparent";
+          (e.currentTarget as HTMLButtonElement).style.color = "#c4a882";
+        }
+      }}
+    >
+      <span className={isActive ? "text-white" : ""}>{icon}</span>
+      <span className="flex-1 text-left">{label}</span>
+      {isActive && <ChevronRight size={14} className="text-white opacity-70" />}
+    </button>
+  );
+}
+
 export default function Sidebar({
   active,
   onNavigate,
   mobileOpen = false,
   onClose,
 }: SidebarProps) {
-  const { hasPageAccess } = useAuthSession();
+  const navigate = useNavigate();
+  const { clearSession, hasPageAccess } = useAuthSession();
+  const { showSuccess, showError } = useToast();
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const visiblePrimaryItems = primaryNavigationItems.filter((item) =>
     hasPageAccess(item.id),
   );
+  const visibleAccountItems = secondaryNavigationItems.filter((item) =>
+    hasPageAccess(item.id),
+  );
+
+  function handleSelect(item: NavigationItem) {
+    onNavigate(item.id);
+    onClose?.();
+  }
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+
+    try {
+      await logoutCurrentSession();
+      showSuccess("Sessao encerrada", "Logout realizado com sucesso.");
+    } catch (error) {
+      const message =
+        error instanceof AuthApiError || error instanceof Error
+          ? error.message
+          : "Nao foi possivel encerrar a sessao no servidor.";
+
+      showError("Logout parcial", message);
+    } finally {
+      clearSession();
+      setIsLoggingOut(false);
+      navigate(authRoutePaths.login, { replace: true });
+    }
+  }
 
   return (
     <>
@@ -39,13 +129,13 @@ export default function Sidebar({
         aria-hidden={!mobileOpen}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex min-h-screen w-72 max-w-[85vw] flex-col transition-transform duration-300 lg:sticky lg:top-0 lg:z-0 lg:w-64 lg:max-w-none ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-72 max-w-[85vw] flex-col transition-transform duration-300 lg:sticky lg:top-0 lg:z-0 lg:h-screen lg:w-64 lg:max-w-none ${
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
         style={{ background: colors.brown[800] }}
       >
         <div
-          className="flex items-center justify-between border-b px-5 py-6 lg:px-6 lg:py-8"
+          className="flex shrink-0 items-center justify-between border-b px-5 py-6 lg:px-6 lg:py-8"
           style={{ borderColor: colors.brown[500] }}
         >
           <div className="flex items-center gap-3">
@@ -84,7 +174,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5 lg:py-6">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-5 lg:py-6">
           <p
             className="mb-4 px-3 text-xs font-semibold uppercase tracking-widest"
             style={{
@@ -94,105 +184,80 @@ export default function Sidebar({
           >
             Menu Principal
           </p>
-          {visiblePrimaryItems.map((item) => {
-            const isActive = active === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onNavigate(item.id);
-                  onClose?.();
-                }}
-                className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all duration-200 ${
-                  isActive ? "text-white" : "text-brown-300 hover:text-white"
-                }`}
-                style={
-                  isActive
-                    ? {
-                        background: "linear-gradient(135deg, #C9A227, #a8811a)",
-                        color: "#fff",
-                      }
-                    : { color: "#c4a882" }
-                }
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.background =
-                      "#3D2314";
-                    (e.currentTarget as HTMLButtonElement).style.color = "#fff";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.background =
-                      "transparent";
-                    (e.currentTarget as HTMLButtonElement).style.color =
-                      "#c4a882";
-                  }
-                }}
-              >
-                <span className={isActive ? "text-white" : ""}>
-                  {item.icon}
-                </span>
-                <span className="flex-1 text-left">{item.label}</span>
-                {isActive && (
-                  <ChevronRight size={14} className="text-white opacity-70" />
-                )}
-              </button>
-            );
-          })}
+          {visiblePrimaryItems.map((item) => (
+            <NavButton
+              key={item.id}
+              label={item.label}
+              icon={item.icon}
+              isActive={active === item.id}
+              onClick={() => handleSelect(item)}
+            />
+          ))}
         </nav>
 
         <div
-          className="space-y-1 border-t px-3 pb-6 pt-4"
+          className="shrink-0 space-y-1 border-t px-3 pb-6 pt-4"
           style={{ borderColor: "#3D2314" }}
         >
-          <p
-            className="mb-3 px-3 text-xs font-semibold uppercase tracking-widest"
+          <button
+            type="button"
+            onClick={() => setAccountOpen((current) => !current)}
+            aria-expanded={accountOpen}
+            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-widest"
             style={{ color: "#7a6050" }}
           >
-            Conta
-          </p>
-          {secondaryNavigationItems.map((item) => {
-            const isActive = active === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onNavigate(item.id);
-                  onClose?.();
-                }}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-all duration-200"
-                style={
-                  isActive
-                    ? {
-                        background: "linear-gradient(135deg, #C9A227, #a8811a)",
-                        color: "#fff",
-                      }
-                    : { color: "#c4a882" }
-                }
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.background =
-                      "#3D2314";
-                    (e.currentTarget as HTMLButtonElement).style.color = "#fff";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.background =
-                      "transparent";
-                    (e.currentTarget as HTMLButtonElement).style.color =
-                      "#c4a882";
-                  }
-                }}
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
+            <span>Conta</span>
+            <ChevronDown
+              size={14}
+              className={`transition-transform ${
+                accountOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+
+          {accountOpen ? (
+            <div className="max-h-[35vh] space-y-1 overflow-y-auto">
+              {visibleAccountItems.map((item) => (
+                <NavButton
+                  key={item.id}
+                  label={item.label}
+                  icon={item.icon}
+                  isActive={active === item.id}
+                  onClick={() => handleSelect(item)}
+                />
+              ))}
+              <NavButton
+                label="Sair"
+                icon={<LogOut size={20} />}
+                loading={isLoggingOut}
+                onClick={() => setConfirmLogoutOpen(true)}
+              />
+            </div>
+          ) : null}
         </div>
       </aside>
+
+      <ConfirmDialog
+        open={confirmLogoutOpen}
+        title="Sair da conta"
+        variant="warning"
+        description={
+          <p>
+            Você será desconectado e precisará entrar novamente para acessar o
+            sistema.
+            <br />
+            <br />
+            Deseja realmente sair?
+          </p>
+        }
+        confirmLabel="Sim, sair"
+        cancelLabel="Cancelar"
+        onConfirm={() => {
+          setConfirmLogoutOpen(false);
+          void handleLogout();
+        }}
+        onCancel={() => setConfirmLogoutOpen(false)}
+      />
     </>
   );
 }

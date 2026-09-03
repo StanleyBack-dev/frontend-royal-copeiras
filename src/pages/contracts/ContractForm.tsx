@@ -30,6 +30,21 @@ import {
   Save,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+  CONTRACTOR_FIELD_GROUPS,
+  CONTRACTOR_FIELD_KEYS,
+  contractorPaymentReference,
+  contractorTradeName,
+  contractorValuesToPayload,
+  fetchCompanyProfile,
+  mapContractPartyToContractorValues,
+  mapProfileToContractorValues,
+  PIX_KEY_TYPE_LABELS,
+  type ContractorFieldKey,
+  type ContractorValues,
+} from "@/features/company-profile";
+import { PIX_KEY_TYPE_OPTIONS } from "@/api/company-profile/schema";
+import type { CompanyProfile } from "@/api/company-profile/schema";
 import { getSignatures } from "@/api/signature/methods";
 import { cancelSignatureRequest } from "@/api/signature/methods/cancel-request";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -216,7 +231,12 @@ function buildServicesAndQuantities(items: BudgetItem[]) {
     .join(", ");
 }
 
-function buildDefaultContractBody(budget: Budget | null) {
+function buildDefaultContractBody(
+  budget: Budget | null,
+  contractor: ContractorValues,
+) {
+  const tradeName = contractorTradeName(contractor);
+  const paymentReference = contractorPaymentReference(contractor);
   const servicesAndQuantities = buildServicesAndQuantities(budget?.items || []);
   const eventDatesText = formatEventDatesText(budget?.eventDates || []);
   const eventLocationText =
@@ -418,7 +438,7 @@ function buildDefaultContractBody(budget: Budget | null) {
 
   const replacementClause = `\n5.4. A contratada responsabiliza-se pela substituição de qualquer profissional contratado ${replacementList} em caso de ausência, atraso ou impossibilidade de comparecimento, sem custos adicionais à contratante.`;
 
-  return `CLÁUSULA 1ª - SERVIÇOS CONTRATADOS:\n\n1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada, consistentes na disponibilização de:\n${servicesBlock}\n1.2. Pelo período de ${eventHours} horas consecutivas.\n1.3. O evento está previsto para ocorrer ${eventDatesText}, ${eventScheduleText}, ${guestCountLabel ? `com previsão de ${guestCountLabel},` : ""} no local ${eventLocationText}.${displacementClause}\n\nCLÁUSULA 2ª - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}${displacementFee > 0 ? `, sendo ${displacementFeeLabel} referente à taxa de deslocamento` : ""}.\n2.2. O pagamento deverá ser realizado à vista, via pix (CNPJ 64.062.038/0001-71) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n2.3. Caso a prestação dos serviços ultrapasse o horário previamente acordado, será necessário contratar horas adicionais, no valor de R$ 90,00 (noventa reais) por hora extra, por profissional.\n\nCLÁUSULA 3ª - DOS MATERIAIS DE LIMPEZA:\n\n3.1. A contratada se responsabiliza por disponibilizar, para a adequada execução dos serviços durante o evento, os seguintes materiais de limpeza: desinfetante, aromatizante de ambiente (cheirinho de banheiro), pano de chão, rodo, vassoura, pá de lixo, sacos de lixo, luvas e álcool.\n3.2. Caso o contratante deseje a inclusão de papel toalha e papel higiênico, este valor será cobrado à parte e adicionado ao valor total do serviço. Ressalta-se que os materiais mencionados acima serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.\n\nCLÁUSULA 4ª - RESPONSABILIDADES DO CONTRATANTE:\n\n4.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n4.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLÁUSULA 5ª - RESPONSABILIDADES DA CONTRATADA:\n\n5.1. A Royal Copeiras compromete-se a prestar os serviços contratados com profissional qualificada e devidamente treinada para atender as necessidades do evento.\n5.2. A contratada se compromete a garantir a pontualidade e a boa apresentação da equipe durante todo o evento.\n5.3. A contratada se responsabiliza pela supervisão e acompanhamento da equipe para assegurar o cumprimento das atividades conforme o acordado neste contrato.${replacementClause}\n\nCLÁUSULA 6ª - CANCELAMENTO E REEMBOLSO:\n\n6.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n6.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n6.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLÁUSULA 7ª - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n7.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n7.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da Royal Copeiras.\n7.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLÁUSULA 8ª - VIGÊNCIA:\n\n8.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLÁUSULA 9ª - CONDIÇÕES GERAIS:\n\n9.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe Royal Copeiras`;
+  return `CLÁUSULA 1ª - SERVIÇOS CONTRATADOS:\n\n1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada, consistentes na disponibilização de:\n${servicesBlock}\n1.2. Pelo período de ${eventHours} horas consecutivas.\n1.3. O evento está previsto para ocorrer ${eventDatesText}, ${eventScheduleText}, ${guestCountLabel ? `com previsão de ${guestCountLabel},` : ""} no local ${eventLocationText}.${displacementClause}\n\nCLÁUSULA 2ª - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}${displacementFee > 0 ? `, sendo ${displacementFeeLabel} referente à taxa de deslocamento` : ""}.\n2.2. O pagamento deverá ser realizado à vista, via pix (${paymentReference}) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n2.3. Caso a prestação dos serviços ultrapasse o horário previamente acordado, será necessário contratar horas adicionais, no valor de R$ 90,00 (noventa reais) por hora extra, por profissional.\n\nCLÁUSULA 3ª - DOS MATERIAIS DE LIMPEZA:\n\n3.1. A contratada se responsabiliza por disponibilizar, para a adequada execução dos serviços durante o evento, os seguintes materiais de limpeza: desinfetante, aromatizante de ambiente (cheirinho de banheiro), pano de chão, rodo, vassoura, pá de lixo, sacos de lixo, luvas e álcool.\n3.2. Caso o contratante deseje a inclusão de papel toalha e papel higiênico, este valor será cobrado à parte e adicionado ao valor total do serviço. Ressalta-se que os materiais mencionados acima serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.\n\nCLÁUSULA 4ª - RESPONSABILIDADES DO CONTRATANTE:\n\n4.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n4.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLÁUSULA 5ª - RESPONSABILIDADES DA CONTRATADA:\n\n5.1. A ${tradeName} compromete-se a prestar os serviços contratados com profissional qualificada e devidamente treinada para atender as necessidades do evento.\n5.2. A contratada se compromete a garantir a pontualidade e a boa apresentação da equipe durante todo o evento.\n5.3. A contratada se responsabiliza pela supervisão e acompanhamento da equipe para assegurar o cumprimento das atividades conforme o acordado neste contrato.${replacementClause}\n\nCLÁUSULA 6ª - CANCELAMENTO E REEMBOLSO:\n\n6.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n6.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n6.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLÁUSULA 7ª - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n7.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n7.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da ${tradeName}.\n7.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLÁUSULA 8ª - VIGÊNCIA:\n\n8.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLÁUSULA 9ª - CONDIÇÕES GERAIS:\n\n9.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe ${tradeName}`;
 }
 
 function buildDefaultFormValues(initialBudgetId?: string): ContractFormValues {
@@ -468,9 +488,52 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     return leads.find((lead) => lead.idLeads === leadId) || null;
   }, [editing?.idLeads, leads, selectedBudget?.idLeads]);
 
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
+    null,
+  );
+  const [contractor, setContractor] = useState<ContractorValues>(() =>
+    mapProfileToContractorValues(null),
+  );
+  const [showContractor, setShowContractor] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void fetchCompanyProfile()
+      .then((profile) => {
+        if (active) {
+          setCompanyProfile(profile);
+        }
+      })
+      .catch(() => {
+        // The contract still works with the built-in fallback identity.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const contractorDefaults = useMemo(
+    () => mapProfileToContractorValues(companyProfile),
+    [companyProfile],
+  );
+
+  useEffect(() => {
+    if (mode === "edit" && editing) {
+      setContractor(
+        mapContractPartyToContractorValues(
+          editing.contractor,
+          contractorDefaults,
+        ),
+      );
+      return;
+    }
+
+    setContractor(contractorDefaults);
+  }, [mode, editing, contractorDefaults]);
+
   const defaultContractBody = useMemo(
-    () => buildDefaultContractBody(selectedBudget),
-    [selectedBudget],
+    () => buildDefaultContractBody(selectedBudget, contractor),
+    [selectedBudget, contractor],
   );
 
   const isNonDraftLocked =
@@ -519,6 +582,14 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     }));
   }
 
+  function updateContractorField(key: ContractorFieldKey, value: string) {
+    setContractor((current) => ({ ...current, [key]: value }));
+  }
+
+  const contractorDiffersFromDefaults = CONTRACTOR_FIELD_KEYS.some(
+    (key) => contractor[key].trim() !== contractorDefaults[key].trim(),
+  );
+
   async function handleSave() {
     if (isNonDraftLocked) {
       return;
@@ -555,6 +626,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       issueDate: form.issueDate,
       body: defaultContractBody,
       notes: form.notes,
+      contractor: contractorValuesToPayload(contractor),
     };
 
     const savedContract = await save(payload, editing);
@@ -1228,6 +1300,107 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
           required
           error={errors.issueDate}
         />
+      </div>
+
+      <div className="mt-6 rounded-xl border border-[#e8d5c9]">
+        <button
+          type="button"
+          onClick={() => setShowContractor((current) => !current)}
+          className="flex w-full items-center justify-between px-4 py-3 text-left"
+        >
+          <span className="text-sm font-semibold text-[#2C1810]">
+            Dados da Contratada
+            {contractorDiffersFromDefaults ? (
+              <span className="ml-2 rounded-full bg-[#f5ede8] px-2 py-0.5 text-xs font-medium text-[#7a4430]">
+                personalizado
+              </span>
+            ) : null}
+          </span>
+          <span className="text-xs text-[#7a4430]">
+            {showContractor ? "Ocultar" : "Editar"}
+          </span>
+        </button>
+
+        {showContractor ? (
+          <div className="space-y-6 border-t border-[#e8d5c9] px-4 py-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-[#7a4430]">
+                Preenchido automaticamente com o Perfil da Empresa. Ajuste
+                somente se este contrato precisar de outra identificação da
+                contratada.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                leftIcon={<RotateCcw size={14} />}
+                onClick={() => setContractor(contractorDefaults)}
+                disabled={isNonDraftLocked || !contractorDiffersFromDefaults}
+              >
+                Restaurar padrão
+              </Button>
+            </div>
+
+            {CONTRACTOR_FIELD_GROUPS.map((group) => (
+              <fieldset
+                key={group.id}
+                disabled={isNonDraftLocked}
+                className="m-0 border-0 p-0"
+              >
+                <legend className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                  {group.title}
+                </legend>
+                <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {group.fields.map((field) => {
+                    const value = contractor[field.key as ContractorFieldKey];
+
+                    if (field.type === "pixKeyType") {
+                      return (
+                        <Select
+                          key={field.key}
+                          label={field.label}
+                          value={value}
+                          onChange={(event) =>
+                            updateContractorField(
+                              field.key as ContractorFieldKey,
+                              event.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Não informado</option>
+                          {PIX_KEY_TYPE_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {PIX_KEY_TYPE_LABELS[option] ?? option}
+                            </option>
+                          ))}
+                        </Select>
+                      );
+                    }
+
+                    return (
+                      <Input
+                        key={field.key}
+                        label={field.label}
+                        type={field.type === "email" ? "email" : "text"}
+                        placeholder={field.placeholder}
+                        value={value}
+                        wrapperClassName={
+                          field.span === 2 ? "sm:col-span-2" : undefined
+                        }
+                        onChange={(event) =>
+                          updateContractorField(
+                            field.key as ContractorFieldKey,
+                            event.target.value,
+                          )
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              </fieldset>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4">

@@ -27,8 +27,6 @@ export function getDeniedViewLabel(deniedView?: ActiveView): string {
       return "Clientes";
     case "employees":
       return "Funcionários";
-    case "finances":
-      return "Finanças";
     case "positions":
       return "Cargos";
     case "users":
@@ -37,14 +35,8 @@ export function getDeniedViewLabel(deniedView?: ActiveView): string {
       return "Eventos";
     case "payments":
       return "Pagamentos";
-    case "debts":
-      return "Dívidas";
-    case "investments":
-      return "Investimentos";
     case "profile":
       return "Perfil";
-    case "settings":
-      return "Configurações";
     default:
       return "esta área";
   }
