@@ -2,6 +2,7 @@ import type { DataTableColumn } from "../../../components/organisms/DataTable";
 import type { Contract } from "../../../api/contracts/schema";
 import { formatDateTimeDisplay } from "../../../utils/format";
 import { signatureUiCopy } from "./messages";
+import { getContractStatusLabel } from "../../contracts/model/status";
 import CopyIcon from "../../../components/atoms/icons/CopyIcon";
 
 export interface SignatureItem {
@@ -18,6 +19,76 @@ export interface SignatureItem {
   signedByEmail?: string;
   signedByDocument?: string;
   signatureUrl?: string | null;
+  signerType?: string;
+}
+
+export interface SignatureContractGroup {
+  idContracts: string;
+  contractNumber: string;
+  contractStatus: Contract["status"];
+  signatureProvider?: string;
+  updatedAt: string;
+  signers: SignatureItem[];
+}
+
+function isSignerSigned(signer: SignatureItem) {
+  const status = (signer.signatureStatus || "").trim().toLowerCase();
+  return status === "signed" || status === "completed";
+}
+
+/**
+ * The client's own signer record — falls back to the first signer when
+ * signerType isn't available (older records created before that field
+ * existed), so the group always has a reasonable name to show.
+ */
+export function getClientSigner(
+  group: Pick<SignatureContractGroup, "signers">,
+) {
+  return (
+    group.signers.find(
+      (signer) => (signer.signerType || "").toUpperCase() === "CLIENT",
+    ) || group.signers[0]
+  );
+}
+
+/**
+ * A contract can have more than one signatory (e.g. contratante and
+ * contratada each sign their own copy), which the API returns as one
+ * SignatureItem per signer. Grouping by contract turns that into one row
+ * per contract with the individual signers nested inside, instead of the
+ * same contract repeated once per signer.
+ */
+export function groupSignaturesByContract(
+  items: SignatureItem[],
+): SignatureContractGroup[] {
+  const groups = new Map<string, SignatureContractGroup>();
+
+  for (const item of items) {
+    const existing = groups.get(item.idContracts);
+    if (!existing) {
+      groups.set(item.idContracts, {
+        idContracts: item.idContracts,
+        contractNumber: item.contractNumber,
+        contractStatus: item.contractStatus,
+        signatureProvider: item.signatureProvider,
+        updatedAt: item.updatedAt,
+        signers: [item],
+      });
+      continue;
+    }
+
+    existing.signers.push(item);
+    if (item.updatedAt > existing.updatedAt) {
+      existing.updatedAt = item.updatedAt;
+      existing.contractStatus = item.contractStatus;
+    }
+  }
+
+  return Array.from(groups.values());
+}
+
+export function getSignedCount(group: SignatureContractGroup) {
+  return group.signers.filter(isSignerSigned).length;
 }
 
 export function getSignatureStatusLabel(status?: string) {
@@ -42,35 +113,7 @@ export function getSignatureStatusLabel(status?: string) {
   return map[normalized] || status;
 }
 
-export function getContractStatusLabel(status: Contract["status"] | string) {
-  const normalized = status.trim().toLowerCase();
-  const aliases: Record<string, Contract["status"]> = {
-    draft: "draft",
-    generated: "generated",
-    pending_signature: "pending_signature",
-    pendingsignature: "pending_signature",
-    signed: "signed",
-    closed_without_signature: "closed_without_signature",
-    closedwithoutsignature: "closed_without_signature",
-    rejected: "rejected",
-    expired: "expired",
-    canceled: "canceled",
-    cancelled: "canceled",
-  };
-
-  const resolved = aliases[normalized] || (status as Contract["status"]);
-  const map: Record<Contract["status"], string> = {
-    draft: "Rascunho",
-    generated: "Gerado",
-    pending_signature: "Pendente assinatura",
-    signed: "Assinado",
-    closed_without_signature: "Encerrado sem assinatura",
-    rejected: "Rejeitado",
-    expired: "Expirado",
-    canceled: "Cancelado",
-  };
-  return map[resolved] || status;
-}
+export { getContractStatusLabel };
 
 function formatSignedAt(value?: string) {
   if (!value) return "-";

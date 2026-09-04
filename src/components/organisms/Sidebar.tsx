@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { colors, typography } from "../../config";
 import CrownIcon from "../atoms/icons/CrownIcon";
@@ -81,9 +81,26 @@ export default function Sidebar({
   const navigate = useNavigate();
   const { clearSession, hasPageAccess } = useAuthSession();
   const { showSuccess, showError } = useToast();
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem("royal:sidebarAccountOpen") === "1";
+    } catch {
+      return false;
+    }
+  });
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        "royal:sidebarAccountOpen",
+        accountOpen ? "1" : "0",
+      );
+    } catch {
+      /* storage unavailable — the section just won't be remembered */
+    }
+  }, [accountOpen]);
 
   const visiblePrimaryItems = primaryNavigationItems.filter((item) =>
     hasPageAccess(item.id),
@@ -129,7 +146,7 @@ export default function Sidebar({
         aria-hidden={!mobileOpen}
       />
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-72 max-w-[85vw] flex-col transition-transform duration-300 lg:sticky lg:top-0 lg:z-0 lg:h-screen lg:w-64 lg:max-w-none ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] flex-col transition-transform duration-300 lg:sticky lg:top-0 lg:z-0 lg:h-dvh lg:w-64 lg:max-w-none ${
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
         style={{ background: colors.brown[800] }}
@@ -199,41 +216,49 @@ export default function Sidebar({
           className="shrink-0 space-y-1 border-t px-3 pb-6 pt-4"
           style={{ borderColor: "#3D2314" }}
         >
-          <button
-            type="button"
-            onClick={() => setAccountOpen((current) => !current)}
-            aria-expanded={accountOpen}
-            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-widest"
-            style={{ color: "#7a6050" }}
-          >
-            <span>Conta</span>
-            <ChevronDown
-              size={14}
-              className={`transition-transform ${
-                accountOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-
-          {accountOpen ? (
-            <div className="max-h-[35vh] space-y-1 overflow-y-auto">
-              {visibleAccountItems.map((item) => (
-                <NavButton
-                  key={item.id}
-                  label={item.label}
-                  icon={item.icon}
-                  isActive={active === item.id}
-                  onClick={() => handleSelect(item)}
+          {visibleAccountItems.length > 0 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setAccountOpen((current) => !current)}
+                aria-expanded={accountOpen}
+                className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-widest"
+                style={{ color: "#7a6050" }}
+              >
+                <span>Conta</span>
+                <ChevronDown
+                  size={14}
+                  className={`transition-transform ${
+                    accountOpen ? "rotate-180" : ""
+                  }`}
                 />
-              ))}
-              <NavButton
-                label="Sair"
-                icon={<LogOut size={20} />}
-                loading={isLoggingOut}
-                onClick={() => setConfirmLogoutOpen(true)}
-              />
-            </div>
+              </button>
+
+              {accountOpen ? (
+                <div
+                  className="space-y-1 border-l pl-3"
+                  style={{ borderColor: "#3D2314" }}
+                >
+                  {visibleAccountItems.map((item) => (
+                    <NavButton
+                      key={item.id}
+                      label={item.label}
+                      icon={item.icon}
+                      isActive={active === item.id}
+                      onClick={() => handleSelect(item)}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </>
           ) : null}
+
+          <NavButton
+            label="Sair"
+            icon={<LogOut size={20} />}
+            loading={isLoggingOut}
+            onClick={() => setConfirmLogoutOpen(true)}
+          />
         </div>
       </aside>
 

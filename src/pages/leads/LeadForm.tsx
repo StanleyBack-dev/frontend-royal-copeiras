@@ -8,6 +8,7 @@ import {
 } from "@/features/leads";
 import { useLeadsContext } from "@/features/leads/context/useLeadsContext";
 import { useToast } from "@/shared/toast/useToast";
+import { leadRoutePaths } from "@/router";
 import { useNavigate, useParams } from "react-router-dom";
 
 export default function LeadForm({ mode }: { mode: "create" | "edit" }) {
@@ -33,7 +34,7 @@ export default function LeadForm({ mode }: { mode: "create" | "edit" }) {
     }
 
     await save(result.payload, editing);
-    navigate("/eventos/leads");
+    navigate(leadRoutePaths.list);
   }
 
   return (
@@ -55,7 +56,7 @@ export default function LeadForm({ mode }: { mode: "create" | "edit" }) {
         }}
         errors={errors}
         saving={saving}
-        onCancel={() => navigate("/eventos/leads")}
+        onCancel={() => navigate(leadRoutePaths.list)}
       />
     </ManagementPanelTemplate>
   );

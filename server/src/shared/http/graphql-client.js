@@ -100,20 +100,28 @@ function getOperationName(query) {
   return match?.[2] || "anonymous_operation";
 }
 
-async function postGraphqlWithRetry(requestBody, headers, metadata = {}) {
+async function postGraphqlWithRetry(
+  requestBody,
+  headers,
+  metadata = {},
+  { timeoutMs, maxRetries = config.graphqlMaxRetries } = {},
+) {
   let lastError;
 
-  for (let attempt = 0; attempt <= config.graphqlMaxRetries; attempt += 1) {
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
       logEvent("info", "graphql.request.attempt", {
         requestId: metadata.requestId,
         operationName: metadata.operationName,
         attempt,
-        maxRetries: config.graphqlMaxRetries,
+        maxRetries,
         variables: summarizePayload(requestBody.variables),
       });
 
-      return await graphqlHttp.post("", requestBody, { headers });
+      return await graphqlHttp.post("", requestBody, {
+        headers,
+        ...(timeoutMs ? { timeout: timeoutMs } : {}),
+      });
     } catch (error) {
       lastError = error;
 
@@ -164,6 +172,8 @@ export async function executeGraphql({
   authorization,
   cookieHeader,
   requestId,
+  timeoutMs,
+  maxRetries,
 }) {
   const operationName = getOperationName(query);
   const startedAt = Date.now();
@@ -198,6 +208,7 @@ export async function executeGraphql({
         requestId,
         operationName,
       },
+      { timeoutMs, maxRetries },
     );
 
     const payload = response.data;

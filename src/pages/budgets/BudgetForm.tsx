@@ -1,8 +1,15 @@
+import ActionBar, {
+  type ActionBarAction,
+} from "@/components/molecules/ActionBar";
 import Button from "@/components/atoms/Button";
-import ConfirmDialog from "@/components/molecules/ConfirmDialog";
 import GenericForm from "@/components/organisms/GenericForm";
 import Input from "@/components/atoms/Input";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
+import StatusBadge from "@/components/atoms/StatusBadge";
+import {
+  getBudgetStatusLabel,
+  getBudgetStatusTone,
+} from "@/features/budgets/model/status";
 import {
   budgetUiCopy,
   getBudgetFormFields,
@@ -20,7 +27,7 @@ import BudgetDisplacementFeeCard from "@/features/budgets/components/BudgetDispl
 import { useBudgetsContext } from "@/features/budgets/context/useBudgetsContext";
 import { useToast } from "@/shared/toast/useToast";
 import { budgetRoutePaths, contractRoutePaths } from "@/router";
-import { formatDateTimeDisplay } from "@/utils/format";
+import { formatDateTimeDisplay, getSentViaLabel } from "@/utils/format";
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { fetchContracts } from "@/features/contracts/services/contract.service";
 import { fetchPositions } from "@/features/positions/services/position.service";
@@ -29,11 +36,12 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { updateBudget } from "@/api/budgets/methods";
 import { getHttpErrorMessage } from "@/api/shared/http-error";
 import {
+  Copy,
+  FilePlus,
   FileText,
   MessageCircle,
   Mail,
   RotateCcw,
-  FileSignature,
   Save,
 } from "lucide-react";
 
@@ -53,9 +61,11 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   const { session } = useAuthSession();
   const [positions, setPositions] = useState<Position[]>([]);
   const initialLeadId = searchParams.get("leadId") || undefined;
+  const duplicateFromId = searchParams.get("duplicateFrom") || undefined;
   const {
     form,
     editing,
+    duplicateSource,
     errors,
     setForm,
     addItem,
@@ -68,10 +78,9 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     id,
     budgets,
     initialLeadId,
+    duplicateFromId,
   });
 
-  const [confirmContract, setConfirmContract] = useState(false);
-  const [confirmSendEmail, setConfirmSendEmail] = useState(false);
   const [hasContract, setHasContract] = useState(false);
 
   const isNonDraftLocked =
@@ -234,14 +243,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   async function handleSendWhatsApp() {
     if (!editing || !selectedLead?.phone || !selectedLead?.name) return;
 
-    const result = submit(form);
-    if (!result.success || !result.payload) {
-      showError(
-        budgetUiCopy.errors.invalidFormData,
-        (result.errors || [budgetUiCopy.errors.invalidFormData]).join("\n"),
-      );
-      return;
-    }
+    if (!(await ensureBudgetGenerated())) return;
 
     const outcome = await pdfActions.shareWhatsApp(
       selectedLead.name,
@@ -269,14 +271,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   async function handleSendEmail() {
     if (!editing?.idBudgets) return;
 
-    const result = submit(form);
-    if (!result.success || !result.payload) {
-      showError(
-        budgetUiCopy.errors.invalidFormData,
-        (result.errors || [budgetUiCopy.errors.invalidFormData]).join("\n"),
-      );
-      return;
-    }
+    if (!(await ensureBudgetGenerated())) return;
 
     const sent = await pdfActions.sendEmail();
     if (!sent) {
@@ -298,15 +293,23 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     });
   }
 
-  async function handleGenerateBudget() {
-    if (!editing?.idBudgets) return;
+  /**
+   * "Gerar" used to be its own button that only flipped draft -> generated
+   * and asked for nothing. It's now an invisible first step folded into
+   * whichever real action (e-mail, WhatsApp, criar contrato) the user
+   * clicks first from a draft budget, so there's no empty click in between.
+   */
+  async function ensureBudgetGenerated(): Promise<boolean> {
+    if (!editing?.idBudgets) return false;
+
+    if (isNonDraftLocked) return true;
 
     if (isSelectedLeadInactive) {
       showError(
         "Lead inativo",
         "Não é possível gerar um orçamento para um lead inativo. Reative o lead para continuar.",
       );
-      return;
+      return false;
     }
 
     const result = submit(form);
@@ -315,16 +318,17 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
         budgetUiCopy.errors.invalidFormData,
         (result.errors || [budgetUiCopy.errors.invalidFormData]).join("\n"),
       );
-      return;
+      return false;
     }
 
     try {
       await updateBudget(editing.idBudgets, { status: "generated" });
       updateLocalStatus("generated");
-      showSuccess("Orçamento gerado com sucesso");
+      return true;
     } catch (error) {
       const message = getHttpErrorMessage(error, "Erro ao gerar orçamento");
       showError("Erro ao gerar orçamento", message);
+      return false;
     }
   }
 
@@ -344,8 +348,10 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   async function handleCreateContract() {
     if (!editing?.idBudgets) return;
 
+    if (!(await ensureBudgetGenerated())) return;
+
     try {
-      // Primeiro, atualiza o status do orçamento para "approved"
+      // Aprova o orçamento (generated -> approved) antes de seguir para o contrato
       await updateBudget(editing.idBudgets, { status: "approved" });
       updateLocalStatus("approved");
 
@@ -359,12 +365,114 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     }
   }
 
+  const previewAction: ActionBarAction = {
+    key: "preview",
+    label: pdfActions.previewing ? "Carregando..." : "Preview",
+    icon: <FileText size={18} />,
+    onClick: () => void handlePreview(),
+    disabled: saving || !session?.user.idUsers || pdfActions.previewing,
+    title: "Visualizar prévia do orçamento",
+  };
+
+  const duplicateAction: ActionBarAction = {
+    key: "duplicate",
+    label: "Duplicar",
+    icon: <Copy size={18} />,
+    onClick: () => {
+      if (!editing?.idBudgets) return;
+      navigate(`${budgetRoutePaths.create}?duplicateFrom=${editing.idBudgets}`);
+    },
+    disabled: saving,
+    title: "Criar um novo orçamento em rascunho a partir deste",
+  };
+
+  let primaryAction: ActionBarAction | undefined;
+  const secondaryActions: ActionBarAction[] = [];
+
+  if (editing?.idBudgets) {
+    secondaryActions.push(previewAction, duplicateAction);
+
+    // Draft-but-ready and already-generated/sent are shown the same way:
+    // there's no separate "Gerar" step anymore — clicking "Criar contrato",
+    // e-mail or WhatsApp silently generates the budget first if it hasn't
+    // been yet.
+    if ((!isNonDraftLocked || isGeneratedOrSent) && !hasContract) {
+      primaryAction = {
+        key: "create-contract",
+        label: "Criar contrato",
+        icon: <FilePlus size={18} />,
+        onClick: () => void handleCreateContract(),
+        disabled:
+          saving ||
+          isSelectedLeadInactive ||
+          (!isNonDraftLocked && !isFormReadyToSend),
+        title: isSelectedLeadInactive
+          ? "Não é possível gerar para lead inativo"
+          : !isNonDraftLocked && !isFormReadyToSend
+            ? "Preencha todos os campos obrigatórios para continuar"
+            : "Criar contrato a partir deste orçamento",
+      };
+      secondaryActions.push({
+        key: "email",
+        label: pdfActions.sendingEmail ? "Enviando..." : "Enviar por e-mail",
+        icon: <Mail size={18} />,
+        onClick: () => void handleSendEmail(),
+        disabled:
+          saving ||
+          !leadHasEmail ||
+          !session?.user.idUsers ||
+          pdfActions.sendingEmail,
+        title: !leadHasEmail
+          ? "O lead selecionado não possui e-mail cadastrado"
+          : "Enviar por e-mail",
+      });
+      secondaryActions.push({
+        key: "whatsapp",
+        label: pdfActions.sharingWhatsApp ? "Enviando..." : "WhatsApp",
+        icon: <MessageCircle size={18} />,
+        onClick: () => void handleSendWhatsApp(),
+        disabled:
+          saving ||
+          !leadHasPhone ||
+          !session?.user.idUsers ||
+          pdfActions.sharingWhatsApp,
+        title: !leadHasPhone
+          ? "O lead selecionado não possui telefone cadastrado"
+          : "Enviar por WhatsApp",
+      });
+    }
+
+    if (isNonDraftLocked && !hasContract) {
+      secondaryActions.push({
+        key: "revert-to-draft",
+        label: "Voltar ao rascunho",
+        icon: <RotateCcw size={18} />,
+        onClick: () => void handleRevertToDraft(),
+        disabled: saving,
+        title: "Voltar ao rascunho",
+      });
+    }
+  }
+
   const formGuidanceContent =
     isSelectedLeadInactive ||
     isNonDraftLocked ||
     (!isFormReadyToSend && editing?.idBudgets) ||
-    editing?.sentAt ? (
+    editing?.sentAt ||
+    duplicateSource ? (
       <div className="space-y-4">
+        {duplicateSource ? (
+          <div className="rounded-xl border border-[#e8d5c9] bg-[#faf6f2] px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+              Duplicado de {duplicateSource.budgetNumber}
+            </p>
+            <p className="mt-1 text-sm text-[#2c1810]">
+              Os dados foram copiados do orçamento original. Revise o que
+              precisar e salve para criar este novo rascunho.
+            </p>
+          </div>
+        ) : null}
+
         {isSelectedLeadInactive ? (
           <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">
@@ -413,11 +521,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
             <p className="mt-1 text-sm text-[#2c1810]">
               Enviado via{" "}
               <span className="font-semibold">
-                {editing.sentVia === "email"
-                  ? "E-mail"
-                  : editing.sentVia === "whatsapp"
-                    ? "WhatsApp"
-                    : editing.sentVia}
+                {getSentViaLabel(editing.sentVia)}
               </span>{" "}
               em{" "}
               <span className="font-semibold">
@@ -451,431 +555,260 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
         : "md:grid-cols-2";
 
   return (
-    <>
-      <ManagementPanelTemplate
-        title={
-          mode === "edit"
-            ? budgetUiCopy.form.editTitle
-            : budgetUiCopy.form.createTitle
+    <ManagementPanelTemplate
+      title={
+        mode === "edit"
+          ? budgetUiCopy.form.editTitle
+          : budgetUiCopy.form.createTitle
+      }
+      description="Crie propostas comerciais com composição de itens e vínculo direto ao lead responsável pela oportunidade."
+      badge={
+        <StatusBadge
+          label={getBudgetStatusLabel(form.status)}
+          tone={getBudgetStatusTone(form.status)}
+        />
+      }
+      actions={
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(budgetRoutePaths.list)}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            leftIcon={<Save size={16} />}
+            onClick={() => void handleSave(form)}
+            disabled={
+              saving ||
+              isNonDraftLocked ||
+              (mode === "create" && isSelectedLeadInactive) ||
+              isChangingToInactiveLead ||
+              !session?.user.idUsers
+            }
+          >
+            {saving ? "Salvando..." : "Salvar"}
+          </Button>
+        </div>
+      }
+    >
+      {primaryAction || secondaryActions.length > 0 ? (
+        <div className="mb-6">
+          <ActionBar primary={primaryAction} secondary={secondaryActions} />
+        </div>
+      ) : null}
+
+      <GenericForm<BudgetFormValues>
+        fields={getBudgetFormFields(form, {
+          isEditing: mode === "edit",
+          leads,
+          disableAll: isNonDraftLocked,
+          currentLeadId: editing?.idLeads,
+        })}
+        contentAfterFieldName={mode === "edit" ? "createdAt" : "idLeads"}
+        contentAfterField={formGuidanceContent}
+        values={form}
+        setValues={setForm}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSave(form);
+        }}
+        errors={errors}
+        saving={saving}
+        submitDisabled={
+          isNonDraftLocked ||
+          (mode === "create" && isSelectedLeadInactive) ||
+          isChangingToInactiveLead
         }
-        description="Crie propostas comerciais com composição de itens e vínculo direto ao lead responsável pela oportunidade."
-        actions={
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate(budgetRoutePaths.list)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              leftIcon={<Save size={16} />}
-              onClick={() => void handleSave(form)}
-              disabled={
-                saving ||
-                isNonDraftLocked ||
-                (mode === "create" && isSelectedLeadInactive) ||
-                isChangingToInactiveLead ||
-                !session?.user.idUsers
-              }
-            >
-              {saving ? "Salvando..." : "Salvar"}
-            </Button>
-          </div>
-        }
+        onCancel={() => navigate(budgetRoutePaths.list)}
       >
-        <div className="flex justify-center mb-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
-            <button
-              type="button"
-              onClick={() => {
-                void handlePreview();
-              }}
-              disabled={
-                saving || !session?.user.idUsers || pdfActions.previewing
-              }
-              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Visualizar prévia do orçamento"
-            >
-              <FileText size={32} className="text-[#C9A227]" />
-              <span className="text-xs font-semibold text-center text-[#2C1810]">
-                {pdfActions.previewing ? "Carregando..." : "Preview"}
-              </span>
-            </button>
+        <div className="mb-6 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#7a4430]">
+              {budgetUiCopy.form.labels.eventDates}
+            </h3>
+            <p className="mt-1 text-sm text-[#7a4430]">
+              Defina as datas reais do evento conforme o período selecionado.
+            </p>
+          </div>
 
-            {!isNonDraftLocked && editing?.idBudgets ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void handleGenerateBudget();
-                }}
-                disabled={
-                  saving ||
-                  !editing?.idBudgets ||
-                  isSelectedLeadInactive ||
-                  !isFormReadyToSend ||
-                  !session?.user.idUsers
-                }
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={
-                  isSelectedLeadInactive
-                    ? "Nao e possivel gerar para lead inativo"
-                    : !isFormReadyToSend
-                      ? "Preencha todos os campos obrigatórios para gerar"
-                      : "Gerar orçamento"
-                }
+          <div className="grid grid-cols-1 gap-4">
+            {eventDateValues.map((eventDate: string, index: number) => (
+              <div
+                key={`event-schedule-${index}`}
+                className="rounded-2xl border border-[#eadfd6] bg-white/70 p-4"
               >
-                <FileSignature size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  Gerar
-                </span>
-              </button>
-            ) : null}
-
-            {isGeneratedOrSent && !hasContract ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmSendEmail(true);
-                }}
-                disabled={
-                  saving ||
-                  !editing?.idBudgets ||
-                  !leadHasEmail ||
-                  !session?.user.idUsers ||
-                  pdfActions.sendingEmail
-                }
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={
-                  !leadHasEmail
-                    ? "O lead selecionado não possui e-mail cadastrado"
-                    : "Enviar por e-mail"
-                }
-              >
-                <Mail size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  {pdfActions.sendingEmail ? "Enviando" : "Email"}
-                </span>
-              </button>
-            ) : null}
-
-            {isGeneratedOrSent && !hasContract ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void handleSendWhatsApp();
-                }}
-                disabled={
-                  saving ||
-                  !editing?.idBudgets ||
-                  !leadHasPhone ||
-                  !session?.user.idUsers ||
-                  pdfActions.sharingWhatsApp
-                }
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={
-                  !leadHasPhone
-                    ? "O lead selecionado não possui telefone cadastrado"
-                    : "Enviar por WhatsApp"
-                }
-              >
-                <MessageCircle size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  {pdfActions.sharingWhatsApp ? "Enviando" : "WhatsApp"}
-                </span>
-              </button>
-            ) : null}
-
-            {isGeneratedOrSent && !hasContract ? (
-              <button
-                type="button"
-                onClick={() => setConfirmContract(true)}
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] transition-colors"
-                title="Gerar contrato"
-              >
-                <FileSignature size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  Contrato
-                </span>
-              </button>
-            ) : null}
-
-            {/* Voltar ao Rascunho */}
-            {isNonDraftLocked && !hasContract ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void handleRevertToDraft();
-                }}
-                disabled={saving}
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title="Voltar ao rascunho"
-              >
-                <RotateCcw size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  Voltar
-                </span>
-              </button>
-            ) : null}
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                  Dia {index + 1}
+                </p>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <Input
+                    label={`Data ${index + 1} *`}
+                    type="date"
+                    value={eventDate}
+                    disabled={isNonDraftLocked}
+                    onChange={(event) => {
+                      const nextEventDates = [...eventDateValues];
+                      nextEventDates[index] = event.target.value;
+                      setForm({
+                        ...form,
+                        eventDates: nextEventDates,
+                      });
+                    }}
+                    error={index === 0 ? errors.eventDates : undefined}
+                  />
+                  <Input
+                    label={`Chegada ${index + 1} *`}
+                    type="time"
+                    value={eventArrivalTimeValues[index] || ""}
+                    disabled={isNonDraftLocked}
+                    onChange={(event) => {
+                      const nextEventArrivalTimes = [...eventArrivalTimeValues];
+                      nextEventArrivalTimes[index] = event.target.value;
+                      setForm({
+                        ...form,
+                        eventArrivalTimes: nextEventArrivalTimes,
+                      });
+                    }}
+                    error={index === 0 ? errors.eventArrivalTimes : undefined}
+                  />
+                  <Input
+                    label={`Partida ${index + 1} *`}
+                    type="time"
+                    value={eventDepartureTimeValues[index] || ""}
+                    disabled={isNonDraftLocked}
+                    onChange={(event) => {
+                      const nextEventDepartureTimes = [
+                        ...eventDepartureTimeValues,
+                      ];
+                      nextEventDepartureTimes[index] = event.target.value;
+                      setForm({
+                        ...form,
+                        eventDepartureTimes: nextEventDepartureTimes,
+                      });
+                    }}
+                    error={index === 0 ? errors.eventDepartureTimes : undefined}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <GenericForm<BudgetFormValues>
-          fields={getBudgetFormFields(form, {
-            isEditing: mode === "edit",
-            leads,
-            disableAll: isNonDraftLocked,
-            currentLeadId: editing?.idLeads,
-          })}
-          contentAfterFieldName={mode === "edit" ? "createdAt" : "idLeads"}
-          contentAfterField={formGuidanceContent}
-          values={form}
-          setValues={setForm}
-          onSubmit={(event) => {
-            event.preventDefault();
-            void handleSave(form);
-          }}
-          errors={errors}
-          saving={saving}
-          submitDisabled={
-            isNonDraftLocked ||
-            (mode === "create" && isSelectedLeadInactive) ||
-            isChangingToInactiveLead
-          }
-          onCancel={() => navigate(budgetRoutePaths.list)}
+        <BudgetDisplacementFeeCard
+          value={form.displacementFee}
+          onChange={(value) => setForm({ ...form, displacementFee: value })}
+          error={errors.displacementFee}
+          disabled={isNonDraftLocked}
+        />
+
+        <BudgetItemsEditor
+          items={form.items}
+          positions={positions}
+          onAddItem={addItem}
+          onRemoveItem={removeItem}
+          onUpdateItem={updateItem}
+          disabled={isNonDraftLocked}
+        />
+
+        <div
+          className={`mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 ${summaryGridColumnsClass}`}
         >
-          <div className="mb-6 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
-            <div className="mb-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#7a4430]">
-                {budgetUiCopy.form.labels.eventDates}
-              </h3>
-              <p className="mt-1 text-sm text-[#7a4430]">
-                Defina as datas reais do evento conforme o período selecionado.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              {eventDateValues.map((eventDate: string, index: number) => (
-                <div
-                  key={`event-schedule-${index}`}
-                  className="rounded-2xl border border-[#eadfd6] bg-white/70 p-4"
-                >
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                    Dia {index + 1}
-                  </p>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Input
-                      label={`Data ${index + 1} *`}
-                      type="date"
-                      value={eventDate}
-                      disabled={isNonDraftLocked}
-                      onChange={(event) => {
-                        const nextEventDates = [...eventDateValues];
-                        nextEventDates[index] = event.target.value;
-                        setForm({
-                          ...form,
-                          eventDates: nextEventDates,
-                        });
-                      }}
-                      error={index === 0 ? errors.eventDates : undefined}
-                    />
-                    <Input
-                      label={`Chegada ${index + 1} *`}
-                      type="time"
-                      value={eventArrivalTimeValues[index] || ""}
-                      disabled={isNonDraftLocked}
-                      onChange={(event) => {
-                        const nextEventArrivalTimes = [
-                          ...eventArrivalTimeValues,
-                        ];
-                        nextEventArrivalTimes[index] = event.target.value;
-                        setForm({
-                          ...form,
-                          eventArrivalTimes: nextEventArrivalTimes,
-                        });
-                      }}
-                      error={index === 0 ? errors.eventArrivalTimes : undefined}
-                    />
-                    <Input
-                      label={`Partida ${index + 1} *`}
-                      type="time"
-                      value={eventDepartureTimeValues[index] || ""}
-                      disabled={isNonDraftLocked}
-                      onChange={(event) => {
-                        const nextEventDepartureTimes = [
-                          ...eventDepartureTimeValues,
-                        ];
-                        nextEventDepartureTimes[index] = event.target.value;
-                        setForm({
-                          ...form,
-                          eventDepartureTimes: nextEventDepartureTimes,
-                        });
-                      }}
-                      error={
-                        index === 0 ? errors.eventDepartureTimes : undefined
-                      }
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+              {budgetUiCopy.form.summary.subtotal}
+            </p>
+            <p className="mt-1 text-lg font-bold text-[#2c1810]">
+              {formatCurrency(totals.subtotal)}
+            </p>
           </div>
-
-          <BudgetDisplacementFeeCard
-            value={form.displacementFee}
-            onChange={(value) => setForm({ ...form, displacementFee: value })}
-            error={errors.displacementFee}
-            disabled={isNonDraftLocked}
-          />
-
-          <BudgetItemsEditor
-            items={form.items}
-            positions={positions}
-            onAddItem={addItem}
-            onRemoveItem={removeItem}
-            onUpdateItem={updateItem}
-            disabled={isNonDraftLocked}
-          />
-
-          <div
-            className={`mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 ${summaryGridColumnsClass}`}
-          >
+          {showDisplacementSummary ? (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                {budgetUiCopy.form.summary.subtotal}
+                {budgetUiCopy.form.labels.displacementFee}
               </p>
               <p className="mt-1 text-lg font-bold text-[#2c1810]">
-                {formatCurrency(totals.subtotal)}
+                {formatCurrency(totals.displacementFee)}
               </p>
             </div>
-            {showDisplacementSummary ? (
-              <div>
+          ) : null}
+          {showDiscountSummary ? (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                Desconto
+              </p>
+              <p className="mt-1 text-lg font-bold text-red-700">
+                -{formatCurrency(totals.discountAmount)}
+              </p>
+            </div>
+          ) : null}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+              {budgetUiCopy.form.summary.total}
+            </p>
+            <p className="mt-1 text-lg font-bold text-[#2c1810]">
+              {formatCurrency(totals.total)}
+            </p>
+          </div>
+        </div>
+
+        {form.discountType === "percentage" &&
+        form.discountPercentage &&
+        Number(form.discountPercentage) > 0 ? (
+          <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                  {budgetUiCopy.form.labels.displacementFee}
+                  Desconto ({form.discountPercentage}%)
                 </p>
-                <p className="mt-1 text-lg font-bold text-[#2c1810]">
-                  {formatCurrency(totals.displacementFee)}
-                </p>
-              </div>
-            ) : null}
-            {showDiscountSummary ? (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                  Desconto
-                </p>
-                <p className="mt-1 text-lg font-bold text-red-700">
+                <p className="text-sm font-semibold text-red-600">
                   -{formatCurrency(totals.discountAmount)}
                 </p>
               </div>
-            ) : null}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                {budgetUiCopy.form.summary.total}
-              </p>
-              <p className="mt-1 text-lg font-bold text-[#2c1810]">
-                {formatCurrency(totals.total)}
-              </p>
+              <div className="border-t border-[#e8d5c9] pt-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                    Total com Desconto
+                  </p>
+                  <p className="text-lg font-bold text-[#2c1810]">
+                    {formatCurrency(totals.total)}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
+        ) : null}
 
-          {form.discountType === "percentage" &&
-          form.discountPercentage &&
-          Number(form.discountPercentage) > 0 ? (
-            <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
-              <div className="space-y-3">
+        {form.discountType === "amount" &&
+        form.discountAmount &&
+        Number(form.discountAmount.replace(/\D/g, "") || 0) > 0 ? (
+          <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                  Desconto (Valor Fixo)
+                </p>
+                <p className="text-sm font-semibold text-red-600">
+                  -{formatCurrency(totals.discountAmount)}
+                </p>
+              </div>
+              <div className="border-t border-[#e8d5c9] pt-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                    Desconto ({form.discountPercentage}%)
+                    Total com Desconto
                   </p>
-                  <p className="text-sm font-semibold text-red-600">
-                    -{formatCurrency(totals.discountAmount)}
+                  <p className="text-lg font-bold text-[#2c1810]">
+                    {formatCurrency(totals.total)}
                   </p>
-                </div>
-                <div className="border-t border-[#e8d5c9] pt-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                      Total com Desconto
-                    </p>
-                    <p className="text-lg font-bold text-[#2c1810]">
-                      {formatCurrency(totals.total)}
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
-          ) : null}
-
-          {form.discountType === "amount" &&
-          form.discountAmount &&
-          Number(form.discountAmount.replace(/\D/g, "") || 0) > 0 ? (
-            <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                    Desconto (Valor Fixo)
-                  </p>
-                  <p className="text-sm font-semibold text-red-600">
-                    -{formatCurrency(totals.discountAmount)}
-                  </p>
-                </div>
-                <div className="border-t border-[#e8d5c9] pt-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                      Total com Desconto
-                    </p>
-                    <p className="text-lg font-bold text-[#2c1810]">
-                      {formatCurrency(totals.total)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </GenericForm>
-      </ManagementPanelTemplate>
-
-      <ConfirmDialog
-        open={confirmContract}
-        title="Gerar contrato"
-        description={
-          <p>
-            Você está prestes a criar um contrato baseado neste orçamento
-            aprovado.
-            <br />
-            <br />
-            Deseja continuar?
-          </p>
-        }
-        confirmLabel="Sim, gerar contrato"
-        cancelLabel="Voltar"
-        onConfirm={() => {
-          setConfirmContract(false);
-          void handleCreateContract();
-        }}
-        onCancel={() => setConfirmContract(false)}
-      />
-      <ConfirmDialog
-        open={confirmSendEmail}
-        title="Enviar por e-mail"
-        description={
-          <p>
-            Você está prestes a enviar este orçamento por e-mail para o lead
-            selecionado.
-            <br />
-            <br />
-            Deseja continuar?
-          </p>
-        }
-        confirmLabel="Sim, enviar"
-        cancelLabel="Voltar"
-        onConfirm={() => {
-          setConfirmSendEmail(false);
-          void handleSendEmail();
-        }}
-        onCancel={() => setConfirmSendEmail(false)}
-      />
-    </>
+          </div>
+        ) : null}
+      </GenericForm>
+    </ManagementPanelTemplate>
   );
 }

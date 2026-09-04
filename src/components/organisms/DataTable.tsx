@@ -5,6 +5,8 @@ export interface DataTableColumn<T> {
   key: keyof T | string;
   label: React.ReactNode;
   render?: (row: T) => React.ReactNode;
+  /** Overrides `render` only for the mobile card title/subtitle; the desktop cell keeps using `render`. */
+  mobileRender?: (row: T) => React.ReactNode;
   className?: string;
 }
 

@@ -10,20 +10,28 @@ interface FilterOption {
 }
 
 interface ListFiltersPanelProps {
+  searchValue?: string;
+  searchLabel?: string;
+  searchPlaceholder?: string;
+  onSearchChange?: (value: string) => void;
   statusLabel?: string;
-  statusValue: string;
-  statusOptions: FilterOption[];
-  onStatusChange: (value: string) => void;
-  startDateValue: string;
-  endDateValue: string;
-  onStartDateChange: (value: string) => void;
-  onEndDateChange: (value: string) => void;
+  statusValue?: string;
+  statusOptions?: FilterOption[];
+  onStatusChange?: (value: string) => void;
+  startDateValue?: string;
+  endDateValue?: string;
+  onStartDateChange?: (value: string) => void;
+  onEndDateChange?: (value: string) => void;
   onClear: () => void;
   extraFilters?: ReactNode;
   hasActiveFilters?: boolean;
 }
 
 export default function ListFiltersPanel({
+  searchValue,
+  searchLabel = "Buscar",
+  searchPlaceholder,
+  onSearchChange,
   statusLabel = "Status",
   statusValue,
   statusOptions,
@@ -38,9 +46,15 @@ export default function ListFiltersPanel({
 }: ListFiltersPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  const showStatus = Boolean(statusOptions && onStatusChange);
+  const showDateRange = Boolean(onStartDateChange && onEndDateChange);
+
   const shouldEnableClear =
     hasActiveFilters ??
-    (Boolean(statusValue) || Boolean(startDateValue) || Boolean(endDateValue));
+    (Boolean(searchValue) ||
+      Boolean(statusValue) ||
+      Boolean(startDateValue) ||
+      Boolean(endDateValue));
 
   return (
     <div className="mb-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2]">
@@ -67,34 +81,49 @@ export default function ListFiltersPanel({
 
       {isOpen ? (
         <div className="border-t border-[#e8d5c9] p-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <Select
-              label={statusLabel}
-              value={statusValue}
-              onChange={(event) => onStatusChange(event.target.value)}
-              wrapperClassName="xl:col-span-1"
-            >
-              {statusOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            <Input
-              label="Data inicial"
-              type="date"
-              value={startDateValue}
-              onChange={(event) => onStartDateChange(event.target.value)}
-              wrapperClassName="xl:col-span-1"
-            />
-            <Input
-              label="Data final"
-              type="date"
-              value={endDateValue}
-              onChange={(event) => onEndDateChange(event.target.value)}
-              wrapperClassName="xl:col-span-1"
-            />
-            {extraFilters ? extraFilters : <div className="xl:col-span-1" />}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
+            {onSearchChange ? (
+              <Input
+                label={searchLabel}
+                value={searchValue}
+                placeholder={searchPlaceholder}
+                onChange={(event) => onSearchChange(event.target.value)}
+                wrapperClassName="xl:col-span-1"
+              />
+            ) : null}
+            {showStatus ? (
+              <Select
+                label={statusLabel}
+                value={statusValue}
+                onChange={(event) => onStatusChange?.(event.target.value)}
+                wrapperClassName="xl:col-span-1"
+              >
+                {statusOptions?.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            ) : null}
+            {showDateRange ? (
+              <>
+                <Input
+                  label="Data inicial"
+                  type="date"
+                  value={startDateValue}
+                  onChange={(event) => onStartDateChange?.(event.target.value)}
+                  wrapperClassName="xl:col-span-1"
+                />
+                <Input
+                  label="Data final"
+                  type="date"
+                  value={endDateValue}
+                  onChange={(event) => onEndDateChange?.(event.target.value)}
+                  wrapperClassName="xl:col-span-1"
+                />
+              </>
+            ) : null}
+            {extraFilters}
             <div className="flex items-end xl:col-span-1">
               <Button
                 type="button"

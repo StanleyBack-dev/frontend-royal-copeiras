@@ -9,6 +9,8 @@ import {
   buildEventDates,
   buildEventTimes,
   budgetPaymentMethodOptions,
+  getDefaultIssueDate,
+  getDefaultValidUntil,
 } from "./form";
 import { parseCurrencyInput } from "./formatters";
 import {
@@ -144,6 +146,29 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
         unitPrice: formatCurrencyFromDecimal(item.unitPrice),
       };
     }),
+  };
+}
+
+/**
+ * Clones an existing budget (draft or not) into fresh, editable form values
+ * for a brand-new draft — lead, event details, items and pricing carry over,
+ * but the number, creation date and status reset since this is a new record,
+ * and the validity window resets to a fresh one starting today. Used so a
+ * correction after a contract was cancelled doesn't mean retyping the whole
+ * proposal from scratch.
+ */
+export function mapBudgetToDuplicateFormValues(
+  budget: Budget,
+): BudgetFormValues {
+  const issueDate = getDefaultIssueDate();
+
+  return {
+    ...mapBudgetToFormValues(budget),
+    budgetNumber: "",
+    createdAt: "",
+    status: "draft",
+    issueDate,
+    validUntil: getDefaultValidUntil(issueDate),
   };
 }
 

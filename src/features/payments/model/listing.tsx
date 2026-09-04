@@ -3,6 +3,7 @@ import type { Payment } from "@/api/payments/schema";
 import type { Budget } from "@/api/budgets/schema";
 import type { Contract } from "@/api/contracts/schema";
 import type { Event } from "@/api/events/schema";
+import type { Lead } from "@/api/leads/schema";
 import type { DataTableColumn } from "@/components/organisms/DataTable";
 import EditIcon from "@/components/atoms/icons/EditIcon";
 import { paymentRoutePaths } from "@/router";
@@ -13,6 +14,7 @@ type PaymentLookupData = {
   budgets: Budget[];
   contracts: Contract[];
   events: Event[];
+  leads: Lead[];
 };
 
 function formatCurrency(value?: number) {
@@ -75,6 +77,14 @@ function getContractNumberById(contracts: Contract[], idContracts?: string) {
   );
 }
 
+function getLeadNameById(leads: Lead[], idLeads?: string) {
+  if (!idLeads) {
+    return undefined;
+  }
+
+  return leads.find((lead) => lead.idLeads === idLeads)?.name;
+}
+
 export function filterPaymentsBySearch(
   payments: Payment[],
   search: string,
@@ -103,6 +113,9 @@ export function filterPaymentsBySearch(
       lookup.events,
       payment.idEvents,
     ).toLowerCase();
+    const leadName = (
+      getLeadNameById(lookup.leads, payment.idLeads) || ""
+    ).toLowerCase();
 
     return (
       payment.notes?.toLowerCase().includes(normalizedSearch) ||
@@ -112,6 +125,7 @@ export function filterPaymentsBySearch(
       budgetNumber.includes(normalizedSearch) ||
       contractNumber.includes(normalizedSearch) ||
       eventNumber.includes(normalizedSearch) ||
+      leadName.includes(normalizedSearch) ||
       payment.idBudgets?.toLowerCase().includes(normalizedSearch) ||
       payment.idContracts?.toLowerCase().includes(normalizedSearch)
     );
@@ -146,6 +160,20 @@ export function getPaymentTableColumns(
       label: paymentUiCopy.list.columns.contractNumber,
       render: (payment) =>
         getContractNumberById(lookup.contracts, payment.idContracts),
+      mobileRender: (payment) => {
+        const contractNumber = getContractNumberById(
+          lookup.contracts,
+          payment.idContracts,
+        );
+        const leadName = getLeadNameById(lookup.leads, payment.idLeads);
+        if (!leadName) return contractNumber;
+        return (
+          <>
+            <div>{contractNumber}</div>
+            <div>{leadName}</div>
+          </>
+        );
+      },
     },
     {
       key: "budgetNumber",
