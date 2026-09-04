@@ -7,15 +7,18 @@ import Button from "@/components/atoms/Button";
 import ConfirmDialog from "@/components/molecules/ConfirmDialog";
 import Input from "@/components/atoms/Input";
 import Select from "@/components/atoms/Select";
-import StatusBadge, {
-  type StatusBadgeTone,
-} from "@/components/atoms/StatusBadge";
+import StatusBadge from "@/components/atoms/StatusBadge";
+import {
+  getContractStatusLabel,
+  getContractStatusTone,
+} from "@/features/contracts/model/status";
 import Textarea from "@/components/atoms/Textarea";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
 import { useAuthSession } from "@/features/auth";
 import { contractUiCopy, useContractPdfActions } from "@/features/contracts";
 import { useContractsContext } from "@/features/contracts/context/useContractsContext";
-import { contractRoutePaths } from "@/router";
+import { budgetRoutePaths, contractRoutePaths, paymentRoutePaths } from "@/router";
+import { getEvents } from "@/api/events/methods";
 import { useToast } from "@/shared/toast/useToast";
 import { type Budget, type BudgetItem } from "@/api/budgets/schema";
 import {
@@ -25,15 +28,20 @@ import {
   getServiceGender,
 } from "@/features/budgets/model/service-items";
 import type { BudgetServiceType } from "@/features/budgets/model/service-items";
-import { formatCurrencyExtended, formatDateTimeDisplay } from "@/utils/format";
+import {
+  formatCurrencyExtended,
+  formatDateTimeDisplay,
+  getSentViaLabel,
+} from "@/utils/format";
 import {
   Archive,
-  FileSignature,
+  Copy,
   FileText,
   Mail,
   MessageCircle,
   PenLine,
   RotateCcw,
+  Wallet,
   X,
   Save,
 } from "lucide-react";
@@ -66,26 +74,6 @@ type ContractFormValues = {
   notes: string;
 };
 
-const CONTRACT_STATUS_TONES: Record<string, StatusBadgeTone> = {
-  draft: "neutral",
-  generated: "warning",
-  pending_signature: "warning",
-  signed: "success",
-  closed_without_signature: "neutral",
-  rejected: "danger",
-  expired: "danger",
-  canceled: "danger",
-};
-
-function getContractStatusMeta(status: string) {
-  return {
-    label:
-      contractUiCopy.form.options[
-        status as keyof typeof contractUiCopy.form.options
-      ] || status,
-    tone: CONTRACT_STATUS_TONES[status] || "neutral",
-  };
-}
 
 type ContractFormErrors = Partial<Record<keyof ContractFormValues, string>>;
 
@@ -571,12 +559,12 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const isPendingSignature = editing?.status === "pending_signature";
   const leadHasEmail = Boolean(selectedLead?.email);
   const leadHasPhone = Boolean(selectedLead?.phone);
-  const [confirmSendEmail, setConfirmSendEmail] = useState(false);
-  const [confirmSendSignature, setConfirmSendSignature] = useState(false);
   const [confirmCloseWithoutSignature, setConfirmCloseWithoutSignature] =
     useState(false);
   const [confirmCancelContract, setConfirmCancelContract] = useState(false);
   const [cancellingContract, setCancellingContract] = useState(false);
+  const [confirmRevertToDraft, setConfirmRevertToDraft] = useState(false);
+  const [revertingToDraft, setRevertingToDraft] = useState(false);
 
   useEffect(() => {
     if (mode === "edit" && editing) {
@@ -594,6 +582,33 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     setForm(buildDefaultFormValues(initialBudgetId));
     setErrors({});
   }, [editing, initialBudgetId, mode]);
+
+  const [linkedEventId, setLinkedEventId] = useState<string | undefined>();
+
+  useEffect(() => {
+    let active = true;
+
+    if (!editing?.idContracts) {
+      setLinkedEventId(undefined);
+      return;
+    }
+
+    void getEvents({ idContracts: editing.idContracts, limit: 1 })
+      .then((result) => {
+        if (active) {
+          setLinkedEventId(result.items[0]?.idEvents);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setLinkedEventId(undefined);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [editing?.idContracts]);
 
   const pdfActions = useContractPdfActions({
     userId: session?.user.idUsers || "",
@@ -691,18 +706,57 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     );
   }
 
-  async function handleGenerateContract() {
+  /**
+   * "Gerar" used to be its own button that only flipped draft -> generated
+   * and asked for nothing. It's now an invisible first step folded into
+   * whichever real action (email, WhatsApp, assinatura, encerrar) the user
+   * clicks first from a draft contract, so there's no empty click in between.
+   */
+  async function ensureContractGenerated(): Promise<boolean> {
     if (!editing?.idContracts) {
-      return;
+      return false;
+    }
+
+    if (isNonDraftLocked) {
+      return true;
     }
 
     try {
       await updateContract(editing.idContracts, { status: "generated" });
       updateLocalStatus("generated");
-      showSuccess("Contrato gerado com sucesso");
+      return true;
     } catch (error) {
       const message = getHttpErrorMessage(error, "Erro ao gerar contrato");
       showError("Erro ao gerar contrato", message);
+      return false;
+    }
+  }
+
+  /**
+   * Best-effort cancellation of any signature envelope still pending for
+   * this contract at the provider — used both when cancelling the contract
+   * outright and when pulling a sent-for-signature contract back to draft,
+   * so a stale signing link never outlives the version the client is
+   * actually looking at. Failures here are surfaced but don't block the
+   * caller: the local status change is what matters most to the user.
+   */
+  async function cancelPendingSignatureEnvelope(idContracts: string) {
+    try {
+      const sigRes = await getSignatures({ idContracts, limit: 10 });
+      const envelopeId = sigRes.items?.[0]?.envelopeId;
+      if (!envelopeId) return;
+
+      try {
+        await cancelSignatureRequest(envelopeId);
+      } catch (err) {
+        const msg = getHttpErrorMessage(
+          err,
+          "Falha ao cancelar solicitação de assinatura",
+        );
+        showError("Erro ao cancelar solicitação de assinatura", msg);
+      }
+    } catch {
+      // ignore signature listing errors, continue regardless
     }
   }
 
@@ -711,18 +765,29 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       return;
     }
 
+    setRevertingToDraft(true);
     try {
+      if (editing.status === "pending_signature") {
+        await cancelPendingSignatureEnvelope(editing.idContracts);
+      }
+
       await updateContract(editing.idContracts, { status: "draft" });
       updateLocalStatus("draft", { sentVia: undefined, sentAt: undefined });
       showSuccess("Contrato voltou para rascunho");
     } catch (error) {
       const message = getHttpErrorMessage(error, "Erro ao reverter status");
       showError("Erro ao reverter para rascunho", message);
+    } finally {
+      setRevertingToDraft(false);
     }
   }
 
   async function handleSendEmail() {
     if (!editing?.idContracts) {
+      return;
+    }
+
+    if (!(await ensureContractGenerated())) {
       return;
     }
 
@@ -744,6 +809,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
 
   async function handleSendSignatureRequest() {
     if (!editing?.idContracts) {
+      return;
+    }
+
+    if (!(await ensureContractGenerated())) {
       return;
     }
 
@@ -807,6 +876,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       return;
     }
 
+    if (!(await ensureContractGenerated())) {
+      return;
+    }
+
     const outcome = await pdfActions.shareWhatsApp(
       selectedLead.name,
       selectedLead.phone,
@@ -836,6 +909,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       return;
     }
 
+    if (!(await ensureContractGenerated())) {
+      return;
+    }
+
     const closed = await pdfActions.closeWithoutSignature();
     if (!closed) {
       return;
@@ -856,30 +933,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     try {
       // If there's a pending signature request, try to cancel the envelope first
       if (editing.status === "pending_signature") {
-        try {
-          const sigRes = await getSignatures({
-            idContracts: editing.idContracts,
-            limit: 10,
-          });
-          const envelopeId =
-            sigRes.items && sigRes.items.length
-              ? sigRes.items[0].envelopeId
-              : undefined;
-          if (envelopeId) {
-            try {
-              await cancelSignatureRequest(envelopeId);
-            } catch (err) {
-              const msg = getHttpErrorMessage(
-                err,
-                "Falha ao cancelar solicitação de assinatura",
-              );
-              showError("Erro ao cancelar solicitação de assinatura", msg);
-              // continue to attempt contract cancel even if envelope cancel failed
-            }
-          }
-        } catch {
-          // ignore signature listing errors, continue to cancel contract
-        }
+        await cancelPendingSignatureEnvelope(editing.idContracts);
       }
 
       await updateContract(editing.idContracts, { status: "canceled" });
@@ -903,93 +957,136 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     title: "Visualizar prévia do contrato",
   };
 
+  const emailAction: ActionBarAction = {
+    key: "email",
+    label: pdfActions.sendingEmail ? "Enviando..." : "Enviar por e-mail",
+    icon: <Mail size={18} />,
+    onClick: () => void handleSendEmail(),
+    disabled:
+      !leadHasEmail || !session?.user.idUsers || pdfActions.sendingEmail,
+    title: leadHasEmail
+      ? "Enviar prévia por e-mail"
+      : "Lead sem e-mail cadastrado",
+  };
+
+  const whatsappAction: ActionBarAction = {
+    key: "whatsapp",
+    label: pdfActions.sharingWhatsApp ? "Compartilhando..." : "WhatsApp",
+    icon: <MessageCircle size={18} />,
+    onClick: () => void handleSendWhatsApp(),
+    disabled:
+      !leadHasPhone || !session?.user.idUsers || pdfActions.sharingWhatsApp,
+    title: leadHasPhone
+      ? "Compartilhar via WhatsApp"
+      : "Lead sem telefone cadastrado",
+  };
+
+  const cancelAction: ActionBarAction = {
+    key: "cancel",
+    label: "Cancelar contrato",
+    icon: <X size={18} />,
+    onClick: () => setConfirmCancelContract(true),
+    disabled: !session?.user.idUsers || cancellingContract,
+    title: "Cancelar contrato",
+    tone: "danger",
+  };
+
+  const revertToDraftAction: ActionBarAction = {
+    key: "revert-to-draft",
+    label: revertingToDraft ? "Revertendo..." : "Voltar ao rascunho",
+    icon: <RotateCcw size={18} />,
+    onClick: () =>
+      isPendingSignature
+        ? setConfirmRevertToDraft(true)
+        : void handleRevertToDraft(),
+    disabled: !session?.user.idUsers || revertingToDraft,
+    title: isPendingSignature
+      ? "Cancela a solicitação de assinatura pendente e volta o contrato para rascunho"
+      : "Voltar ao rascunho",
+  };
+
+  const duplicateBudgetAction: ActionBarAction = {
+    key: "duplicate-budget",
+    label: "Duplicar orçamento",
+    icon: <Copy size={18} />,
+    onClick: () => {
+      if (!editing?.idBudgets) return;
+      navigate(`${budgetRoutePaths.create}?duplicateFrom=${editing.idBudgets}`);
+    },
+    disabled: !editing?.idBudgets,
+    title:
+      "Cria um novo orçamento em rascunho com os mesmos dados deste, pronto para ajustar",
+  };
+
+  const registerPaymentAction: ActionBarAction = {
+    key: "register-payment",
+    label: "Registrar pagamento",
+    icon: <Wallet size={18} />,
+    onClick: () => {
+      if (!editing?.idContracts) return;
+      const params = new URLSearchParams();
+      if (selectedLead?.idLeads) params.set("leadId", selectedLead.idLeads);
+      if (editing.idBudgets) params.set("budgetId", editing.idBudgets);
+      params.set("contractId", editing.idContracts);
+      if (linkedEventId) params.set("eventId", linkedEventId);
+      navigate(`${paymentRoutePaths.create}?${params.toString()}`);
+    },
+    disabled: !session?.user.idUsers,
+    title: "Registrar pagamento com lead, orçamento, contrato e evento já vinculados",
+  };
+
   let primaryAction: ActionBarAction | undefined;
   const secondaryActions: ActionBarAction[] = [];
 
   if (editing?.idContracts) {
-    if (!isNonDraftLocked) {
+    secondaryActions.push(registerPaymentAction, duplicateBudgetAction);
+
+    if (isPendingSignature) {
+      secondaryActions.push(
+        previewAction,
+        emailAction,
+        whatsappAction,
+        revertToDraftAction,
+        cancelAction,
+      );
+    } else if (!isNonDraftLocked || isGenerated) {
+      // Draft-but-ready and already-generated are shown the same way: there's
+      // no separate "Gerar" step anymore — clicking any of these actions
+      // silently generates the contract first if it hasn't been yet.
+      secondaryActions.push(previewAction, emailAction, whatsappAction);
+
       primaryAction = {
-        key: "generate",
-        label: "Gerar contrato",
-        icon: <FileSignature size={18} />,
-        onClick: () => void handleGenerateContract(),
-        disabled: !session?.user.idUsers,
-      };
-      secondaryActions.push(previewAction);
-    } else if (isGenerated || isPendingSignature) {
-      secondaryActions.push(previewAction);
-      secondaryActions.push({
-        key: "email",
-        label: pdfActions.sendingEmail ? "Enviando..." : "Enviar por e-mail",
-        icon: <Mail size={18} />,
-        onClick: () => setConfirmSendEmail(true),
+        key: "signature",
+        label: pdfActions.sendingSignatureRequest
+          ? "Enviando..."
+          : "Enviar para assinatura",
+        icon: <PenLine size={18} />,
+        onClick: () => void handleSendSignatureRequest(),
         disabled:
-          !leadHasEmail || !session?.user.idUsers || pdfActions.sendingEmail,
-        title: leadHasEmail
-          ? "Enviar prévia por e-mail"
-          : "Lead sem e-mail cadastrado",
-      });
-      secondaryActions.push({
-        key: "whatsapp",
-        label: pdfActions.sharingWhatsApp ? "Compartilhando..." : "WhatsApp",
-        icon: <MessageCircle size={18} />,
-        onClick: () => void handleSendWhatsApp(),
-        disabled:
-          !leadHasPhone ||
+          !leadHasEmail ||
           !session?.user.idUsers ||
-          pdfActions.sharingWhatsApp,
-        title: leadHasPhone
-          ? "Compartilhar via WhatsApp"
-          : "Lead sem telefone cadastrado",
+          pdfActions.sendingSignatureRequest,
+        title: leadHasEmail
+          ? "Enviar para assinatura online"
+          : "Lead sem e-mail cadastrado",
+      };
+      secondaryActions.push({
+        key: "close-without-signature",
+        label: pdfActions.closingWithoutSignature
+          ? "Encerrando..."
+          : "Encerrar sem assinatura",
+        icon: <Archive size={18} />,
+        onClick: () => setConfirmCloseWithoutSignature(true),
+        disabled: !session?.user.idUsers || pdfActions.closingWithoutSignature,
+        title: "Encerrar sem gerar assinaturas",
+        tone: "danger",
       });
 
       if (isGenerated) {
-        primaryAction = {
-          key: "signature",
-          label: pdfActions.sendingSignatureRequest
-            ? "Enviando..."
-            : "Enviar para assinatura",
-          icon: <PenLine size={18} />,
-          onClick: () => setConfirmSendSignature(true),
-          disabled:
-            !leadHasEmail ||
-            !session?.user.idUsers ||
-            pdfActions.sendingSignatureRequest,
-          title: leadHasEmail
-            ? "Enviar para assinatura online"
-            : "Lead sem e-mail cadastrado",
-        };
-        secondaryActions.push({
-          key: "close-without-signature",
-          label: pdfActions.closingWithoutSignature
-            ? "Encerrando..."
-            : "Encerrar sem assinatura",
-          icon: <Archive size={18} />,
-          onClick: () => setConfirmCloseWithoutSignature(true),
-          disabled:
-            !session?.user.idUsers || pdfActions.closingWithoutSignature,
-          title: "Encerrar sem gerar assinaturas",
-          tone: "danger",
-        });
-        secondaryActions.push({
-          key: "revert-to-draft",
-          label: "Voltar ao rascunho",
-          icon: <RotateCcw size={18} />,
-          onClick: () => void handleRevertToDraft(),
-          disabled: !session?.user.idUsers,
-          title: "Voltar ao rascunho",
-        });
+        secondaryActions.push(revertToDraftAction);
       }
 
-      secondaryActions.push({
-        key: "cancel",
-        label: "Cancelar contrato",
-        icon: <X size={18} />,
-        onClick: () => setConfirmCancelContract(true),
-        disabled: !session?.user.idUsers || cancellingContract,
-        title: "Cancelar contrato",
-        tone: "danger",
-      });
+      secondaryActions.push(cancelAction);
     } else {
       secondaryActions.push(previewAction);
     }
@@ -1017,17 +1114,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
             <p className="mt-1 text-sm text-[#2c1810]">
               Enviado via{" "}
               <span className="font-semibold">
-                {editing.sentVia === "email"
-                  ? "E-mail"
-                  : editing.sentVia === "email_preview"
-                    ? "E-mail (prévia)"
-                    : editing.sentVia === "whatsapp"
-                      ? "WhatsApp"
-                      : editing.sentVia === "signature_provider"
-                        ? "Plataforma de assinatura"
-                        : editing.sentVia === "manual_close"
-                          ? "Encerramento manual"
-                          : editing.sentVia}
+                {getSentViaLabel(editing.sentVia)}
               </span>{" "}
               em{" "}
               <span className="font-semibold">
@@ -1049,8 +1136,8 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       description="Formalize contratos a partir de orçamentos aprovados, com preview em PDF."
       badge={
         <StatusBadge
-          label={getContractStatusMeta(form.status).label}
-          tone={getContractStatusMeta(form.status).tone}
+          label={getContractStatusLabel(form.status)}
+          tone={getContractStatusTone(form.status)}
         />
       }
       actions={
@@ -1099,44 +1186,25 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       ) : null}
 
       <ConfirmDialog
-        open={confirmSendEmail}
-        title="Enviar por e-mail"
+        open={confirmRevertToDraft}
+        title="Voltar ao rascunho"
         description={
           <p>
-            Você está prestes a enviar a prévia deste contrato por e-mail
-            para o lead selecionado.
+            Este contrato já foi enviado para assinatura. Voltar para
+            rascunho vai cancelar a solicitação de assinatura pendente — o
+            link que o cliente recebeu deixará de funcionar.
             <br />
             <br />
             Deseja continuar?
           </p>
         }
-        confirmLabel="Sim, enviar"
+        confirmLabel="Sim, voltar ao rascunho"
         cancelLabel="Voltar"
         onConfirm={() => {
-          setConfirmSendEmail(false);
-          void handleSendEmail();
+          setConfirmRevertToDraft(false);
+          void handleRevertToDraft();
         }}
-        onCancel={() => setConfirmSendEmail(false)}
-      />
-      <ConfirmDialog
-        open={confirmSendSignature}
-        title="Enviar para assinatura"
-        description={
-          <p>
-            Você está prestes a enviar este contrato para assinatura online.
-            O lead receberá um e-mail com o link para assinar.
-            <br />
-            <br />
-            Deseja continuar?
-          </p>
-        }
-        confirmLabel="Sim, enviar"
-        cancelLabel="Voltar"
-        onConfirm={() => {
-          setConfirmSendSignature(false);
-          void handleSendSignatureRequest();
-        }}
-        onCancel={() => setConfirmSendSignature(false)}
+        onCancel={() => setConfirmRevertToDraft(false)}
       />
       <ConfirmDialog
         open={confirmCloseWithoutSignature}
@@ -1171,9 +1239,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
             <br />
             <br />
             Ao cancelar o contrato, o orçamento vinculado será
-            automaticamente cancelado. Para gerar um novo contrato será
-            necessário criar um novo orçamento aprovado e então gerar o
-            contrato novamente.
+            automaticamente cancelado. Se for para corrigir alguma
+            informação, use "Duplicar orçamento" para criar um novo
+            rascunho já preenchido com os mesmos dados, em vez de
+            recomeçar do zero.
             <br />
             <br />
             Deseja continuar?

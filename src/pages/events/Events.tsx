@@ -1,8 +1,7 @@
 import DataTable from "@/components/organisms/DataTable";
-import FilterBar from "@/components/molecules/FilterBar";
+import ListFiltersPanel from "@/components/molecules/ListFiltersPanel";
+import ListPager from "@/components/molecules/ListPager";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
-import SearchIcon from "@/components/atoms/icons/SearchIcon";
-import { colors } from "@/config";
 import {
   useEventsContext,
   eventUiCopy,
@@ -42,38 +41,21 @@ export default function Events() {
       title={eventUiCopy.list.title}
       description={eventUiCopy.list.description}
     >
-      <FilterBar
+      <ListFiltersPanel
         searchValue={search}
-        onSearchChange={setSearch}
         searchPlaceholder={eventUiCopy.list.searchPlaceholder}
-        searchIcon={
-          <SearchIcon size={16} style={{ color: colors.brown[300] }} />
+        onSearchChange={setSearch}
+        statusValue={activeStatusTab}
+        statusOptions={tabs}
+        onStatusChange={(value) =>
+          setActiveStatusTab(value as EventStatus | "" | "__upcoming__")
         }
+        onClear={() => {
+          setSearch("");
+          setActiveStatusTab("");
+        }}
+        hasActiveFilters={Boolean(search || activeStatusTab)}
       />
-
-      <div className="mb-4 flex flex-wrap gap-2">
-        {tabs.map((tab) => {
-          const isActive = activeStatusTab === tab.value;
-          return (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() =>
-                setActiveStatusTab(
-                  tab.value as EventStatus | "" | "__upcoming__",
-                )
-              }
-              className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "border-[#7a4430] bg-[#7a4430] text-white"
-                  : "border-[#e8d5c9] bg-[#faf6f2] text-[#7a4430] hover:border-[#7a4430]"
-              }`}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
 
       {loading ? (
         <div className="flex h-64 items-center justify-center">
@@ -90,52 +72,13 @@ export default function Events() {
             emptyMessage={eventUiCopy.list.emptyMessage}
             getId={(item) => item.idEvents}
           />
-          <div className="mt-4 flex items-center justify-between text-sm text-brown-700">
-            <span>
-              Página {pagination.currentPage} de{" "}
-              {Math.max(pagination.totalPages, 1)}
-              {" - "}
-              {pagination.total} registros
-            </span>
-            <div className="flex items-center gap-2">
-              <label className="flex items-center gap-2">
-                <span>Itens:</span>
-                <select
-                  className="rounded border border-brown-300 bg-white px-2 py-1"
-                  value={pagination.limit}
-                  onChange={(event) => {
-                    setLimit(Number(event.target.value));
-                  }}
-                  disabled={loading}
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                className="rounded border border-brown-300 px-3 py-1 disabled:opacity-50"
-                onClick={() => {
-                  prevPage();
-                }}
-                disabled={loading || pagination.currentPage <= 1}
-              >
-                Anterior
-              </button>
-              <button
-                type="button"
-                className="rounded border border-brown-300 px-3 py-1 disabled:opacity-50"
-                onClick={() => {
-                  nextPage();
-                }}
-                disabled={loading || !pagination.hasNextPage}
-              >
-                Próxima
-              </button>
-            </div>
-          </div>
+          <ListPager
+            pagination={pagination}
+            loading={loading}
+            onLimitChange={(limit) => setLimit(limit)}
+            onPrev={() => prevPage()}
+            onNext={() => nextPage()}
+          />
         </>
       )}
     </ManagementPanelTemplate>

@@ -10,6 +10,7 @@ import { normalizeBudgetFormValues } from "@/features/budgets/model/formatters";
 import {
   calculateBudgetTotals,
   mapBudgetFormToPayload,
+  mapBudgetToDuplicateFormValues,
   mapBudgetToFormValues,
 } from "@/features/budgets/model/mappers";
 import { fetchBudgetById } from "@/features/budgets/services/budget.service";
@@ -19,6 +20,7 @@ interface UseBudgetFormParams {
   id?: string;
   budgets: Budget[];
   initialLeadId?: string;
+  duplicateFromId?: string;
 }
 
 type BudgetFormErrors = Partial<
@@ -30,13 +32,54 @@ export function useBudgetForm({
   id,
   budgets,
   initialLeadId,
+  duplicateFromId,
 }: UseBudgetFormParams) {
   const [form, setForm] = useState<BudgetFormValues>(
     createEmptyBudgetFormValues(initialLeadId),
   );
   const [editing, setEditing] = useState<Budget | null>(null);
+  const [duplicateSource, setDuplicateSource] = useState<Budget | null>(null);
   const [errors, setErrors] = useState<BudgetFormErrors>({});
   const [loadingBudget, setLoadingBudget] = useState(false);
+
+  // Create mode with ?duplicateFrom=<id>: clone an existing budget's data
+  // into the new draft instead of starting from a blank form.
+  useEffect(() => {
+    if (mode !== "create" || !duplicateFromId) {
+      setDuplicateSource(null);
+      return;
+    }
+
+    let isMounted = true;
+    const fromContext = budgets.find(
+      (budget) => budget.idBudgets === duplicateFromId,
+    );
+
+    if (fromContext) {
+      setDuplicateSource(fromContext);
+      setForm(mapBudgetToDuplicateFormValues(fromContext));
+      return;
+    }
+
+    setLoadingBudget(true);
+    void fetchBudgetById(duplicateFromId)
+      .then((budget) => {
+        if (!isMounted) return;
+        setDuplicateSource(budget);
+        setForm(mapBudgetToDuplicateFormValues(budget));
+      })
+      .catch(() => {
+        // Source budget couldn't be loaded; leave the form blank rather
+        // than block the user from creating a budget from scratch.
+      })
+      .finally(() => {
+        if (isMounted) setLoadingBudget(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [mode, duplicateFromId, budgets]);
 
   // Primary effect: load from context budgets
   useEffect(() => {
@@ -50,13 +93,15 @@ export function useBudgetForm({
       }
     }
 
-    // If in edit mode but budget not found in context, will try direct fetch
-    if (!(mode === "edit" && id)) {
+    // If in edit mode but budget not found in context, will try direct fetch.
+    // Skip the reset when duplicating — the dedicated effect above owns the
+    // form in that case.
+    if (!(mode === "edit" && id) && !duplicateFromId) {
       setEditing(null);
       setForm(createEmptyBudgetFormValues(initialLeadId));
       setErrors({});
     }
-  }, [budgets, id, initialLeadId, mode]);
+  }, [budgets, id, initialLeadId, mode, duplicateFromId]);
 
   // Secondary effect: load directly from API when in edit mode but not found in context
   useEffect(() => {
@@ -208,6 +253,7 @@ export function useBudgetForm({
   return {
     form,
     editing,
+    duplicateSource,
     errors,
     setForm: updateForm,
     addItem,

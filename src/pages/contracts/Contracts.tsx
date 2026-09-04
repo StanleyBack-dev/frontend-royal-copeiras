@@ -1,11 +1,10 @@
 import DataTable from "@/components/organisms/DataTable";
 import FilterBar from "@/components/molecules/FilterBar";
 import ListFiltersPanel from "@/components/molecules/ListFiltersPanel";
+import ListPager from "@/components/molecules/ListPager";
 import Button from "@/components/atoms/Button";
 import Select from "@/components/atoms/Select";
-import SearchIcon from "@/components/atoms/icons/SearchIcon";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
-import { colors } from "@/config";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { contractUiCopy, useContractsList } from "@/features/contracts";
@@ -58,12 +57,6 @@ export default function Contracts() {
       description={contractUiCopy.list.description}
     >
       <FilterBar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder={contractUiCopy.list.searchPlaceholder}
-        searchIcon={
-          <SearchIcon size={16} style={{ color: colors.brown[300] }} />
-        }
         actions={
           <div className="flex w-full gap-2 sm:w-auto">
             <Button
@@ -80,6 +73,9 @@ export default function Contracts() {
       />
 
       <ListFiltersPanel
+        searchValue={search}
+        searchPlaceholder={contractUiCopy.list.searchPlaceholder}
+        onSearchChange={setSearch}
         statusValue={filters.status}
         statusOptions={statusOptions}
         onStatusChange={(value) => {
@@ -111,9 +107,11 @@ export default function Contracts() {
           </Select>
         }
         onClear={() => {
+          setSearch("");
           void clearFilters();
         }}
         hasActiveFilters={Boolean(
+          search ||
           filters.status ||
           filters.startDate ||
           filters.endDate ||
@@ -136,52 +134,13 @@ export default function Contracts() {
             emptyMessage={contractUiCopy.list.emptyMessage}
             getId={(contract) => contract.idContracts}
           />
-          <div className="mt-4 flex items-center justify-between text-sm text-brown-700">
-            <span>
-              Pagina {pagination.currentPage} de{" "}
-              {Math.max(pagination.totalPages, 1)}
-              {" - "}
-              {pagination.total} registros
-            </span>
-            <div className="flex items-center gap-2">
-              <label className="flex items-center gap-2">
-                <span>Itens:</span>
-                <select
-                  className="rounded border border-brown-300 bg-white px-2 py-1"
-                  value={pagination.limit}
-                  onChange={(event) => {
-                    void setLimit(Number(event.target.value));
-                  }}
-                  disabled={loading}
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                className="rounded border border-brown-300 px-3 py-1 disabled:opacity-50"
-                onClick={() => {
-                  void prevPage();
-                }}
-                disabled={loading || pagination.currentPage <= 1}
-              >
-                Anterior
-              </button>
-              <button
-                type="button"
-                className="rounded border border-brown-300 px-3 py-1 disabled:opacity-50"
-                onClick={() => {
-                  void nextPage();
-                }}
-                disabled={loading || !pagination.hasNextPage}
-              >
-                Proxima
-              </button>
-            </div>
-          </div>
+          <ListPager
+            pagination={pagination}
+            loading={loading}
+            onLimitChange={(limit) => void setLimit(limit)}
+            onPrev={() => void prevPage()}
+            onNext={() => void nextPage()}
+          />
         </>
       )}
     </ManagementPanelTemplate>

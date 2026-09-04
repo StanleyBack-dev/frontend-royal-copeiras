@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { DataTableColumn } from "../../../components/organisms/DataTable";
+import CopyIcon from "../../../components/atoms/icons/CopyIcon";
 import EditIcon from "../../../components/atoms/icons/EditIcon";
 import FileTextIcon from "../../../components/atoms/icons/FileTextIcon";
 import { colors } from "../../../config";
@@ -8,6 +9,7 @@ import { budgetRoutePaths } from "../../../router";
 import { contractRoutePaths } from "../../../router";
 import { formatDateTimeDisplay } from "../../../utils/format";
 import { budgetUiCopy } from "./messages";
+import { getBudgetStatusLabel } from "./status";
 import { useAuthSession } from "../../../features/auth";
 import { useBudgetPdfActions } from "../hooks/useBudgetPdfActions";
 
@@ -16,10 +18,6 @@ function formatCurrency(value: number) {
     style: "currency",
     currency: "BRL",
   }).format(value);
-}
-
-function getBudgetStatusLabel(status: Budget["status"]) {
-  return budgetUiCopy.form.options[status];
 }
 
 export function filterBudgetsBySearch(
@@ -56,14 +54,24 @@ export function getBudgetTableColumns(
       key: "actions",
       label: budgetUiCopy.list.columns.actions,
       render: (budget) => (
-        <Link
-          to={budgetRoutePaths.edit(budget.idBudgets)}
-          title="Editar orçamento"
-          className="hover:text-yellow-700"
-          style={{ display: "flex", alignItems: "center" }}
-        >
-          <EditIcon size={18} />
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to={budgetRoutePaths.edit(budget.idBudgets)}
+            title="Editar orçamento"
+            className="hover:text-yellow-700"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <EditIcon size={18} />
+          </Link>
+          <Link
+            to={`${budgetRoutePaths.create}?duplicateFrom=${budget.idBudgets}`}
+            title="Duplicar orçamento"
+            className="hover:text-yellow-700"
+            style={{ display: "flex", alignItems: "center" }}
+          >
+            <CopyIcon size={18} />
+          </Link>
+        </div>
       ),
     },
     {

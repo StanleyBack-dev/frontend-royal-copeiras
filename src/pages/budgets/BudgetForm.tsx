@@ -2,13 +2,14 @@ import ActionBar, {
   type ActionBarAction,
 } from "@/components/molecules/ActionBar";
 import Button from "@/components/atoms/Button";
-import ConfirmDialog from "@/components/molecules/ConfirmDialog";
 import GenericForm from "@/components/organisms/GenericForm";
 import Input from "@/components/atoms/Input";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
-import StatusBadge, {
-  type StatusBadgeTone,
-} from "@/components/atoms/StatusBadge";
+import StatusBadge from "@/components/atoms/StatusBadge";
+import {
+  getBudgetStatusLabel,
+  getBudgetStatusTone,
+} from "@/features/budgets/model/status";
 import {
   budgetUiCopy,
   getBudgetFormFields,
@@ -26,7 +27,7 @@ import BudgetDisplacementFeeCard from "@/features/budgets/components/BudgetDispl
 import { useBudgetsContext } from "@/features/budgets/context/useBudgetsContext";
 import { useToast } from "@/shared/toast/useToast";
 import { budgetRoutePaths, contractRoutePaths } from "@/router";
-import { formatDateTimeDisplay } from "@/utils/format";
+import { formatDateTimeDisplay, getSentViaLabel } from "@/utils/format";
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { fetchContracts } from "@/features/contracts/services/contract.service";
 import { fetchPositions } from "@/features/positions/services/position.service";
@@ -35,34 +36,14 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { updateBudget } from "@/api/budgets/methods";
 import { getHttpErrorMessage } from "@/api/shared/http-error";
 import {
+  Copy,
   FilePlus,
   FileText,
   MessageCircle,
   Mail,
   RotateCcw,
-  FileSignature,
   Save,
 } from "lucide-react";
-
-const BUDGET_STATUS_TONES: Record<string, StatusBadgeTone> = {
-  draft: "neutral",
-  generated: "warning",
-  sent: "warning",
-  approved: "success",
-  rejected: "danger",
-  expired: "danger",
-  canceled: "danger",
-};
-
-function getBudgetStatusMeta(status: string) {
-  return {
-    label:
-      budgetUiCopy.form.options[
-        status as keyof typeof budgetUiCopy.form.options
-      ] || status,
-    tone: BUDGET_STATUS_TONES[status] || "neutral",
-  };
-}
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -80,9 +61,11 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   const { session } = useAuthSession();
   const [positions, setPositions] = useState<Position[]>([]);
   const initialLeadId = searchParams.get("leadId") || undefined;
+  const duplicateFromId = searchParams.get("duplicateFrom") || undefined;
   const {
     form,
     editing,
+    duplicateSource,
     errors,
     setForm,
     addItem,
@@ -95,10 +78,9 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     id,
     budgets,
     initialLeadId,
+    duplicateFromId,
   });
 
-  const [confirmContract, setConfirmContract] = useState(false);
-  const [confirmSendEmail, setConfirmSendEmail] = useState(false);
   const [hasContract, setHasContract] = useState(false);
 
   const isNonDraftLocked =
@@ -261,14 +243,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   async function handleSendWhatsApp() {
     if (!editing || !selectedLead?.phone || !selectedLead?.name) return;
 
-    const result = submit(form);
-    if (!result.success || !result.payload) {
-      showError(
-        budgetUiCopy.errors.invalidFormData,
-        (result.errors || [budgetUiCopy.errors.invalidFormData]).join("\n"),
-      );
-      return;
-    }
+    if (!(await ensureBudgetGenerated())) return;
 
     const outcome = await pdfActions.shareWhatsApp(
       selectedLead.name,
@@ -296,14 +271,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   async function handleSendEmail() {
     if (!editing?.idBudgets) return;
 
-    const result = submit(form);
-    if (!result.success || !result.payload) {
-      showError(
-        budgetUiCopy.errors.invalidFormData,
-        (result.errors || [budgetUiCopy.errors.invalidFormData]).join("\n"),
-      );
-      return;
-    }
+    if (!(await ensureBudgetGenerated())) return;
 
     const sent = await pdfActions.sendEmail();
     if (!sent) {
@@ -325,15 +293,23 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     });
   }
 
-  async function handleGenerateBudget() {
-    if (!editing?.idBudgets) return;
+  /**
+   * "Gerar" used to be its own button that only flipped draft -> generated
+   * and asked for nothing. It's now an invisible first step folded into
+   * whichever real action (e-mail, WhatsApp, criar contrato) the user
+   * clicks first from a draft budget, so there's no empty click in between.
+   */
+  async function ensureBudgetGenerated(): Promise<boolean> {
+    if (!editing?.idBudgets) return false;
+
+    if (isNonDraftLocked) return true;
 
     if (isSelectedLeadInactive) {
       showError(
         "Lead inativo",
         "Não é possível gerar um orçamento para um lead inativo. Reative o lead para continuar.",
       );
-      return;
+      return false;
     }
 
     const result = submit(form);
@@ -342,16 +318,17 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
         budgetUiCopy.errors.invalidFormData,
         (result.errors || [budgetUiCopy.errors.invalidFormData]).join("\n"),
       );
-      return;
+      return false;
     }
 
     try {
       await updateBudget(editing.idBudgets, { status: "generated" });
       updateLocalStatus("generated");
-      showSuccess("Orçamento gerado com sucesso");
+      return true;
     } catch (error) {
       const message = getHttpErrorMessage(error, "Erro ao gerar orçamento");
       showError("Erro ao gerar orçamento", message);
+      return false;
     }
   }
 
@@ -371,8 +348,10 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   async function handleCreateContract() {
     if (!editing?.idBudgets) return;
 
+    if (!(await ensureBudgetGenerated())) return;
+
     try {
-      // Primeiro, atualiza o status do orçamento para "approved"
+      // Aprova o orçamento (generated -> approved) antes de seguir para o contrato
       await updateBudget(editing.idBudgets, { status: "approved" });
       updateLocalStatus("approved");
 
@@ -395,43 +374,49 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     title: "Visualizar prévia do orçamento",
   };
 
+  const duplicateAction: ActionBarAction = {
+    key: "duplicate",
+    label: "Duplicar",
+    icon: <Copy size={18} />,
+    onClick: () => {
+      if (!editing?.idBudgets) return;
+      navigate(`${budgetRoutePaths.create}?duplicateFrom=${editing.idBudgets}`);
+    },
+    disabled: saving,
+    title: "Criar um novo orçamento em rascunho a partir deste",
+  };
+
   let primaryAction: ActionBarAction | undefined;
   const secondaryActions: ActionBarAction[] = [];
 
   if (editing?.idBudgets) {
-    secondaryActions.push(previewAction);
+    secondaryActions.push(previewAction, duplicateAction);
 
-    if (!isNonDraftLocked) {
-      primaryAction = {
-        key: "generate",
-        label: "Gerar orçamento",
-        icon: <FileSignature size={18} />,
-        onClick: () => void handleGenerateBudget(),
-        disabled:
-          saving ||
-          isSelectedLeadInactive ||
-          !isFormReadyToSend ||
-          !session?.user.idUsers,
-        title: isSelectedLeadInactive
-          ? "Não é possível gerar para lead inativo"
-          : !isFormReadyToSend
-            ? "Preencha todos os campos obrigatórios para gerar"
-            : "Gerar orçamento",
-      };
-    } else if (isGeneratedOrSent && !hasContract) {
+    // Draft-but-ready and already-generated/sent are shown the same way:
+    // there's no separate "Gerar" step anymore — clicking "Criar contrato",
+    // e-mail or WhatsApp silently generates the budget first if it hasn't
+    // been yet.
+    if ((!isNonDraftLocked || isGeneratedOrSent) && !hasContract) {
       primaryAction = {
         key: "create-contract",
         label: "Criar contrato",
         icon: <FilePlus size={18} />,
-        onClick: () => setConfirmContract(true),
-        disabled: saving,
-        title: "Criar contrato a partir deste orçamento",
+        onClick: () => void handleCreateContract(),
+        disabled:
+          saving ||
+          isSelectedLeadInactive ||
+          (!isNonDraftLocked && !isFormReadyToSend),
+        title: isSelectedLeadInactive
+          ? "Não é possível gerar para lead inativo"
+          : !isNonDraftLocked && !isFormReadyToSend
+            ? "Preencha todos os campos obrigatórios para continuar"
+            : "Criar contrato a partir deste orçamento",
       };
       secondaryActions.push({
         key: "email",
         label: pdfActions.sendingEmail ? "Enviando..." : "Enviar por e-mail",
         icon: <Mail size={18} />,
-        onClick: () => setConfirmSendEmail(true),
+        onClick: () => void handleSendEmail(),
         disabled:
           saving ||
           !leadHasEmail ||
@@ -473,8 +458,21 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     isSelectedLeadInactive ||
     isNonDraftLocked ||
     (!isFormReadyToSend && editing?.idBudgets) ||
-    editing?.sentAt ? (
+    editing?.sentAt ||
+    duplicateSource ? (
       <div className="space-y-4">
+        {duplicateSource ? (
+          <div className="rounded-xl border border-[#e8d5c9] bg-[#faf6f2] px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+              Duplicado de {duplicateSource.budgetNumber}
+            </p>
+            <p className="mt-1 text-sm text-[#2c1810]">
+              Os dados foram copiados do orçamento original. Revise o que
+              precisar e salve para criar este novo rascunho.
+            </p>
+          </div>
+        ) : null}
+
         {isSelectedLeadInactive ? (
           <div className="rounded-xl border border-rose-300 bg-rose-50 px-4 py-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-rose-700">
@@ -523,11 +521,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
             <p className="mt-1 text-sm text-[#2c1810]">
               Enviado via{" "}
               <span className="font-semibold">
-                {editing.sentVia === "email"
-                  ? "E-mail"
-                  : editing.sentVia === "whatsapp"
-                    ? "WhatsApp"
-                    : editing.sentVia}
+                {getSentViaLabel(editing.sentVia)}
               </span>{" "}
               em{" "}
               <span className="font-semibold">
@@ -561,8 +555,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
         : "md:grid-cols-2";
 
   return (
-    <>
-      <ManagementPanelTemplate
+    <ManagementPanelTemplate
         title={
           mode === "edit"
             ? budgetUiCopy.form.editTitle
@@ -571,8 +564,8 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
         description="Crie propostas comerciais com composição de itens e vínculo direto ao lead responsável pela oportunidade."
         badge={
           <StatusBadge
-            label={getBudgetStatusMeta(form.status).label}
-            tone={getBudgetStatusMeta(form.status).tone}
+            label={getBudgetStatusLabel(form.status)}
+            tone={getBudgetStatusTone(form.status)}
           />
         }
         actions={
@@ -820,48 +813,6 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
             </div>
           ) : null}
         </GenericForm>
-      </ManagementPanelTemplate>
-
-      <ConfirmDialog
-        open={confirmContract}
-        title="Gerar contrato"
-        description={
-          <p>
-            Você está prestes a criar um contrato baseado neste orçamento
-            aprovado.
-            <br />
-            <br />
-            Deseja continuar?
-          </p>
-        }
-        confirmLabel="Sim, gerar contrato"
-        cancelLabel="Voltar"
-        onConfirm={() => {
-          setConfirmContract(false);
-          void handleCreateContract();
-        }}
-        onCancel={() => setConfirmContract(false)}
-      />
-      <ConfirmDialog
-        open={confirmSendEmail}
-        title="Enviar por e-mail"
-        description={
-          <p>
-            Você está prestes a enviar este orçamento por e-mail para o lead
-            selecionado.
-            <br />
-            <br />
-            Deseja continuar?
-          </p>
-        }
-        confirmLabel="Sim, enviar"
-        cancelLabel="Voltar"
-        onConfirm={() => {
-          setConfirmSendEmail(false);
-          void handleSendEmail();
-        }}
-        onCancel={() => setConfirmSendEmail(false)}
-      />
-    </>
+    </ManagementPanelTemplate>
   );
 }

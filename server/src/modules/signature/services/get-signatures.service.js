@@ -19,6 +19,7 @@ export class GetSignaturesService {
             signedByName
             signedByEmail
             signedByDocument
+            signerType
             signerIp
             signedAt
             signatureUrl

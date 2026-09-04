@@ -112,6 +112,16 @@ export function getEventTableColumns(
       key: "contractNumber",
       label: eventUiCopy.list.columns.contractNumber,
       render: (item) => item.contractNumber || "-",
+      mobileRender: (item) => {
+        const customer = item.customerName || item.leadName;
+        if (!customer) return item.contractNumber || "-";
+        return (
+          <>
+            <div>{item.contractNumber || "-"}</div>
+            <div>{customer}</div>
+          </>
+        );
+      },
     },
     {
       key: "budgetNumber",

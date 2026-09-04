@@ -3,8 +3,8 @@ import Button from "../atoms/Button";
 import SearchBar from "../atoms/SearchBar";
 
 interface FilterBarProps {
-  searchValue: string;
-  onSearchChange: (value: string) => void;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
   searchIcon?: React.ReactNode;
   action?: {
@@ -26,18 +26,22 @@ export default function FilterBar({
   actions,
   className = "",
 }: FilterBarProps) {
+  const hasSearch = Boolean(onSearchChange);
+
   return (
     <div
-      className={`mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${className}`}
+      className={`mb-4 flex flex-col gap-3 sm:flex-row sm:items-center ${hasSearch ? "sm:justify-between" : "sm:justify-end"} ${className}`}
     >
-      <div className="w-full sm:max-w-md">
-        <SearchBar
-          value={searchValue}
-          onChange={onSearchChange}
-          placeholder={searchPlaceholder}
-          icon={searchIcon}
-        />
-      </div>
+      {hasSearch ? (
+        <div className="w-full sm:max-w-md">
+          <SearchBar
+            value={searchValue ?? ""}
+            onChange={onSearchChange!}
+            placeholder={searchPlaceholder}
+            icon={searchIcon}
+          />
+        </div>
+      ) : null}
       {actions ||
         (action ? (
           <Button

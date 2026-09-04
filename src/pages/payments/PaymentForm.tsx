@@ -28,7 +28,7 @@ import {
 import { paymentRoutePaths } from "@/router";
 import { useToast } from "@/shared/toast/useToast";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 type PaymentFormValues = {
   idLeads: string;
@@ -100,9 +100,26 @@ export default function PaymentForm({ mode }: { mode: "create" | "edit" }) {
   const { showError } = useToast();
   const { payments, budgets, contracts, events, save, saving } =
     usePaymentsContext();
+  const [searchParams] = useSearchParams();
+
+  // Coming from a contract's/event's "Registrar pagamento" action: the four
+  // relationships are already tied together there, so there's no reason to
+  // make the user pick them again — the form arrives pre-filled and locked.
+  const prefill =
+    mode === "create"
+      ? {
+          idLeads: searchParams.get("leadId") || "",
+          idBudgets: searchParams.get("budgetId") || "",
+          idContracts: searchParams.get("contractId") || "",
+          idEvents: searchParams.get("eventId") || "",
+        }
+      : null;
+  const isPrefilledFromContract = Boolean(prefill?.idLeads);
 
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [values, setValues] = useState<PaymentFormValues>(defaultValues);
+  const [values, setValues] = useState<PaymentFormValues>(
+    prefill ? { ...defaultValues, ...prefill } : defaultValues,
+  );
   const [paymentItems, setPaymentItems] = useState<PaymentItemFormValues[]>([
     createDefaultPaymentItem(),
   ]);
@@ -299,8 +316,10 @@ export default function PaymentForm({ mode }: { mode: "create" | "edit" }) {
       },
     ];
 
-    // Filter out relationship fields in edit mode since they're displayed as info
-    if (mode === "edit") {
+    // Filter out relationship fields in edit mode, and when the form arrived
+    // pre-filled from a contract/event — both cases show them as read-only
+    // info instead.
+    if (mode === "edit" || isPrefilledFromContract) {
       return createFields.filter(
         (field) =>
           !["idLeads", "idBudgets", "idContracts", "idEvents"].includes(
@@ -310,7 +329,7 @@ export default function PaymentForm({ mode }: { mode: "create" | "edit" }) {
     }
 
     return createFields;
-  }, [budgetOptions, contractOptions, leads, mode]);
+  }, [budgetOptions, contractOptions, leads, mode, isPrefilledFromContract]);
 
   function validateCreateForm(formValues: PaymentFormValues) {
     const nextErrors: PaymentFormErrors = {};
@@ -525,7 +544,7 @@ export default function PaymentForm({ mode }: { mode: "create" | "edit" }) {
         </div>
       }
     >
-      {mode === "edit" &&
+      {(mode === "edit" || isPrefilledFromContract) &&
         (selectedLead ||
           selectedBudget ||
           selectedContract ||
@@ -560,7 +579,10 @@ export default function PaymentForm({ mode }: { mode: "create" | "edit" }) {
                 )}
               </div>
 
-              {/* Payment Items Extract */}
+              {/* Payment Items Extract — only meaningful once there's an
+                  actual payment on record; a freshly pre-filled create form
+                  has nothing to extract yet. */}
+              {mode === "edit" && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
                   Extrato dos valores
@@ -630,6 +652,7 @@ export default function PaymentForm({ mode }: { mode: "create" | "edit" }) {
                   )}
                 </div>
               </div>
+              )}
             </div>
           </SectionCard>
         )}

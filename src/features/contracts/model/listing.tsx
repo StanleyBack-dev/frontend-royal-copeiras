@@ -6,25 +6,7 @@ import type { Contract } from "@/api/contracts/schema";
 import { contractRoutePaths, budgetRoutePaths } from "@/router";
 import { formatDateTimeDisplay } from "@/utils/format";
 import { contractUiCopy } from "./messages";
-
-function getContractStatusLabel(status: Contract["status"]) {
-  const normalized = status.trim().toLowerCase();
-  const aliases: Record<string, Contract["status"]> = {
-    draft: "draft",
-    generated: "generated",
-    pending_signature: "pending_signature",
-    pendingsignature: "pending_signature",
-    signed: "signed",
-    closed_without_signature: "closed_without_signature",
-    closedwithoutsignature: "closed_without_signature",
-    rejected: "rejected",
-    expired: "expired",
-    canceled: "canceled",
-    cancelled: "canceled",
-  };
-  const resolved = aliases[normalized] || status;
-  return contractUiCopy.form.options[resolved] || status;
-}
+import { getContractStatusLabel } from "./status";
 
 export function filterContractsBySearch(contracts: Contract[], search: string) {
   const normalizedSearch = search.trim().toLowerCase();

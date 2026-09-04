@@ -201,8 +201,22 @@ export function useContractPdfActions({
         navigator.canShare({ files: [file] });
 
       if (canShare) {
-        await navigator.share({ files: [file], text: shareText });
-        showSuccess("PDF compartilhado com sucesso");
+        // WhatsApp's Android share target silently drops the attached file
+        // when the Web Share payload combines `files` with `text` in the
+        // same call — it only keeps whichever one it picks up. Sharing the
+        // file alone is what reliably arrives as an actual attachment.
+        await navigator.share({ files: [file] });
+
+        try {
+          await navigator.clipboard.writeText(shareText);
+          showSuccess(
+            "PDF compartilhado com sucesso",
+            "Mensagem copiada — cole na conversa do WhatsApp.",
+          );
+        } catch {
+          showSuccess("PDF compartilhado com sucesso");
+        }
+
         return "shared";
       }
 

@@ -43,6 +43,7 @@ export const SignatureListItemSchema = z.object({
   signedByName: z.string().nullable().optional(),
   signedByEmail: z.string().nullable().optional(),
   signedByDocument: z.string().nullable().optional(),
+  signerType: z.string().nullable().optional(),
   signerIp: z.string().nullable().optional(),
   signedAt: z.string().nullable().optional(),
   signatureUrl: z.string().nullable().optional(),

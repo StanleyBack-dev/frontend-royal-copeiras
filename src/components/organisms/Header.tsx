@@ -58,7 +58,7 @@ export default function Header({
           >
             <Menu size={18} />
           </button>
-          <div className="relative w-full sm:max-w-xs">
+          <div className="relative hidden w-full sm:block sm:max-w-xs">
             <SearchBar
               value={search}
               onChange={setSearch}

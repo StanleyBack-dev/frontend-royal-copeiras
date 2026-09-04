@@ -231,3 +231,22 @@ export function onlyDigits(value: string, maxLength?: number): string {
   const digits = value.replace(/\D/g, "");
   return maxLength ? digits.slice(0, maxLength) : digits;
 }
+
+const SENT_VIA_LABELS: Record<string, string> = {
+  email: "E-mail",
+  email_preview: "E-mail (prévia)",
+  whatsapp: "WhatsApp",
+  signature_provider: "Plataforma de assinatura",
+  manual_close: "Encerramento manual",
+};
+
+/**
+ * `sentVia` is an internal enum (email_preview, signature_provider,
+ * manual_close, ...) — never show it raw to an operator. Anything not in
+ * the known list degrades to a generic label instead of leaking the
+ * snake_case value.
+ */
+export function getSentViaLabel(sentVia?: string | null): string {
+  if (!sentVia) return "-";
+  return SENT_VIA_LABELS[sentVia] || "Outro";
+}
