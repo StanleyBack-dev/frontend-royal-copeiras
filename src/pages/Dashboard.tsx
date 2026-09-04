@@ -226,8 +226,7 @@ export default function Dashboard() {
                       </span>
                     </Link>
                   ))}
-                  {data.pendingContractsTotal >
-                  data.pendingContracts.length ? (
+                  {data.pendingContractsTotal > data.pendingContracts.length ? (
                     <Link
                       to={contractRoutePaths.list}
                       className="block text-xs font-semibold text-[#7a4430] hover:underline"
@@ -256,7 +255,9 @@ export default function Dashboard() {
                       className="flex items-center justify-between gap-3 rounded-xl border border-[#e8d5c9] bg-[#faf6f2] px-4 py-3 text-sm transition-colors hover:border-[#7a4430]"
                     >
                       <span className="font-semibold text-[#2C1810]">
-                        {event.leadName || event.customerName || event.eventNumber}
+                        {event.leadName ||
+                          event.customerName ||
+                          event.eventNumber}
                       </span>
                       <span className="text-[#7a4430]">
                         {event.eventDates?.[0]

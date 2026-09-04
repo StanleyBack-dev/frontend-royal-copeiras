@@ -157,7 +157,9 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
  * correction after a contract was cancelled doesn't mean retyping the whole
  * proposal from scratch.
  */
-export function mapBudgetToDuplicateFormValues(budget: Budget): BudgetFormValues {
+export function mapBudgetToDuplicateFormValues(
+  budget: Budget,
+): BudgetFormValues {
   const issueDate = getDefaultIssueDate();
 
   return {

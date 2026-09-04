@@ -583,75 +583,75 @@ export default function PaymentForm({ mode }: { mode: "create" | "edit" }) {
                   actual payment on record; a freshly pre-filled create form
                   has nothing to extract yet. */}
               {mode === "edit" && (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                  Extrato dos valores
-                </p>
-                <div className="mt-2 rounded-xl border border-[#e8d5c9] bg-white p-3">
-                  {paymentItems.length > 0 ? (
-                    <div className="space-y-2">
-                      {paymentItems.map((item, index) => {
-                        const plannedAmount =
-                          parseCurrencyInput(item.plannedAmount) ?? 0;
-                        return (
-                          <div key={index}>
-                            <div className="flex items-start justify-between gap-3 text-sm">
-                              <div>
-                                <p className="font-medium text-[#2c1810]">
-                                  {
-                                    paymentUiCopy.form.options.origins[
-                                      item.origin as keyof typeof paymentUiCopy.form.options.origins
-                                    ]
-                                  }
-                                </p>
-                                <p className="text-xs text-[#7a4430]">
-                                  {
-                                    paymentUiCopy.form.options.statuses[
-                                      item.status as keyof typeof paymentUiCopy.form.options.statuses
-                                    ]
-                                  }
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                    Extrato dos valores
+                  </p>
+                  <div className="mt-2 rounded-xl border border-[#e8d5c9] bg-white p-3">
+                    {paymentItems.length > 0 ? (
+                      <div className="space-y-2">
+                        {paymentItems.map((item, index) => {
+                          const plannedAmount =
+                            parseCurrencyInput(item.plannedAmount) ?? 0;
+                          return (
+                            <div key={index}>
+                              <div className="flex items-start justify-between gap-3 text-sm">
+                                <div>
+                                  <p className="font-medium text-[#2c1810]">
+                                    {
+                                      paymentUiCopy.form.options.origins[
+                                        item.origin as keyof typeof paymentUiCopy.form.options.origins
+                                      ]
+                                    }
+                                  </p>
+                                  <p className="text-xs text-[#7a4430]">
+                                    {
+                                      paymentUiCopy.form.options.statuses[
+                                        item.status as keyof typeof paymentUiCopy.form.options.statuses
+                                      ]
+                                    }
+                                  </p>
+                                </div>
+                                <p className="font-semibold text-[#2c1810]">
+                                  {new Intl.NumberFormat("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                  }).format(plannedAmount)}
                                 </p>
                               </div>
-                              <p className="font-semibold text-[#2c1810]">
-                                {new Intl.NumberFormat("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                }).format(plannedAmount)}
-                              </p>
+                              {index < paymentItems.length - 1 && (
+                                <div className="my-2 h-px w-full bg-[#e8d5c9]" />
+                              )}
                             </div>
-                            {index < paymentItems.length - 1 && (
-                              <div className="my-2 h-px w-full bg-[#e8d5c9]" />
+                          );
+                        })}
+                        <div className="my-2 h-px w-full bg-[#e8d5c9]" />
+                        <div className="flex items-center justify-between text-sm font-semibold">
+                          <p className="text-[#7a4430]">
+                            Total de valores previstos
+                          </p>
+                          <p className="text-[#2c1810]">
+                            {new Intl.NumberFormat("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            }).format(
+                              paymentItems.reduce(
+                                (sum, item) =>
+                                  sum +
+                                  (parseCurrencyInput(item.plannedAmount) ?? 0),
+                                0,
+                              ),
                             )}
-                          </div>
-                        );
-                      })}
-                      <div className="my-2 h-px w-full bg-[#e8d5c9]" />
-                      <div className="flex items-center justify-between text-sm font-semibold">
-                        <p className="text-[#7a4430]">
-                          Total de valores previstos
-                        </p>
-                        <p className="text-[#2c1810]">
-                          {new Intl.NumberFormat("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          }).format(
-                            paymentItems.reduce(
-                              (sum, item) =>
-                                sum +
-                                (parseCurrencyInput(item.plannedAmount) ?? 0),
-                              0,
-                            ),
-                          )}
-                        </p>
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-[#7a4430]">
-                      Nenhum item de pagamento adicionado.
-                    </p>
-                  )}
+                    ) : (
+                      <p className="text-sm text-[#7a4430]">
+                        Nenhum item de pagamento adicionado.
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
               )}
             </div>
           </SectionCard>

@@ -86,10 +86,7 @@ export default function ActionBar({
   }
 
   return (
-    <div
-      className={`flex items-center gap-2 ${className}`}
-      ref={containerRef}
-    >
+    <div className={`flex items-center gap-2 ${className}`} ref={containerRef}>
       {primary ? (
         <button
           type="button"

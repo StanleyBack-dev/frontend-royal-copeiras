@@ -17,7 +17,11 @@ import ManagementPanelTemplate from "@/components/templates/management/Managemen
 import { useAuthSession } from "@/features/auth";
 import { contractUiCopy, useContractPdfActions } from "@/features/contracts";
 import { useContractsContext } from "@/features/contracts/context/useContractsContext";
-import { budgetRoutePaths, contractRoutePaths, paymentRoutePaths } from "@/router";
+import {
+  budgetRoutePaths,
+  contractRoutePaths,
+  paymentRoutePaths,
+} from "@/router";
 import { getEvents } from "@/api/events/methods";
 import { useToast } from "@/shared/toast/useToast";
 import { type Budget, type BudgetItem } from "@/api/budgets/schema";
@@ -73,7 +77,6 @@ type ContractFormValues = {
   body: string;
   notes: string;
 };
-
 
 type ContractFormErrors = Partial<Record<keyof ContractFormValues, string>>;
 
@@ -1032,7 +1035,8 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       navigate(`${paymentRoutePaths.create}?${params.toString()}`);
     },
     disabled: !session?.user.idUsers,
-    title: "Registrar pagamento com lead, orçamento, contrato e evento já vinculados",
+    title:
+      "Registrar pagamento com lead, orçamento, contrato e evento já vinculados",
   };
 
   let primaryAction: ActionBarAction | undefined;
@@ -1190,9 +1194,9 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
         title="Voltar ao rascunho"
         description={
           <p>
-            Este contrato já foi enviado para assinatura. Voltar para
-            rascunho vai cancelar a solicitação de assinatura pendente — o
-            link que o cliente recebeu deixará de funcionar.
+            Este contrato já foi enviado para assinatura. Voltar para rascunho
+            vai cancelar a solicitação de assinatura pendente — o link que o
+            cliente recebeu deixará de funcionar.
             <br />
             <br />
             Deseja continuar?
@@ -1238,11 +1242,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
             irreversível.
             <br />
             <br />
-            Ao cancelar o contrato, o orçamento vinculado será
-            automaticamente cancelado. Se for para corrigir alguma
-            informação, use "Duplicar orçamento" para criar um novo
-            rascunho já preenchido com os mesmos dados, em vez de
-            recomeçar do zero.
+            Ao cancelar o contrato, o orçamento vinculado será automaticamente
+            cancelado. Se for para corrigir alguma informação, use "Duplicar
+            orçamento" para criar um novo rascunho já preenchido com os mesmos
+            dados, em vez de recomeçar do zero.
             <br />
             <br />
             Deseja continuar?

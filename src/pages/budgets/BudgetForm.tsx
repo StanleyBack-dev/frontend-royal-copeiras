@@ -556,263 +556,259 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
 
   return (
     <ManagementPanelTemplate
-        title={
-          mode === "edit"
-            ? budgetUiCopy.form.editTitle
-            : budgetUiCopy.form.createTitle
-        }
-        description="Crie propostas comerciais com composição de itens e vínculo direto ao lead responsável pela oportunidade."
-        badge={
-          <StatusBadge
-            label={getBudgetStatusLabel(form.status)}
-            tone={getBudgetStatusTone(form.status)}
-          />
-        }
-        actions={
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate(budgetRoutePaths.list)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              leftIcon={<Save size={16} />}
-              onClick={() => void handleSave(form)}
-              disabled={
-                saving ||
-                isNonDraftLocked ||
-                (mode === "create" && isSelectedLeadInactive) ||
-                isChangingToInactiveLead ||
-                !session?.user.idUsers
-              }
-            >
-              {saving ? "Salvando..." : "Salvar"}
-            </Button>
-          </div>
-        }
-      >
-        {primaryAction || secondaryActions.length > 0 ? (
-          <div className="mb-6">
-            <ActionBar primary={primaryAction} secondary={secondaryActions} />
-          </div>
-        ) : null}
-
-        <GenericForm<BudgetFormValues>
-          fields={getBudgetFormFields(form, {
-            isEditing: mode === "edit",
-            leads,
-            disableAll: isNonDraftLocked,
-            currentLeadId: editing?.idLeads,
-          })}
-          contentAfterFieldName={mode === "edit" ? "createdAt" : "idLeads"}
-          contentAfterField={formGuidanceContent}
-          values={form}
-          setValues={setForm}
-          onSubmit={(event) => {
-            event.preventDefault();
-            void handleSave(form);
-          }}
-          errors={errors}
-          saving={saving}
-          submitDisabled={
-            isNonDraftLocked ||
-            (mode === "create" && isSelectedLeadInactive) ||
-            isChangingToInactiveLead
-          }
-          onCancel={() => navigate(budgetRoutePaths.list)}
-        >
-          <div className="mb-6 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
-            <div className="mb-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-[#7a4430]">
-                {budgetUiCopy.form.labels.eventDates}
-              </h3>
-              <p className="mt-1 text-sm text-[#7a4430]">
-                Defina as datas reais do evento conforme o período selecionado.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              {eventDateValues.map((eventDate: string, index: number) => (
-                <div
-                  key={`event-schedule-${index}`}
-                  className="rounded-2xl border border-[#eadfd6] bg-white/70 p-4"
-                >
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                    Dia {index + 1}
-                  </p>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <Input
-                      label={`Data ${index + 1} *`}
-                      type="date"
-                      value={eventDate}
-                      disabled={isNonDraftLocked}
-                      onChange={(event) => {
-                        const nextEventDates = [...eventDateValues];
-                        nextEventDates[index] = event.target.value;
-                        setForm({
-                          ...form,
-                          eventDates: nextEventDates,
-                        });
-                      }}
-                      error={index === 0 ? errors.eventDates : undefined}
-                    />
-                    <Input
-                      label={`Chegada ${index + 1} *`}
-                      type="time"
-                      value={eventArrivalTimeValues[index] || ""}
-                      disabled={isNonDraftLocked}
-                      onChange={(event) => {
-                        const nextEventArrivalTimes = [
-                          ...eventArrivalTimeValues,
-                        ];
-                        nextEventArrivalTimes[index] = event.target.value;
-                        setForm({
-                          ...form,
-                          eventArrivalTimes: nextEventArrivalTimes,
-                        });
-                      }}
-                      error={index === 0 ? errors.eventArrivalTimes : undefined}
-                    />
-                    <Input
-                      label={`Partida ${index + 1} *`}
-                      type="time"
-                      value={eventDepartureTimeValues[index] || ""}
-                      disabled={isNonDraftLocked}
-                      onChange={(event) => {
-                        const nextEventDepartureTimes = [
-                          ...eventDepartureTimeValues,
-                        ];
-                        nextEventDepartureTimes[index] = event.target.value;
-                        setForm({
-                          ...form,
-                          eventDepartureTimes: nextEventDepartureTimes,
-                        });
-                      }}
-                      error={
-                        index === 0 ? errors.eventDepartureTimes : undefined
-                      }
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <BudgetDisplacementFeeCard
-            value={form.displacementFee}
-            onChange={(value) => setForm({ ...form, displacementFee: value })}
-            error={errors.displacementFee}
-            disabled={isNonDraftLocked}
-          />
-
-          <BudgetItemsEditor
-            items={form.items}
-            positions={positions}
-            onAddItem={addItem}
-            onRemoveItem={removeItem}
-            onUpdateItem={updateItem}
-            disabled={isNonDraftLocked}
-          />
-
-          <div
-            className={`mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 ${summaryGridColumnsClass}`}
+      title={
+        mode === "edit"
+          ? budgetUiCopy.form.editTitle
+          : budgetUiCopy.form.createTitle
+      }
+      description="Crie propostas comerciais com composição de itens e vínculo direto ao lead responsável pela oportunidade."
+      badge={
+        <StatusBadge
+          label={getBudgetStatusLabel(form.status)}
+          tone={getBudgetStatusTone(form.status)}
+        />
+      }
+      actions={
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(budgetRoutePaths.list)}
           >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            leftIcon={<Save size={16} />}
+            onClick={() => void handleSave(form)}
+            disabled={
+              saving ||
+              isNonDraftLocked ||
+              (mode === "create" && isSelectedLeadInactive) ||
+              isChangingToInactiveLead ||
+              !session?.user.idUsers
+            }
+          >
+            {saving ? "Salvando..." : "Salvar"}
+          </Button>
+        </div>
+      }
+    >
+      {primaryAction || secondaryActions.length > 0 ? (
+        <div className="mb-6">
+          <ActionBar primary={primaryAction} secondary={secondaryActions} />
+        </div>
+      ) : null}
+
+      <GenericForm<BudgetFormValues>
+        fields={getBudgetFormFields(form, {
+          isEditing: mode === "edit",
+          leads,
+          disableAll: isNonDraftLocked,
+          currentLeadId: editing?.idLeads,
+        })}
+        contentAfterFieldName={mode === "edit" ? "createdAt" : "idLeads"}
+        contentAfterField={formGuidanceContent}
+        values={form}
+        setValues={setForm}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSave(form);
+        }}
+        errors={errors}
+        saving={saving}
+        submitDisabled={
+          isNonDraftLocked ||
+          (mode === "create" && isSelectedLeadInactive) ||
+          isChangingToInactiveLead
+        }
+        onCancel={() => navigate(budgetRoutePaths.list)}
+      >
+        <div className="mb-6 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#7a4430]">
+              {budgetUiCopy.form.labels.eventDates}
+            </h3>
+            <p className="mt-1 text-sm text-[#7a4430]">
+              Defina as datas reais do evento conforme o período selecionado.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {eventDateValues.map((eventDate: string, index: number) => (
+              <div
+                key={`event-schedule-${index}`}
+                className="rounded-2xl border border-[#eadfd6] bg-white/70 p-4"
+              >
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                  Dia {index + 1}
+                </p>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <Input
+                    label={`Data ${index + 1} *`}
+                    type="date"
+                    value={eventDate}
+                    disabled={isNonDraftLocked}
+                    onChange={(event) => {
+                      const nextEventDates = [...eventDateValues];
+                      nextEventDates[index] = event.target.value;
+                      setForm({
+                        ...form,
+                        eventDates: nextEventDates,
+                      });
+                    }}
+                    error={index === 0 ? errors.eventDates : undefined}
+                  />
+                  <Input
+                    label={`Chegada ${index + 1} *`}
+                    type="time"
+                    value={eventArrivalTimeValues[index] || ""}
+                    disabled={isNonDraftLocked}
+                    onChange={(event) => {
+                      const nextEventArrivalTimes = [...eventArrivalTimeValues];
+                      nextEventArrivalTimes[index] = event.target.value;
+                      setForm({
+                        ...form,
+                        eventArrivalTimes: nextEventArrivalTimes,
+                      });
+                    }}
+                    error={index === 0 ? errors.eventArrivalTimes : undefined}
+                  />
+                  <Input
+                    label={`Partida ${index + 1} *`}
+                    type="time"
+                    value={eventDepartureTimeValues[index] || ""}
+                    disabled={isNonDraftLocked}
+                    onChange={(event) => {
+                      const nextEventDepartureTimes = [
+                        ...eventDepartureTimeValues,
+                      ];
+                      nextEventDepartureTimes[index] = event.target.value;
+                      setForm({
+                        ...form,
+                        eventDepartureTimes: nextEventDepartureTimes,
+                      });
+                    }}
+                    error={index === 0 ? errors.eventDepartureTimes : undefined}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <BudgetDisplacementFeeCard
+          value={form.displacementFee}
+          onChange={(value) => setForm({ ...form, displacementFee: value })}
+          error={errors.displacementFee}
+          disabled={isNonDraftLocked}
+        />
+
+        <BudgetItemsEditor
+          items={form.items}
+          positions={positions}
+          onAddItem={addItem}
+          onRemoveItem={removeItem}
+          onUpdateItem={updateItem}
+          disabled={isNonDraftLocked}
+        />
+
+        <div
+          className={`mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 ${summaryGridColumnsClass}`}
+        >
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+              {budgetUiCopy.form.summary.subtotal}
+            </p>
+            <p className="mt-1 text-lg font-bold text-[#2c1810]">
+              {formatCurrency(totals.subtotal)}
+            </p>
+          </div>
+          {showDisplacementSummary ? (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                {budgetUiCopy.form.summary.subtotal}
+                {budgetUiCopy.form.labels.displacementFee}
               </p>
               <p className="mt-1 text-lg font-bold text-[#2c1810]">
-                {formatCurrency(totals.subtotal)}
+                {formatCurrency(totals.displacementFee)}
               </p>
             </div>
-            {showDisplacementSummary ? (
-              <div>
+          ) : null}
+          {showDiscountSummary ? (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                Desconto
+              </p>
+              <p className="mt-1 text-lg font-bold text-red-700">
+                -{formatCurrency(totals.discountAmount)}
+              </p>
+            </div>
+          ) : null}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+              {budgetUiCopy.form.summary.total}
+            </p>
+            <p className="mt-1 text-lg font-bold text-[#2c1810]">
+              {formatCurrency(totals.total)}
+            </p>
+          </div>
+        </div>
+
+        {form.discountType === "percentage" &&
+        form.discountPercentage &&
+        Number(form.discountPercentage) > 0 ? (
+          <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                  {budgetUiCopy.form.labels.displacementFee}
+                  Desconto ({form.discountPercentage}%)
                 </p>
-                <p className="mt-1 text-lg font-bold text-[#2c1810]">
-                  {formatCurrency(totals.displacementFee)}
-                </p>
-              </div>
-            ) : null}
-            {showDiscountSummary ? (
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                  Desconto
-                </p>
-                <p className="mt-1 text-lg font-bold text-red-700">
+                <p className="text-sm font-semibold text-red-600">
                   -{formatCurrency(totals.discountAmount)}
                 </p>
               </div>
-            ) : null}
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                {budgetUiCopy.form.summary.total}
-              </p>
-              <p className="mt-1 text-lg font-bold text-[#2c1810]">
-                {formatCurrency(totals.total)}
-              </p>
+              <div className="border-t border-[#e8d5c9] pt-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                    Total com Desconto
+                  </p>
+                  <p className="text-lg font-bold text-[#2c1810]">
+                    {formatCurrency(totals.total)}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
+        ) : null}
 
-          {form.discountType === "percentage" &&
-          form.discountPercentage &&
-          Number(form.discountPercentage) > 0 ? (
-            <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
-              <div className="space-y-3">
+        {form.discountType === "amount" &&
+        form.discountAmount &&
+        Number(form.discountAmount.replace(/\D/g, "") || 0) > 0 ? (
+          <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                  Desconto (Valor Fixo)
+                </p>
+                <p className="text-sm font-semibold text-red-600">
+                  -{formatCurrency(totals.discountAmount)}
+                </p>
+              </div>
+              <div className="border-t border-[#e8d5c9] pt-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                    Desconto ({form.discountPercentage}%)
+                    Total com Desconto
                   </p>
-                  <p className="text-sm font-semibold text-red-600">
-                    -{formatCurrency(totals.discountAmount)}
+                  <p className="text-lg font-bold text-[#2c1810]">
+                    {formatCurrency(totals.total)}
                   </p>
-                </div>
-                <div className="border-t border-[#e8d5c9] pt-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                      Total com Desconto
-                    </p>
-                    <p className="text-lg font-bold text-[#2c1810]">
-                      {formatCurrency(totals.total)}
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
-          ) : null}
-
-          {form.discountType === "amount" &&
-          form.discountAmount &&
-          Number(form.discountAmount.replace(/\D/g, "") || 0) > 0 ? (
-            <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                    Desconto (Valor Fixo)
-                  </p>
-                  <p className="text-sm font-semibold text-red-600">
-                    -{formatCurrency(totals.discountAmount)}
-                  </p>
-                </div>
-                <div className="border-t border-[#e8d5c9] pt-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                      Total com Desconto
-                    </p>
-                    <p className="text-lg font-bold text-[#2c1810]">
-                      {formatCurrency(totals.total)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </GenericForm>
+          </div>
+        ) : null}
+      </GenericForm>
     </ManagementPanelTemplate>
   );
 }

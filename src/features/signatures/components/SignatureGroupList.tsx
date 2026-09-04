@@ -66,9 +66,7 @@ function SignerCard({ signer }: { signer: SignatureItem }) {
         <DetailRow label="E-mail" value={signer.signedByEmail || "-"} />
         <DetailRow
           label="Assinado em"
-          value={
-            signer.signedAt ? formatDateTimeDisplay(signer.signedAt) : "-"
-          }
+          value={signer.signedAt ? formatDateTimeDisplay(signer.signedAt) : "-"}
         />
         <DetailRow
           label="URL da assinatura"

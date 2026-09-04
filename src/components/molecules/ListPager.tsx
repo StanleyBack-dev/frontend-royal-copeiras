@@ -26,8 +26,7 @@ export default function ListPager({
   return (
     <div className="mt-4 flex items-center justify-between text-sm text-brown-700">
       <span>
-        Página {pagination.currentPage} de{" "}
-        {Math.max(pagination.totalPages, 1)}
+        Página {pagination.currentPage} de {Math.max(pagination.totalPages, 1)}
         {" - "}
         {pagination.total} registros
       </span>

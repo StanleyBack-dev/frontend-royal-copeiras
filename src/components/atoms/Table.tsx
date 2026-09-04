@@ -92,7 +92,10 @@ function MobileRow<T>({
             </div>
           ) : null}
           {subtitleColumn ? (
-            <div className="text-xs [&>*]:truncate" style={{ color: "#9a7060" }}>
+            <div
+              className="text-xs [&>*]:truncate"
+              style={{ color: "#9a7060" }}
+            >
               {getMobileCellValue(subtitleColumn, row)}
             </div>
           ) : null}
