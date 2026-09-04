@@ -57,22 +57,6 @@ export function getBudgetFormFields(
       disabled: disableAll,
     },
     {
-      name: "status",
-      label: budgetUiCopy.form.labels.status,
-      as: "select",
-      options: [
-        { value: "draft", label: budgetUiCopy.form.options.draft },
-        { value: "generated", label: budgetUiCopy.form.options.generated },
-        { value: "sent", label: budgetUiCopy.form.options.sent },
-        { value: "approved", label: budgetUiCopy.form.options.approved },
-        { value: "rejected", label: budgetUiCopy.form.options.rejected },
-        { value: "expired", label: budgetUiCopy.form.options.expired },
-        { value: "canceled", label: budgetUiCopy.form.options.canceled },
-      ],
-      required: true,
-      disabled: true,
-    },
-    {
       name: "issueDate",
       label: budgetUiCopy.form.labels.issueDate,
       type: "date",

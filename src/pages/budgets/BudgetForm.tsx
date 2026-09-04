@@ -1,8 +1,14 @@
+import ActionBar, {
+  type ActionBarAction,
+} from "@/components/molecules/ActionBar";
 import Button from "@/components/atoms/Button";
 import ConfirmDialog from "@/components/molecules/ConfirmDialog";
 import GenericForm from "@/components/organisms/GenericForm";
 import Input from "@/components/atoms/Input";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
+import StatusBadge, {
+  type StatusBadgeTone,
+} from "@/components/atoms/StatusBadge";
 import {
   budgetUiCopy,
   getBudgetFormFields,
@@ -29,6 +35,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { updateBudget } from "@/api/budgets/methods";
 import { getHttpErrorMessage } from "@/api/shared/http-error";
 import {
+  FilePlus,
   FileText,
   MessageCircle,
   Mail,
@@ -36,6 +43,26 @@ import {
   FileSignature,
   Save,
 } from "lucide-react";
+
+const BUDGET_STATUS_TONES: Record<string, StatusBadgeTone> = {
+  draft: "neutral",
+  generated: "warning",
+  sent: "warning",
+  approved: "success",
+  rejected: "danger",
+  expired: "danger",
+  canceled: "danger",
+};
+
+function getBudgetStatusMeta(status: string) {
+  return {
+    label:
+      budgetUiCopy.form.options[
+        status as keyof typeof budgetUiCopy.form.options
+      ] || status,
+    tone: BUDGET_STATUS_TONES[status] || "neutral",
+  };
+}
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -359,6 +386,89 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     }
   }
 
+  const previewAction: ActionBarAction = {
+    key: "preview",
+    label: pdfActions.previewing ? "Carregando..." : "Preview",
+    icon: <FileText size={18} />,
+    onClick: () => void handlePreview(),
+    disabled: saving || !session?.user.idUsers || pdfActions.previewing,
+    title: "Visualizar prévia do orçamento",
+  };
+
+  let primaryAction: ActionBarAction | undefined;
+  const secondaryActions: ActionBarAction[] = [];
+
+  if (editing?.idBudgets) {
+    secondaryActions.push(previewAction);
+
+    if (!isNonDraftLocked) {
+      primaryAction = {
+        key: "generate",
+        label: "Gerar orçamento",
+        icon: <FileSignature size={18} />,
+        onClick: () => void handleGenerateBudget(),
+        disabled:
+          saving ||
+          isSelectedLeadInactive ||
+          !isFormReadyToSend ||
+          !session?.user.idUsers,
+        title: isSelectedLeadInactive
+          ? "Não é possível gerar para lead inativo"
+          : !isFormReadyToSend
+            ? "Preencha todos os campos obrigatórios para gerar"
+            : "Gerar orçamento",
+      };
+    } else if (isGeneratedOrSent && !hasContract) {
+      primaryAction = {
+        key: "create-contract",
+        label: "Criar contrato",
+        icon: <FilePlus size={18} />,
+        onClick: () => setConfirmContract(true),
+        disabled: saving,
+        title: "Criar contrato a partir deste orçamento",
+      };
+      secondaryActions.push({
+        key: "email",
+        label: pdfActions.sendingEmail ? "Enviando..." : "Enviar por e-mail",
+        icon: <Mail size={18} />,
+        onClick: () => setConfirmSendEmail(true),
+        disabled:
+          saving ||
+          !leadHasEmail ||
+          !session?.user.idUsers ||
+          pdfActions.sendingEmail,
+        title: !leadHasEmail
+          ? "O lead selecionado não possui e-mail cadastrado"
+          : "Enviar por e-mail",
+      });
+      secondaryActions.push({
+        key: "whatsapp",
+        label: pdfActions.sharingWhatsApp ? "Enviando..." : "WhatsApp",
+        icon: <MessageCircle size={18} />,
+        onClick: () => void handleSendWhatsApp(),
+        disabled:
+          saving ||
+          !leadHasPhone ||
+          !session?.user.idUsers ||
+          pdfActions.sharingWhatsApp,
+        title: !leadHasPhone
+          ? "O lead selecionado não possui telefone cadastrado"
+          : "Enviar por WhatsApp",
+      });
+    }
+
+    if (isNonDraftLocked && !hasContract) {
+      secondaryActions.push({
+        key: "revert-to-draft",
+        label: "Voltar ao rascunho",
+        icon: <RotateCcw size={18} />,
+        onClick: () => void handleRevertToDraft(),
+        disabled: saving,
+        title: "Voltar ao rascunho",
+      });
+    }
+  }
+
   const formGuidanceContent =
     isSelectedLeadInactive ||
     isNonDraftLocked ||
@@ -459,6 +569,12 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
             : budgetUiCopy.form.createTitle
         }
         description="Crie propostas comerciais com composição de itens e vínculo direto ao lead responsável pela oportunidade."
+        badge={
+          <StatusBadge
+            label={getBudgetStatusMeta(form.status).label}
+            tone={getBudgetStatusMeta(form.status).tone}
+          />
+        }
         actions={
           <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             <Button
@@ -486,141 +602,11 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
           </div>
         }
       >
-        <div className="flex justify-center mb-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6">
-            <button
-              type="button"
-              onClick={() => {
-                void handlePreview();
-              }}
-              disabled={
-                saving || !session?.user.idUsers || pdfActions.previewing
-              }
-              className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Visualizar prévia do orçamento"
-            >
-              <FileText size={32} className="text-[#C9A227]" />
-              <span className="text-xs font-semibold text-center text-[#2C1810]">
-                {pdfActions.previewing ? "Carregando..." : "Preview"}
-              </span>
-            </button>
-
-            {!isNonDraftLocked && editing?.idBudgets ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void handleGenerateBudget();
-                }}
-                disabled={
-                  saving ||
-                  !editing?.idBudgets ||
-                  isSelectedLeadInactive ||
-                  !isFormReadyToSend ||
-                  !session?.user.idUsers
-                }
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={
-                  isSelectedLeadInactive
-                    ? "Nao e possivel gerar para lead inativo"
-                    : !isFormReadyToSend
-                      ? "Preencha todos os campos obrigatórios para gerar"
-                      : "Gerar orçamento"
-                }
-              >
-                <FileSignature size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  Gerar
-                </span>
-              </button>
-            ) : null}
-
-            {isGeneratedOrSent && !hasContract ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmSendEmail(true);
-                }}
-                disabled={
-                  saving ||
-                  !editing?.idBudgets ||
-                  !leadHasEmail ||
-                  !session?.user.idUsers ||
-                  pdfActions.sendingEmail
-                }
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={
-                  !leadHasEmail
-                    ? "O lead selecionado não possui e-mail cadastrado"
-                    : "Enviar por e-mail"
-                }
-              >
-                <Mail size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  {pdfActions.sendingEmail ? "Enviando" : "Email"}
-                </span>
-              </button>
-            ) : null}
-
-            {isGeneratedOrSent && !hasContract ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void handleSendWhatsApp();
-                }}
-                disabled={
-                  saving ||
-                  !editing?.idBudgets ||
-                  !leadHasPhone ||
-                  !session?.user.idUsers ||
-                  pdfActions.sharingWhatsApp
-                }
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title={
-                  !leadHasPhone
-                    ? "O lead selecionado não possui telefone cadastrado"
-                    : "Enviar por WhatsApp"
-                }
-              >
-                <MessageCircle size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  {pdfActions.sharingWhatsApp ? "Enviando" : "WhatsApp"}
-                </span>
-              </button>
-            ) : null}
-
-            {isGeneratedOrSent && !hasContract ? (
-              <button
-                type="button"
-                onClick={() => setConfirmContract(true)}
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] transition-colors"
-                title="Gerar contrato"
-              >
-                <FileSignature size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  Contrato
-                </span>
-              </button>
-            ) : null}
-
-            {/* Voltar ao Rascunho */}
-            {isNonDraftLocked && !hasContract ? (
-              <button
-                type="button"
-                onClick={() => {
-                  void handleRevertToDraft();
-                }}
-                disabled={saving}
-                className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-[#f5ede8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                title="Voltar ao rascunho"
-              >
-                <RotateCcw size={32} className="text-[#C9A227]" />
-                <span className="text-xs font-semibold text-center text-[#2C1810]">
-                  Voltar
-                </span>
-              </button>
-            ) : null}
+        {primaryAction || secondaryActions.length > 0 ? (
+          <div className="mb-6">
+            <ActionBar primary={primaryAction} secondary={secondaryActions} />
           </div>
-        </div>
+        ) : null}
 
         <GenericForm<BudgetFormValues>
           fields={getBudgetFormFields(form, {

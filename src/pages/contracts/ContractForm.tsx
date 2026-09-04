@@ -1,9 +1,15 @@
 import { updateContract } from "@/api/contracts/methods";
 import { getHttpErrorMessage } from "@/api/shared/http-error";
+import ActionBar, {
+  type ActionBarAction,
+} from "@/components/molecules/ActionBar";
 import Button from "@/components/atoms/Button";
 import ConfirmDialog from "@/components/molecules/ConfirmDialog";
 import Input from "@/components/atoms/Input";
 import Select from "@/components/atoms/Select";
+import StatusBadge, {
+  type StatusBadgeTone,
+} from "@/components/atoms/StatusBadge";
 import Textarea from "@/components/atoms/Textarea";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
 import { useAuthSession } from "@/features/auth";
@@ -21,10 +27,12 @@ import {
 import type { BudgetServiceType } from "@/features/budgets/model/service-items";
 import { formatCurrencyExtended, formatDateTimeDisplay } from "@/utils/format";
 import {
+  Archive,
   FileSignature,
   FileText,
   Mail,
   MessageCircle,
+  PenLine,
   RotateCcw,
   X,
   Save,
@@ -57,6 +65,27 @@ type ContractFormValues = {
   body: string;
   notes: string;
 };
+
+const CONTRACT_STATUS_TONES: Record<string, StatusBadgeTone> = {
+  draft: "neutral",
+  generated: "warning",
+  pending_signature: "warning",
+  signed: "success",
+  closed_without_signature: "neutral",
+  rejected: "danger",
+  expired: "danger",
+  canceled: "danger",
+};
+
+function getContractStatusMeta(status: string) {
+  return {
+    label:
+      contractUiCopy.form.options[
+        status as keyof typeof contractUiCopy.form.options
+      ] || status,
+    tone: CONTRACT_STATUS_TONES[status] || "neutral",
+  };
+}
 
 type ContractFormErrors = Partial<Record<keyof ContractFormValues, string>>;
 
@@ -864,6 +893,108 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     }
   }
 
+  const previewAction: ActionBarAction = {
+    key: "preview",
+    label: pdfActions.previewing ? "Carregando..." : "Preview",
+    icon: <FileText size={18} />,
+    onClick: () => void pdfActions.preview(),
+    disabled:
+      !editing?.idContracts || pdfActions.previewing || !session?.user.idUsers,
+    title: "Visualizar prévia do contrato",
+  };
+
+  let primaryAction: ActionBarAction | undefined;
+  const secondaryActions: ActionBarAction[] = [];
+
+  if (editing?.idContracts) {
+    if (!isNonDraftLocked) {
+      primaryAction = {
+        key: "generate",
+        label: "Gerar contrato",
+        icon: <FileSignature size={18} />,
+        onClick: () => void handleGenerateContract(),
+        disabled: !session?.user.idUsers,
+      };
+      secondaryActions.push(previewAction);
+    } else if (isGenerated || isPendingSignature) {
+      secondaryActions.push(previewAction);
+      secondaryActions.push({
+        key: "email",
+        label: pdfActions.sendingEmail ? "Enviando..." : "Enviar por e-mail",
+        icon: <Mail size={18} />,
+        onClick: () => setConfirmSendEmail(true),
+        disabled:
+          !leadHasEmail || !session?.user.idUsers || pdfActions.sendingEmail,
+        title: leadHasEmail
+          ? "Enviar prévia por e-mail"
+          : "Lead sem e-mail cadastrado",
+      });
+      secondaryActions.push({
+        key: "whatsapp",
+        label: pdfActions.sharingWhatsApp ? "Compartilhando..." : "WhatsApp",
+        icon: <MessageCircle size={18} />,
+        onClick: () => void handleSendWhatsApp(),
+        disabled:
+          !leadHasPhone ||
+          !session?.user.idUsers ||
+          pdfActions.sharingWhatsApp,
+        title: leadHasPhone
+          ? "Compartilhar via WhatsApp"
+          : "Lead sem telefone cadastrado",
+      });
+
+      if (isGenerated) {
+        primaryAction = {
+          key: "signature",
+          label: pdfActions.sendingSignatureRequest
+            ? "Enviando..."
+            : "Enviar para assinatura",
+          icon: <PenLine size={18} />,
+          onClick: () => setConfirmSendSignature(true),
+          disabled:
+            !leadHasEmail ||
+            !session?.user.idUsers ||
+            pdfActions.sendingSignatureRequest,
+          title: leadHasEmail
+            ? "Enviar para assinatura online"
+            : "Lead sem e-mail cadastrado",
+        };
+        secondaryActions.push({
+          key: "close-without-signature",
+          label: pdfActions.closingWithoutSignature
+            ? "Encerrando..."
+            : "Encerrar sem assinatura",
+          icon: <Archive size={18} />,
+          onClick: () => setConfirmCloseWithoutSignature(true),
+          disabled:
+            !session?.user.idUsers || pdfActions.closingWithoutSignature,
+          title: "Encerrar sem gerar assinaturas",
+          tone: "danger",
+        });
+        secondaryActions.push({
+          key: "revert-to-draft",
+          label: "Voltar ao rascunho",
+          icon: <RotateCcw size={18} />,
+          onClick: () => void handleRevertToDraft(),
+          disabled: !session?.user.idUsers,
+          title: "Voltar ao rascunho",
+        });
+      }
+
+      secondaryActions.push({
+        key: "cancel",
+        label: "Cancelar contrato",
+        icon: <X size={18} />,
+        onClick: () => setConfirmCancelContract(true),
+        disabled: !session?.user.idUsers || cancellingContract,
+        title: "Cancelar contrato",
+        tone: "danger",
+      });
+    } else {
+      secondaryActions.push(previewAction);
+    }
+  }
+
   const formGuidanceContent =
     isNonDraftLocked || editing?.sentAt ? (
       <div className="space-y-4">
@@ -916,6 +1047,12 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
           : contractUiCopy.form.createTitle
       }
       description="Formalize contratos a partir de orçamentos aprovados, com preview em PDF."
+      badge={
+        <StatusBadge
+          label={getContractStatusMeta(form.status).label}
+          tone={getContractStatusMeta(form.status).tone}
+        />
+      }
       actions={
         <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           <Button
@@ -955,278 +1092,102 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
               : "Enviando para assinatura..."
         }
       />
-      <div className="mb-6 flex justify-center">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6 sm:gap-6">
-          <button
-            type="button"
-            onClick={() => {
-              void pdfActions.preview();
-            }}
-            disabled={
-              !editing?.idContracts ||
-              pdfActions.previewing ||
-              !session?.user.idUsers
-            }
-            className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-            title="Visualizar previa do contrato"
-          >
-            <FileText size={32} className="text-[#C9A227]" />
-            <span className="text-center text-xs font-semibold text-[#2C1810]">
-              {pdfActions.previewing ? "Carregando..." : "Preview"}
-            </span>
-          </button>
-
-          {!isNonDraftLocked && editing?.idContracts ? (
-            <button
-              type="button"
-              onClick={() => {
-                void handleGenerateContract();
-              }}
-              disabled={!editing?.idContracts || !session?.user.idUsers}
-              className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-              title="Gerar contrato"
-            >
-              <FileSignature size={32} className="text-[#C9A227]" />
-              <span className="text-center text-xs font-semibold text-[#2C1810]">
-                Gerar
-              </span>
-            </button>
-          ) : null}
-
-          {isNonDraftLocked && (isGenerated || isPendingSignature) ? (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmSendEmail(true);
-                }}
-                disabled={
-                  !editing?.idContracts ||
-                  !leadHasEmail ||
-                  !session?.user.idUsers ||
-                  pdfActions.sendingEmail
-                }
-                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-                title={
-                  leadHasEmail
-                    ? "Enviar prévia por e-mail"
-                    : "Lead sem e-mail cadastrado"
-                }
-              >
-                <Mail size={32} className="text-[#C9A227]" />
-                <span className="text-center text-xs font-semibold text-[#2C1810]">
-                  {pdfActions.sendingEmail ? "Enviando..." : "Email"}
-                </span>
-              </button>
-              <ConfirmDialog
-                open={confirmSendEmail}
-                title="Enviar por e-mail"
-                description={
-                  <p>
-                    Você está prestes a enviar a prévia deste contrato por
-                    e-mail para o lead selecionado.
-                    <br />
-                    <br />
-                    Deseja continuar?
-                  </p>
-                }
-                confirmLabel="Sim, enviar"
-                cancelLabel="Voltar"
-                onConfirm={() => {
-                  setConfirmSendEmail(false);
-                  void handleSendEmail();
-                }}
-                onCancel={() => setConfirmSendEmail(false)}
-              />
-
-              <button
-                type="button"
-                onClick={() => {
-                  void handleSendWhatsApp();
-                }}
-                disabled={
-                  !editing?.idContracts ||
-                  !leadHasPhone ||
-                  !session?.user.idUsers ||
-                  pdfActions.sharingWhatsApp
-                }
-                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-                title={
-                  leadHasPhone
-                    ? "Compartilhar via WhatsApp"
-                    : "Lead sem telefone cadastrado"
-                }
-              >
-                <MessageCircle size={32} className="text-[#25D366]" />
-                <span className="text-center text-xs font-semibold text-[#2C1810]">
-                  {pdfActions.sharingWhatsApp ? "Compart..." : "WhatsApp"}
-                </span>
-              </button>
-
-              {isGenerated ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setConfirmSendSignature(true);
-                    }}
-                    disabled={
-                      !editing?.idContracts ||
-                      !leadHasEmail ||
-                      !session?.user.idUsers ||
-                      pdfActions.sendingSignatureRequest
-                    }
-                    className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-                    title={
-                      leadHasEmail
-                        ? "Enviar para assinatura online"
-                        : "Lead sem e-mail cadastrado"
-                    }
-                  >
-                    <FileSignature size={32} className="text-[#C9A227]" />
-                    <span className="text-center text-xs font-semibold text-[#2C1810]">
-                      {pdfActions.sendingSignatureRequest
-                        ? "Enviando..."
-                        : "Assinatura"}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setConfirmCloseWithoutSignature(true);
-                    }}
-                    disabled={
-                      !editing?.idContracts ||
-                      !session?.user.idUsers ||
-                      pdfActions.closingWithoutSignature
-                    }
-                    className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-                    title="Encerrar sem gerar assinaturas"
-                  >
-                    <FileSignature size={32} className="text-[#7a4430]" />
-                    <span className="text-center text-xs font-semibold text-[#2C1810]">
-                      {pdfActions.closingWithoutSignature
-                        ? "Encerrando..."
-                        : "Encerrar"}
-                    </span>
-                  </button>
-                </>
-              ) : null}
-              <ConfirmDialog
-                open={confirmSendSignature}
-                title="Enviar para assinatura"
-                description={
-                  <p>
-                    Você está prestes a enviar este contrato para assinatura
-                    online. O lead receberá um e-mail com o link para assinar.
-                    <br />
-                    <br />
-                    Deseja continuar?
-                  </p>
-                }
-                confirmLabel="Sim, enviar"
-                cancelLabel="Voltar"
-                onConfirm={() => {
-                  setConfirmSendSignature(false);
-                  void handleSendSignatureRequest();
-                }}
-                onCancel={() => setConfirmSendSignature(false)}
-              />
-              <ConfirmDialog
-                open={confirmCloseWithoutSignature}
-                title="Encerrar sem assinaturas"
-                description={
-                  <p>
-                    Você está prestes a encerrar este contrato sem gerar
-                    assinaturas.
-                    <br />
-                    <br />
-                    Essa ação é irreversível e criará automaticamente o cliente
-                    e o evento vinculados ao contrato.
-                    <br />
-                    <br />
-                    Deseja continuar?
-                  </p>
-                }
-                confirmLabel="Sim, encerrar"
-                cancelLabel="Voltar"
-                onConfirm={() => {
-                  setConfirmCloseWithoutSignature(false);
-                  void handleCloseWithoutSignature();
-                }}
-                onCancel={() => setConfirmCloseWithoutSignature(false)}
-              />
-              <ConfirmDialog
-                open={confirmCancelContract}
-                title="Cancelar contrato"
-                description={
-                  <p>
-                    Você está prestes a cancelar este contrato. Essa ação é
-                    irreversível.
-                    <br />
-                    <br />
-                    Ao cancelar o contrato, o orçamento vinculado será
-                    automaticamente cancelado. Para gerar um novo contrato será
-                    necessário criar um novo orçamento aprovado e então gerar o
-                    contrato novamente.
-                    <br />
-                    <br />
-                    Deseja continuar?
-                  </p>
-                }
-                confirmLabel="Sim, cancelar contrato"
-                cancelLabel="Voltar"
-                variant="warning"
-                onConfirm={() => {
-                  setConfirmCancelContract(false);
-                  void handleCancelContract();
-                }}
-                onCancel={() => setConfirmCancelContract(false)}
-              />
-            </>
-          ) : null}
-
-          {isNonDraftLocked && (isGenerated || isPendingSignature) ? (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmCancelContract(true);
-                }}
-                disabled={
-                  !editing?.idContracts ||
-                  !session?.user.idUsers ||
-                  cancellingContract
-                }
-                className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#feece8] disabled:cursor-not-allowed disabled:opacity-50"
-                title="Cancelar contrato"
-              >
-                <X size={32} className="text-[#C94A27]" />
-                <span className="text-center text-xs font-semibold text-[#2C1810]">
-                  Cancelar
-                </span>
-              </button>
-
-              {!isPendingSignature ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    void handleRevertToDraft();
-                  }}
-                  disabled={!editing?.idContracts || !session?.user.idUsers}
-                  className="flex flex-col items-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#f5ede8] disabled:cursor-not-allowed disabled:opacity-50"
-                  title="Voltar ao rascunho"
-                >
-                  <RotateCcw size={32} className="text-[#C9A227]" />
-                  <span className="text-center text-xs font-semibold text-[#2C1810]">
-                    Voltar
-                  </span>
-                </button>
-              ) : null}
-            </>
-          ) : null}
+      {primaryAction || secondaryActions.length > 0 ? (
+        <div className="mb-6">
+          <ActionBar primary={primaryAction} secondary={secondaryActions} />
         </div>
-      </div>
+      ) : null}
+
+      <ConfirmDialog
+        open={confirmSendEmail}
+        title="Enviar por e-mail"
+        description={
+          <p>
+            Você está prestes a enviar a prévia deste contrato por e-mail
+            para o lead selecionado.
+            <br />
+            <br />
+            Deseja continuar?
+          </p>
+        }
+        confirmLabel="Sim, enviar"
+        cancelLabel="Voltar"
+        onConfirm={() => {
+          setConfirmSendEmail(false);
+          void handleSendEmail();
+        }}
+        onCancel={() => setConfirmSendEmail(false)}
+      />
+      <ConfirmDialog
+        open={confirmSendSignature}
+        title="Enviar para assinatura"
+        description={
+          <p>
+            Você está prestes a enviar este contrato para assinatura online.
+            O lead receberá um e-mail com o link para assinar.
+            <br />
+            <br />
+            Deseja continuar?
+          </p>
+        }
+        confirmLabel="Sim, enviar"
+        cancelLabel="Voltar"
+        onConfirm={() => {
+          setConfirmSendSignature(false);
+          void handleSendSignatureRequest();
+        }}
+        onCancel={() => setConfirmSendSignature(false)}
+      />
+      <ConfirmDialog
+        open={confirmCloseWithoutSignature}
+        title="Encerrar sem assinaturas"
+        description={
+          <p>
+            Você está prestes a encerrar este contrato sem gerar assinaturas.
+            <br />
+            <br />
+            Essa ação é irreversível e criará automaticamente o cliente e o
+            evento vinculados ao contrato.
+            <br />
+            <br />
+            Deseja continuar?
+          </p>
+        }
+        confirmLabel="Sim, encerrar"
+        cancelLabel="Voltar"
+        onConfirm={() => {
+          setConfirmCloseWithoutSignature(false);
+          void handleCloseWithoutSignature();
+        }}
+        onCancel={() => setConfirmCloseWithoutSignature(false)}
+      />
+      <ConfirmDialog
+        open={confirmCancelContract}
+        title="Cancelar contrato"
+        description={
+          <p>
+            Você está prestes a cancelar este contrato. Essa ação é
+            irreversível.
+            <br />
+            <br />
+            Ao cancelar o contrato, o orçamento vinculado será
+            automaticamente cancelado. Para gerar um novo contrato será
+            necessário criar um novo orçamento aprovado e então gerar o
+            contrato novamente.
+            <br />
+            <br />
+            Deseja continuar?
+          </p>
+        }
+        confirmLabel="Sim, cancelar contrato"
+        cancelLabel="Voltar"
+        variant="warning"
+        onConfirm={() => {
+          setConfirmCancelContract(false);
+          void handleCancelContract();
+        }}
+        onCancel={() => setConfirmCancelContract(false)}
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {mode === "edit" && editing ? (
@@ -1268,27 +1229,6 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
               </option>
             );
           })}
-        </Select>
-
-        <Select label="Status" value={form.status} onChange={() => {}} disabled>
-          <option value="draft">{contractUiCopy.form.options.draft}</option>
-          <option value="generated">
-            {contractUiCopy.form.options.generated}
-          </option>
-          <option value="pending_signature">
-            {contractUiCopy.form.options.pending_signature}
-          </option>
-          <option value="signed">{contractUiCopy.form.options.signed}</option>
-          <option value="closed_without_signature">
-            {contractUiCopy.form.options.closed_without_signature}
-          </option>
-          <option value="rejected">
-            {contractUiCopy.form.options.rejected}
-          </option>
-          <option value="expired">{contractUiCopy.form.options.expired}</option>
-          <option value="canceled">
-            {contractUiCopy.form.options.canceled}
-          </option>
         </Select>
 
         <Input

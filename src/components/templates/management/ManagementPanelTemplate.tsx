@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 interface ManagementPanelTemplateProps {
   title: string;
   description?: string;
+  badge?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
 }
@@ -10,6 +11,7 @@ interface ManagementPanelTemplateProps {
 export default function ManagementPanelTemplate({
   title,
   description,
+  badge,
   actions,
   children,
 }: ManagementPanelTemplateProps) {
@@ -21,7 +23,10 @@ export default function ManagementPanelTemplate({
       <div className="flex flex-col gap-3 px-4 pb-0 pt-5 sm:px-6 sm:pt-6 lg:px-8 lg:pt-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-xl font-bold sm:text-2xl">{title}</h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-xl font-bold sm:text-2xl">{title}</h2>
+              {badge}
+            </div>
             {description ? (
               <p className="mt-2 max-w-3xl text-sm text-[#7a4430]">
                 {description}
