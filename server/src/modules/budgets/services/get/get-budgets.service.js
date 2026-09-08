@@ -50,6 +50,8 @@ export class GetBudgetsService {
               totalPrice
               notes
               sortOrder
+              eventDateIndex
+              serviceGender
               createdAt
               updatedAt
             }

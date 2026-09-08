@@ -121,10 +121,11 @@ export const budgetValidationMessages = {
   discountAmountRequired:
     "Informe o valor do desconto quando o tipo for monetário.",
   itemsRequired: "Informe pelo menos um item de serviço.",
+  dayMissingItems: "Cada dia do evento deve ter ao menos um serviço.",
   itemDescriptionRequired: "Preencha a descrição dos serviços.",
   itemServiceTypeRequired: "Selecione o tipo de serviço de cada item.",
   itemServiceTypeDuplicated:
-    "Não é permitido repetir o mesmo tipo de serviço no orçamento.",
+    "Não é permitido repetir o mesmo tipo de serviço no mesmo dia do orçamento.",
   itemQuantityInvalid: "A quantidade de cada item deve ser maior que zero.",
   itemUnitPriceInvalid: "Informe um valor unitário válido para cada item.",
   displacementFeeInvalid:

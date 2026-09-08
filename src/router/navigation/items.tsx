@@ -11,6 +11,7 @@ import {
   Target,
   Calculator,
   Layers,
+  Link2,
   User,
   Shield,
 } from "lucide-react";
@@ -32,6 +33,11 @@ export const primaryNavigationItems: NavigationItem[] = [
     icon: <FileSignature size={20} />,
   },
   { id: "events", label: "Eventos", icon: <EventsIcon size={20} /> },
+  {
+    id: "publicIntake",
+    label: "Links de Orçamento",
+    icon: <Link2 size={20} />,
+  },
   { id: "clients", label: "Clientes", icon: <ClientsIcon size={20} /> },
   { id: "employees", label: "Funcionários", icon: <EmployeesIcon size={20} /> },
   { id: "positions", label: "Cargos", icon: <Layers size={20} /> },

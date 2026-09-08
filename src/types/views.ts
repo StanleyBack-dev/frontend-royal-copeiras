@@ -10,4 +10,5 @@ export type ActiveView =
   | "positions"
   | "users"
   | "events"
+  | "publicIntake"
   | "profile";

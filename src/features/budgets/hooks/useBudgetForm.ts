@@ -142,7 +142,7 @@ export function useBudgetForm({
     );
   }
 
-  function addItem() {
+  function addItem(dayIndex = 0) {
     setForm((current: BudgetFormValues) =>
       normalizeBudgetFormValues(
         {
@@ -152,6 +152,7 @@ export function useBudgetForm({
             {
               ...emptyBudgetItemFormValues,
               description: "",
+              eventDateIndex: dayIndex,
             },
           ],
         },

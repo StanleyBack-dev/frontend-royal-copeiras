@@ -38,20 +38,31 @@ function formatCurrencyBRL(value: number) {
   }).format(value);
 }
 
+function formatSingleEventDate(value?: string): string {
+  if (!value) return "-";
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    weekday: "long",
+  }).format(date);
+}
+
 function formatEventDates(dates?: string[] | null): string {
   if (!dates || dates.length === 0) return "-";
-  return dates
-    .map((d) => {
-      const date = new Date(`${d}T12:00:00`);
-      if (Number.isNaN(date.getTime())) return d;
-      return new Intl.DateTimeFormat("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        weekday: "long",
-      }).format(date);
-    })
-    .join(", ");
+  return dates.map((d) => formatSingleEventDate(d)).join(", ");
+}
+
+function formatShortEventDate(value?: string): string {
+  if (!value) return "";
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  }).format(date);
 }
 
 interface AssignmentRowProps {
@@ -322,6 +333,34 @@ export default function EventDetail() {
     ]),
   );
 
+  const eventDates = event.eventDates ?? [];
+  const eventDayCount = eventDates.length || 1;
+  const isMultiDayEvent = eventDayCount > 1;
+  const eventArrivalTimes = event.eventArrivalTimes ?? [];
+  const eventDepartureTimes = event.eventDepartureTimes ?? [];
+  const eventLocationPerDay = event.eventLocationPerDay ?? [];
+  const guestCountPerDay = event.guestCountPerDay ?? [];
+  const durationHoursPerDay = event.durationHoursPerDay ?? [];
+
+  function dayShortLabel(dayIndex: number): string {
+    const date = formatShortEventDate(eventDates[dayIndex]);
+    return date ? `Dia ${dayIndex + 1} — ${date}` : `Dia ${dayIndex + 1}`;
+  }
+
+  const servicesByDay = Array.from({ length: eventDayCount }, (_, dayIndex) =>
+    detailedServices.filter(
+      (service) => (service.eventDateIndex ?? 0) === dayIndex,
+    ),
+  );
+
+  const assignmentsByDay = Array.from(
+    { length: eventDayCount },
+    (_, dayIndex) =>
+      draftAssignments.filter(
+        (assignment) => (assignment.eventDateIndex ?? 0) === dayIndex,
+      ),
+  );
+
   const dynamicTotalCost = draftAssignments.reduce((acc, assignment) => {
     const draft = assignmentDrafts[assignment.idEventAssignments];
     const payment = draft ? parsePaymentValue(draft.payment) : 0;
@@ -409,6 +448,61 @@ export default function EventDetail() {
     return Object.keys(nextErrors).length === 0;
   }
 
+  function renderAssignmentRow(assignment: EventAssignment) {
+    return (
+      <AssignmentRow
+        key={assignment.idEventAssignments}
+        assignment={assignment}
+        employees={employees}
+        selectedEmployee={
+          assignmentDrafts[assignment.idEventAssignments]?.selectedEmployee ??
+          ""
+        }
+        payment={assignmentDrafts[assignment.idEventAssignments]?.payment ?? ""}
+        employeeError={
+          assignmentErrors[assignment.idEventAssignments]?.employee
+        }
+        paymentError={assignmentErrors[assignment.idEventAssignments]?.payment}
+        chargedAmount={
+          serviceUnitPriceByItemId.get(assignment.idBudgetItems ?? "") ?? 0
+        }
+        selectedEmployeeIds={selectedEmployeeIds}
+        onSelectedEmployeeChange={(value) => {
+          setAssignmentDrafts((prev) => ({
+            ...prev,
+            [assignment.idEventAssignments]: {
+              ...prev[assignment.idEventAssignments],
+              selectedEmployee: value,
+            },
+          }));
+          setAssignmentErrors((prev) => ({
+            ...prev,
+            [assignment.idEventAssignments]: {
+              ...prev[assignment.idEventAssignments],
+              employee: undefined,
+            },
+          }));
+        }}
+        onPaymentChange={(value) => {
+          setAssignmentDrafts((prev) => ({
+            ...prev,
+            [assignment.idEventAssignments]: {
+              ...prev[assignment.idEventAssignments],
+              payment: formatCurrencyInput(value),
+            },
+          }));
+          setAssignmentErrors((prev) => ({
+            ...prev,
+            [assignment.idEventAssignments]: {
+              ...prev[assignment.idEventAssignments],
+              payment: undefined,
+            },
+          }));
+        }}
+      />
+    );
+  }
+
   async function handleSaveAllAssignments() {
     const isValid = validateAssignmentDrafts();
     if (!isValid) {
@@ -492,6 +586,47 @@ export default function EventDetail() {
             </div>
           )}
 
+          {isMultiDayEvent ? (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                Itinerário por dia
+              </p>
+              <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
+                {Array.from({ length: eventDayCount }, (_, dayIndex) => (
+                  <div
+                    key={`day-itinerary-${dayIndex}`}
+                    className="rounded-xl border border-[#e8d5c9] bg-white p-3"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                      {dayShortLabel(dayIndex)}
+                    </p>
+                    <div className="mt-2 space-y-1 text-sm text-[#2c1810]">
+                      <p>
+                        <span className="text-[#7a4430]">Local:</span>{" "}
+                        {eventLocationPerDay[dayIndex] || "-"}
+                      </p>
+                      <p>
+                        <span className="text-[#7a4430]">Horário:</span>{" "}
+                        {eventArrivalTimes[dayIndex] || "-"} às{" "}
+                        {eventDepartureTimes[dayIndex] || "-"}
+                      </p>
+                      <p>
+                        <span className="text-[#7a4430]">Convidados:</span>{" "}
+                        {guestCountPerDay[dayIndex] ?? "-"}
+                      </p>
+                      <p>
+                        <span className="text-[#7a4430]">Duração:</span>{" "}
+                        {durationHoursPerDay[dayIndex]
+                          ? `${durationHoursPerDay[dayIndex]}h`
+                          : "-"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="sm:col-span-2 lg:col-span-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
               Extrato dos serviços
@@ -499,28 +634,63 @@ export default function EventDetail() {
             <div className="mt-2 rounded-xl border border-[#e8d5c9] bg-white p-3">
               {detailedServices.length > 0 ? (
                 <div className="space-y-2">
-                  {detailedServices.map((service) => (
-                    <div
-                      key={service.idBudgetItems}
-                      className="flex items-start justify-between gap-3 text-sm"
-                    >
-                      <div>
-                        <p className="font-medium text-[#2c1810]">
-                          {getEventServiceLabel(
-                            service.serviceDescription ?? "",
-                            service.quantity,
-                          )}
-                        </p>
-                        <p className="text-xs text-[#7a4430]">
-                          {service.quantity} x{" "}
-                          {formatCurrencyBRL(service.unitPrice)}
-                        </p>
-                      </div>
-                      <p className="font-semibold text-[#2c1810]">
-                        {formatCurrencyBRL(service.totalPrice)}
-                      </p>
-                    </div>
-                  ))}
+                  {isMultiDayEvent
+                    ? servicesByDay.map((dayServices, dayIndex) =>
+                        dayServices.length > 0 ? (
+                          <div
+                            key={`day-services-${dayIndex}`}
+                            className="space-y-2"
+                          >
+                            <p className="text-xs font-semibold uppercase tracking-wide text-[#a16207]">
+                              {dayShortLabel(dayIndex)}
+                            </p>
+                            {dayServices.map((service) => (
+                              <div
+                                key={service.idBudgetItems}
+                                className="flex items-start justify-between gap-3 text-sm"
+                              >
+                                <div>
+                                  <p className="font-medium text-[#2c1810]">
+                                    {getEventServiceLabel(
+                                      service.serviceDescription ?? "",
+                                      service.quantity,
+                                    )}
+                                  </p>
+                                  <p className="text-xs text-[#7a4430]">
+                                    {service.quantity} x{" "}
+                                    {formatCurrencyBRL(service.unitPrice)}
+                                  </p>
+                                </div>
+                                <p className="font-semibold text-[#2c1810]">
+                                  {formatCurrencyBRL(service.totalPrice)}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null,
+                      )
+                    : detailedServices.map((service) => (
+                        <div
+                          key={service.idBudgetItems}
+                          className="flex items-start justify-between gap-3 text-sm"
+                        >
+                          <div>
+                            <p className="font-medium text-[#2c1810]">
+                              {getEventServiceLabel(
+                                service.serviceDescription ?? "",
+                                service.quantity,
+                              )}
+                            </p>
+                            <p className="text-xs text-[#7a4430]">
+                              {service.quantity} x{" "}
+                              {formatCurrencyBRL(service.unitPrice)}
+                            </p>
+                          </div>
+                          <p className="font-semibold text-[#2c1810]">
+                            {formatCurrencyBRL(service.totalPrice)}
+                          </p>
+                        </div>
+                      ))}
 
                   <div className="my-2 h-px w-full bg-[#e8d5c9]" />
 
@@ -612,65 +782,26 @@ export default function EventDetail() {
             />
           </div>
         ) : event.assignments && event.assignments.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            {event.assignments.map((assignment) => (
-              <AssignmentRow
-                key={assignment.idEventAssignments}
-                assignment={assignment}
-                employees={employees}
-                selectedEmployee={
-                  assignmentDrafts[assignment.idEventAssignments]
-                    ?.selectedEmployee ?? ""
-                }
-                payment={
-                  assignmentDrafts[assignment.idEventAssignments]?.payment ?? ""
-                }
-                employeeError={
-                  assignmentErrors[assignment.idEventAssignments]?.employee
-                }
-                paymentError={
-                  assignmentErrors[assignment.idEventAssignments]?.payment
-                }
-                chargedAmount={
-                  serviceUnitPriceByItemId.get(
-                    assignment.idBudgetItems ?? "",
-                  ) ?? 0
-                }
-                selectedEmployeeIds={selectedEmployeeIds}
-                onSelectedEmployeeChange={(value) => {
-                  setAssignmentDrafts((prev) => ({
-                    ...prev,
-                    [assignment.idEventAssignments]: {
-                      ...prev[assignment.idEventAssignments],
-                      selectedEmployee: value,
-                    },
-                  }));
-                  setAssignmentErrors((prev) => ({
-                    ...prev,
-                    [assignment.idEventAssignments]: {
-                      ...prev[assignment.idEventAssignments],
-                      employee: undefined,
-                    },
-                  }));
-                }}
-                onPaymentChange={(value) => {
-                  setAssignmentDrafts((prev) => ({
-                    ...prev,
-                    [assignment.idEventAssignments]: {
-                      ...prev[assignment.idEventAssignments],
-                      payment: formatCurrencyInput(value),
-                    },
-                  }));
-                  setAssignmentErrors((prev) => ({
-                    ...prev,
-                    [assignment.idEventAssignments]: {
-                      ...prev[assignment.idEventAssignments],
-                      payment: undefined,
-                    },
-                  }));
-                }}
-              />
-            ))}
+          <div className="flex flex-col gap-4">
+            {isMultiDayEvent
+              ? assignmentsByDay.map((dayAssignments, dayIndex) =>
+                  dayAssignments.length > 0 ? (
+                    <div
+                      key={`day-assignments-${dayIndex}`}
+                      className="flex flex-col gap-3"
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#a16207]">
+                        {dayShortLabel(dayIndex)}
+                      </p>
+                      {dayAssignments.map((assignment) =>
+                        renderAssignmentRow(assignment),
+                      )}
+                    </div>
+                  ) : null,
+                )
+              : draftAssignments.map((assignment) =>
+                  renderAssignmentRow(assignment),
+                )}
           </div>
         ) : (
           <p className="text-sm text-[#7a4430]">

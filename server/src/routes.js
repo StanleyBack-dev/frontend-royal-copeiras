@@ -12,6 +12,7 @@ import observabilityRoutes from "./modules/observability/routes.js";
 import signatureRoutes from "./modules/signature/routes.js";
 import eventsRoutes from "./modules/events/routes.js";
 import paymentsRoutes from "./modules/payments/routes.js";
+import publicIntakeRoutes from "./modules/public-intake/routes.js";
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use("/observability", observabilityRoutes);
 router.use("/signature", signatureRoutes);
 router.use("/events", eventsRoutes);
 router.use("/payments", paymentsRoutes);
+router.use("/public-intake", publicIntakeRoutes);
 
 export default router;

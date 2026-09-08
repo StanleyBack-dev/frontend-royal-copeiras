@@ -115,6 +115,59 @@ function formatEventDatesText(eventDates: string[]) {
     .join(", ");
 }
 
+function allEqual<T>(values: T[]): boolean {
+  return values.length > 0 && values.every((value) => value === values[0]);
+}
+
+function dayLabel(eventDates: string[], index: number) {
+  return eventDates[index]
+    ? `no dia ${formatEventDateWithWeekday(eventDates[index])}`
+    : `no ${index + 1}º dia`;
+}
+
+function buildEventLocationText(eventDates: string[], locations: string[]) {
+  const trimmed = locations.map((location) => location?.trim() || "");
+
+  if (!trimmed.some(Boolean)) {
+    return "local a definir";
+  }
+
+  if (allEqual(trimmed)) {
+    return trimmed[0] || "local a definir";
+  }
+
+  return trimmed
+    .map(
+      (location, index) =>
+        `${dayLabel(eventDates, index)}, no local ${location || "a definir"}`,
+    )
+    .join("; ");
+}
+
+function buildDurationClauseText(eventDates: string[], durations: number[]) {
+  const validDurations = durations.filter(
+    (duration) => Number.isFinite(duration) && duration > 0,
+  );
+
+  if (!validDurations.length) {
+    return "Pelo período de 08 horas consecutivas.";
+  }
+
+  if (allEqual(durations)) {
+    return `Pelo período de ${String(durations[0]).padStart(2, "0")} horas consecutivas.`;
+  }
+
+  const parts = durations.map((duration, index) => {
+    const hours =
+      Number.isFinite(duration) && duration > 0
+        ? String(duration).padStart(2, "0")
+        : "08";
+    return `${dayLabel(eventDates, index)} por ${hours} horas consecutivas`;
+  });
+
+  return `Sendo ${parts.join(", ")}.`;
+}
+
 function parseTimeToMinutes(time?: string) {
   if (!time || !/^\d{2}:\d{2}$/.test(time)) {
     return undefined;
@@ -251,6 +304,39 @@ function buildServicesAndQuantities(items: BudgetItem[]) {
     .join(", ");
 }
 
+function buildServicesBlockPerDay(
+  items: BudgetItem[],
+  eventDates: string[],
+  buildItemLine: (item: BudgetItem) => string,
+): string {
+  const byDay = new Map<number, BudgetItem[]>();
+
+  items.forEach((item) => {
+    const day = item.eventDateIndex ?? 0;
+    const existing = byDay.get(day) ?? [];
+    existing.push(item);
+    byDay.set(day, existing);
+  });
+
+  const sortedDays = Array.from(byDay.keys()).sort(
+    (left, right) => left - right,
+  );
+  const lines: string[] = [];
+  let clauseIndex = 1;
+
+  sortedDays.forEach((day) => {
+    const label = dayLabel(eventDates, day);
+    const capitalizedLabel = `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
+    lines.push(`1.1.${clauseIndex}. ${capitalizedLabel}:`);
+    clauseIndex += 1;
+    byDay.get(day)!.forEach((item) => {
+      lines.push(`   - ${buildItemLine(item)}`);
+    });
+  });
+
+  return lines.join("\n");
+}
+
 function buildDefaultContractBody(
   budget: Budget | null,
   contractor: ContractorValues,
@@ -258,24 +344,28 @@ function buildDefaultContractBody(
   const tradeName = contractorTradeName(contractor);
   const paymentReference = contractorPaymentReference(contractor);
   const servicesAndQuantities = buildServicesAndQuantities(budget?.items || []);
-  const eventDatesText = formatEventDatesText(budget?.eventDates || []);
-  const eventLocationText =
-    typeof budget?.eventLocation === "string" && budget.eventLocation.trim()
-      ? budget.eventLocation.trim()
-      : "local a definir";
+  const eventDates = budget?.eventDates || [];
+  const eventDatesText = formatEventDatesText(eventDates);
+  const eventLocationText = buildEventLocationText(
+    eventDates,
+    budget?.eventLocation || [],
+  );
   const eventScheduleText = formatEventScheduleText(
     budget?.eventDates || [],
     budget?.eventArrivalTimes || [],
     budget?.eventDepartureTimes || [],
   );
-  const eventHours = budget?.durationHours
-    ? String(budget.durationHours).padStart(2, "0")
-    : "08";
+  const durationClauseText = buildDurationClauseText(
+    eventDates,
+    budget?.durationHours || [],
+  );
   const totalAmount =
     typeof budget?.totalAmount === "number" ? budget.totalAmount : 0;
   const totalAmountLabel = formatCurrencyExtended(totalAmount);
-  const displacementFee =
-    typeof budget?.displacementFee === "number" ? budget.displacementFee : 0;
+  const displacementFee = (budget?.displacementFee || []).reduce(
+    (sum, value) => sum + (typeof value === "number" ? value : 0),
+    0,
+  );
   const displacementFeeLabel = formatCurrencyExtended(displacementFee);
   const advancePercentage =
     typeof budget?.advancePercentage === "number"
@@ -307,14 +397,16 @@ function buildDefaultContractBody(
     return desc;
   };
 
-  const servicesBlock = items.length
-    ? items
-        .map((it, index) => {
-          const line = buildItemLine(it);
-          return `1.1.${index + 1}. ${line}`;
-        })
-        .join("\n")
-    : `1.1.1. ${servicesAndQuantities}`;
+  const servicesBlock = !items.length
+    ? `1.1.1. ${servicesAndQuantities}`
+    : eventDates.length <= 1
+      ? items
+          .map((it, index) => {
+            const line = buildItemLine(it);
+            return `1.1.${index + 1}. ${line}`;
+          })
+          .join("\n")
+      : buildServicesBlockPerDay(items, eventDates, buildItemLine);
 
   const displacementClause =
     displacementFee > 0
@@ -417,16 +509,23 @@ function buildDefaultContractBody(
     return String(n);
   }
 
-  const guestCount =
-    typeof budget?.guestCount === "number" &&
-    Number.isFinite(budget.guestCount) &&
-    budget.guestCount > 0
-      ? budget.guestCount
-      : undefined;
+  const guestCounts = budget?.guestCount || [];
+  const validGuestCounts = guestCounts.filter(
+    (value) => Number.isFinite(value) && value > 0,
+  );
 
-  const guestCountLabel = guestCount
-    ? `${guestCount} (${numberToPtWords(guestCount)}) convidados`
-    : null;
+  const guestCountLabel = !validGuestCounts.length
+    ? null
+    : allEqual(guestCounts)
+      ? `${guestCounts[0]} (${numberToPtWords(guestCounts[0])}) convidados`
+      : guestCounts
+          .map((count, index) =>
+            Number.isFinite(count) && count > 0
+              ? `${dayLabel(eventDates, index)}, ${count} (${numberToPtWords(count)}) convidados`
+              : null,
+          )
+          .filter((value): value is string => Boolean(value))
+          .join("; ");
 
   const replacementList = items.length
     ? items
@@ -458,7 +557,9 @@ function buildDefaultContractBody(
 
   const replacementClause = `\n5.4. A contratada responsabiliza-se pela substituição de qualquer profissional contratado ${replacementList} em caso de ausência, atraso ou impossibilidade de comparecimento, sem custos adicionais à contratante.`;
 
-  return `CLÁUSULA 1ª - SERVIÇOS CONTRATADOS:\n\n1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada, consistentes na disponibilização de:\n${servicesBlock}\n1.2. Pelo período de ${eventHours} horas consecutivas.\n1.3. O evento está previsto para ocorrer ${eventDatesText}, ${eventScheduleText}, ${guestCountLabel ? `com previsão de ${guestCountLabel},` : ""} no local ${eventLocationText}.${displacementClause}\n\nCLÁUSULA 2ª - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}${displacementFee > 0 ? `, sendo ${displacementFeeLabel} referente à taxa de deslocamento` : ""}.\n2.2. O pagamento deverá ser realizado à vista, via pix (${paymentReference}) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n2.3. Caso a prestação dos serviços ultrapasse o horário previamente acordado, será necessário contratar horas adicionais, no valor de R$ 90,00 (noventa reais) por hora extra, por profissional.\n\nCLÁUSULA 3ª - DOS MATERIAIS DE LIMPEZA:\n\n3.1. A contratada se responsabiliza por disponibilizar, para a adequada execução dos serviços durante o evento, os seguintes materiais de limpeza: desinfetante, aromatizante de ambiente (cheirinho de banheiro), pano de chão, rodo, vassoura, pá de lixo, sacos de lixo, luvas e álcool.\n3.2. Caso o contratante deseje a inclusão de papel toalha e papel higiênico, este valor será cobrado à parte e adicionado ao valor total do serviço. Ressalta-se que os materiais mencionados acima serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.\n\nCLÁUSULA 4ª - RESPONSABILIDADES DO CONTRATANTE:\n\n4.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n4.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLÁUSULA 5ª - RESPONSABILIDADES DA CONTRATADA:\n\n5.1. A ${tradeName} compromete-se a prestar os serviços contratados com profissional qualificada e devidamente treinada para atender as necessidades do evento.\n5.2. A contratada se compromete a garantir a pontualidade e a boa apresentação da equipe durante todo o evento.\n5.3. A contratada se responsabiliza pela supervisão e acompanhamento da equipe para assegurar o cumprimento das atividades conforme o acordado neste contrato.${replacementClause}\n\nCLÁUSULA 6ª - CANCELAMENTO E REEMBOLSO:\n\n6.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n6.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n6.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLÁUSULA 7ª - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n7.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n7.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da ${tradeName}.\n7.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLÁUSULA 8ª - VIGÊNCIA:\n\n8.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLÁUSULA 9ª - CONDIÇÕES GERAIS:\n\n9.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe ${tradeName}`;
+  const penaltyClause = `\n5.5. Em caso de descumprimento, pela CONTRATADA, das obrigações previstas nas Cláusulas 5.1 a 5.3 (pontualidade, qualidade e adequação da equipe, fornecimento dos materiais previstos na Cláusula 3ª), a CONTRATADA sujeitar-se-á à multa de 10% (dez por cento) sobre o valor total do contrato, sem prejuízo do direito da CONTRATANTE de exigir o cumprimento da obrigação ou de rescindir o contrato, bem como de pleitear indenização por perdas e danos comprovados.`;
+
+  return `CLÁUSULA 1ª - SERVIÇOS CONTRATADOS:\n\n1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada, consistentes na disponibilização de:\n${servicesBlock}\n1.2. ${durationClauseText}\n1.3. O evento está previsto para ocorrer ${eventDatesText}, ${eventScheduleText}, ${guestCountLabel ? `com previsão de ${guestCountLabel},` : ""} no local ${eventLocationText}.${displacementClause}\n\nCLÁUSULA 2ª - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}${displacementFee > 0 ? `, sendo ${displacementFeeLabel} referente à taxa de deslocamento` : ""}.\n2.2. O pagamento deverá ser realizado à vista, via pix (${paymentReference}) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n2.3. Caso a prestação dos serviços ultrapasse o horário previamente acordado, será necessário contratar horas adicionais, no valor de R$ 90,00 (noventa reais) por hora extra, por profissional.\n\nCLÁUSULA 3ª - DOS MATERIAIS DE LIMPEZA:\n\n3.1. A contratada se responsabiliza por disponibilizar, para a adequada execução dos serviços durante o evento, os seguintes materiais de limpeza: desinfetante, aromatizante de ambiente (cheirinho de banheiro), pano de chão, rodo, vassoura, pá de lixo, sacos de lixo, luvas e álcool.\n3.2. Caso o contratante deseje a inclusão de papel toalha e papel higiênico, este valor será cobrado à parte e adicionado ao valor total do serviço. Ressalta-se que os materiais mencionados acima serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.\n\nCLÁUSULA 4ª - RESPONSABILIDADES DO CONTRATANTE:\n\n4.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n4.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLÁUSULA 5ª - RESPONSABILIDADES DA CONTRATADA:\n\n5.1. A ${tradeName} compromete-se a cumprir rigorosamente os horários acordados para a prestação dos serviços, garantindo a pontualidade da equipe designada para o evento.\n5.2. A ${tradeName} compromete-se a prestar os serviços contratados com equipe qualificada, assegurando a adequação técnica e comportamental dos profissionais designados.\n5.3. A contratada se responsabiliza pelo fornecimento dos materiais previstos na Cláusula 3ª, necessários à adequada execução dos serviços contratados.${replacementClause}${penaltyClause}\n\nCLÁUSULA 6ª - CANCELAMENTO E REEMBOLSO:\n\n6.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n6.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n6.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLÁUSULA 7ª - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n7.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n7.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da ${tradeName}.\n7.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLÁUSULA 8ª - VIGÊNCIA:\n\n8.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLÁUSULA 9ª - CONDIÇÕES GERAIS:\n\n9.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe ${tradeName}`;
 }
 
 function buildDefaultFormValues(initialBudgetId?: string): ContractFormValues {

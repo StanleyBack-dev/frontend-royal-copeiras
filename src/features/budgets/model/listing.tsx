@@ -35,7 +35,10 @@ export function filterBudgetsBySearch(
     const leadName = resolveLeadName(budget.idLeads).toLowerCase();
     return (
       budget.budgetNumber.toLowerCase().includes(normalizedSearch) ||
-      (budget.eventLocation || "").toLowerCase().includes(normalizedSearch) ||
+      (budget.eventLocation || [])
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch) ||
       leadName.includes(normalizedSearch)
     );
   });
@@ -119,7 +122,10 @@ export function getBudgetTableColumns(
     {
       key: "eventLocation",
       label: budgetUiCopy.list.columns.eventLocation,
-      render: (budget) => budget.eventLocation || "-",
+      render: (budget) =>
+        Array.from(new Set((budget.eventLocation || []).filter(Boolean))).join(
+          " / ",
+        ) || "-",
     },
     {
       key: "totalAmount",

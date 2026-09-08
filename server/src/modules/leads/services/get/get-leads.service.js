@@ -23,6 +23,11 @@ export class GetLeadsService {
             email
             phone
             document
+            legalName
+            address
+            addressCity
+            addressState
+            addressZipCode
             source
             notes
             status

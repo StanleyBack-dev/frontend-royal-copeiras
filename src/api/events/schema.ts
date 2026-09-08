@@ -18,6 +18,7 @@ export const EventAssignmentSchema = z.object({
   isActive: z.boolean(),
   budgetItemDescription: z.string().nullable().optional(),
   budgetItemQuantity: z.number().nullable().optional(),
+  eventDateIndex: z.number().int().min(0).optional().default(0),
   employeeName: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
@@ -30,6 +31,7 @@ export const EventServiceBreakdownSchema = z.object({
   unitPrice: z.number(),
   totalPrice: z.number(),
   sortOrder: z.number(),
+  eventDateIndex: z.number().int().min(0).optional().default(0),
 });
 
 export const EventSchema = z.object({
@@ -47,6 +49,11 @@ export const EventSchema = z.object({
   leadName: z.string().nullable().optional(),
   eventDates: z.array(z.string()).nullable().optional(),
   eventLocation: z.string().nullable().optional(),
+  eventArrivalTimes: z.array(z.string()).optional().default([]),
+  eventDepartureTimes: z.array(z.string()).optional().default([]),
+  eventLocationPerDay: z.array(z.string()).optional().default([]),
+  guestCountPerDay: z.array(z.number()).optional().default([]),
+  durationHoursPerDay: z.array(z.number()).optional().default([]),
   displacementFee: z.number().optional().default(0),
   discountTotal: z.number().optional().default(0),
   overtimeMinutes: z.number().int().min(0).optional().default(0),

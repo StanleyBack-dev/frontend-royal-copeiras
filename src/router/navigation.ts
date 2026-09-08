@@ -12,6 +12,8 @@ export {
   routePaths,
   utilityRoutePaths,
   userRoutePaths,
+  publicIntakeRoutePaths,
+  publicFormRoutePaths,
 } from "./navigation/paths";
 export { viewTitles } from "./navigation/titles";
 export {

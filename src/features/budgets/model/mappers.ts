@@ -56,6 +56,7 @@ function mapBudgetItemFormToPayload(
     unitPrice: toDecimal(item.unitPrice) ?? 0,
     notes: "",
     sortOrder: index,
+    eventDateIndex: item.eventDateIndex ?? 0,
   };
 }
 
@@ -69,10 +70,28 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
   const eventDepartureTimes = budget.eventDepartureTimes?.length
     ? budget.eventDepartureTimes.map((value) => value.trim())
     : [];
+  const eventLocations = budget.eventLocation?.length
+    ? budget.eventLocation.map((value) => value.trim())
+    : [];
+  const guestCounts = budget.guestCount?.length
+    ? budget.guestCount.map((value) => String(value))
+    : [];
+  const durationHoursPerDay = budget.durationHours?.length
+    ? budget.durationHours.map((value) => String(value))
+    : [];
+  const discountTypesRaw = budget.discountType ?? [];
+  const discountPercentagesRaw = budget.discountPercentage ?? [];
+  const discountAmountsRaw = budget.discountAmount ?? [];
+  const displacementFeesRaw = budget.displacementFee ?? [];
   const eventDayCount = Math.max(
     eventDates.length,
     eventArrivalTimes.length,
     eventDepartureTimes.length,
+    eventLocations.length,
+    guestCounts.length,
+    durationHoursPerDay.length,
+    discountTypesRaw.length,
+    displacementFeesRaw.length,
     1,
   );
 
@@ -88,10 +107,9 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
     eventDates: buildEventDates(eventDayCount, eventDates),
     eventArrivalTimes: buildEventTimes(eventDayCount, eventArrivalTimes),
     eventDepartureTimes: buildEventTimes(eventDayCount, eventDepartureTimes),
-    eventLocation: budget.eventLocation || "",
-    guestCount: budget.guestCount != null ? String(budget.guestCount) : "",
-    durationHours:
-      budget.durationHours != null ? String(budget.durationHours) : "",
+    eventLocation: buildEventTimes(eventDayCount, eventLocations),
+    guestCount: buildEventTimes(eventDayCount, guestCounts),
+    durationHours: buildEventTimes(eventDayCount, durationHoursPerDay),
     paymentMethod:
       budget.paymentMethod &&
       budgetPaymentMethodOptions.includes(
@@ -101,19 +119,26 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
         : "",
     advancePercentage:
       budget.advancePercentage != null ? String(budget.advancePercentage) : "",
-    discountPercentage:
-      budget.discountPercentage != null
-        ? String(budget.discountPercentage)
+    discountType: buildEventTimes(
+      eventDayCount,
+      discountTypesRaw,
+    ) as BudgetFormValues["discountType"],
+    discountPercentage: Array.from({ length: eventDayCount }, (_, index) =>
+      discountTypesRaw[index] === "percentage" &&
+      discountPercentagesRaw[index] != null
+        ? String(discountPercentagesRaw[index])
         : "",
-    discountType: budget.discountType || "",
-    discountAmount:
-      budget.discountAmount != null && budget.discountAmount >= 0
-        ? formatCurrencyFromDecimal(budget.discountAmount)
+    ),
+    discountAmount: Array.from({ length: eventDayCount }, (_, index) =>
+      discountTypesRaw[index] === "amount" && discountAmountsRaw[index] != null
+        ? formatCurrencyFromDecimal(discountAmountsRaw[index])
         : "",
-    displacementFee:
-      budget.displacementFee != null && budget.displacementFee >= 0
-        ? formatCurrencyFromDecimal(budget.displacementFee)
+    ),
+    displacementFee: Array.from({ length: eventDayCount }, (_, index) =>
+      displacementFeesRaw[index] != null
+        ? formatCurrencyFromDecimal(displacementFeesRaw[index])
         : "0,00",
+    ),
     items: (budget.items || []).map((item) => {
       const serviceType =
         item.position || inferBudgetServiceType(item.description);
@@ -144,6 +169,7 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
           : sanitizeBudgetServiceDescription(item.description),
         quantity: String(item.quantity),
         unitPrice: formatCurrencyFromDecimal(item.unitPrice),
+        eventDateIndex: item.eventDateIndex ?? 0,
       };
     }),
   };
@@ -186,34 +212,55 @@ export function mapBudgetFormToPayload(
   const eventDepartureTimes = values.eventDepartureTimes
     .slice(0, eventDaysCount)
     .map((value) => value.trim());
+  const eventLocation = values.eventLocation
+    .slice(0, eventDaysCount)
+    .map((value) => value.trim());
+  const guestCount = values.guestCount
+    .slice(0, eventDaysCount)
+    .map((value) => Number(value || 0));
+  const durationHours = values.durationHours
+    .slice(0, eventDaysCount)
+    .map((value) => Number(value || 0));
   const items = values.items.map(mapBudgetItemFormToPayload);
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
-    0,
+
+  const discountType = values.discountType
+    .slice(0, eventDaysCount)
+    .map((type) => type || "");
+  const discountPercentage = discountType.map((type, index) =>
+    type === "percentage" ? Number(values.discountPercentage[index] || 0) : 0,
   );
-  const displacementFeeValue = toDecimal(values.displacementFee) ?? 0;
+  const discountAmount = discountType.map((type, index) =>
+    type === "amount"
+      ? (toDecimal(values.discountAmount[index] || "") ?? 0)
+      : 0,
+  );
+  const displacementFee = values.displacementFee
+    .slice(0, eventDaysCount)
+    .map((value) => toDecimal(value) ?? 0);
 
-  const discountType = values.discountType || null;
-  const discountPercentage =
-    values.discountType === "percentage" && values.discountPercentage
-      ? Number(values.discountPercentage)
-      : undefined;
-  const discountAmountValue =
-    values.discountType === "amount" && values.discountAmount
-      ? toDecimal(values.discountAmount)
-      : undefined;
+  const daySubtotals = Array.from({ length: eventDaysCount }, (_, day) =>
+    items
+      .filter((item) => item.eventDateIndex === day)
+      .reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+  );
 
-  const baseTotal = subtotal + displacementFeeValue;
-  const resolvedDiscountAmount =
-    discountType === "percentage"
-      ? Math.max(
-          0,
-          Math.min(baseTotal, baseTotal * ((discountPercentage ?? 0) / 100)),
-        )
-      : discountType === "amount"
-        ? Math.max(0, Math.min(discountAmountValue ?? 0, baseTotal))
-        : 0;
-  const totalAmount = baseTotal - resolvedDiscountAmount;
+  let totalAmount = 0;
+  for (let day = 0; day < eventDaysCount; day += 1) {
+    const baseTotal = daySubtotals[day] + (displacementFee[day] ?? 0);
+    const dayDiscount =
+      discountType[day] === "percentage"
+        ? Math.max(
+            0,
+            Math.min(
+              baseTotal,
+              baseTotal * ((discountPercentage[day] ?? 0) / 100),
+            ),
+          )
+        : discountType[day] === "amount"
+          ? Math.max(0, Math.min(discountAmount[day] ?? 0, baseTotal))
+          : 0;
+    totalAmount += baseTotal - dayDiscount;
+  }
 
   return {
     idLeads: values.idLeads.trim(),
@@ -223,15 +270,15 @@ export function mapBudgetFormToPayload(
     eventDates,
     eventArrivalTimes,
     eventDepartureTimes,
-    eventLocation: values.eventLocation.trim(),
-    guestCount: Number(values.guestCount || 0),
-    durationHours: Number(values.durationHours || 0),
+    eventLocation,
+    guestCount,
+    durationHours,
     paymentMethod: values.paymentMethod.trim(),
     advancePercentage: Number(values.advancePercentage || 0),
     discountPercentage,
     discountType,
-    discountAmount: discountAmountValue,
-    displacementFee: displacementFeeValue,
+    discountAmount,
+    displacementFee,
     totalAmount,
     items,
   };
@@ -239,43 +286,61 @@ export function mapBudgetFormToPayload(
 
 export function calculateBudgetTotals(
   items: BudgetItemFormValues[],
-  displacementFee = "",
-  discountPercentage = "",
-  discountType: "percentage" | "amount" | "" = "",
-  discountAmount = "",
+  displacementFee: string[] = [],
+  discountPercentage: string[] = [],
+  discountType: ("percentage" | "amount" | "")[] = [],
+  discountAmount: string[] = [],
 ) {
-  const subtotal = items.reduce((sum, item) => {
-    const quantity = Number(item.quantity || 0);
-    const unitPrice = toDecimal(item.unitPrice) ?? 0;
-    return sum + quantity * unitPrice;
-  }, 0);
+  const dayCount = Math.max(
+    displacementFee.length,
+    discountType.length,
+    1,
+    ...items.map((item) => (item.eventDateIndex ?? 0) + 1),
+  );
 
-  const displacementFeeValue = toDecimal(displacementFee) ?? 0;
-  const baseTotal = subtotal + displacementFeeValue;
+  const daySubtotals = Array.from({ length: dayCount }, (_, day) =>
+    items
+      .filter((item) => (item.eventDateIndex ?? 0) === day)
+      .reduce((sum, item) => {
+        const quantity = Number(item.quantity || 0);
+        const unitPrice = toDecimal(item.unitPrice) ?? 0;
+        return sum + quantity * unitPrice;
+      }, 0),
+  );
 
-  let calculatedDiscountAmount = 0;
+  const subtotal = daySubtotals.reduce((sum, value) => sum + value, 0);
 
-  if (discountType === "percentage") {
-    const discountPercentageValue = Math.min(
-      Math.max(Number(discountPercentage || 0), 0),
-      100,
-    );
-    calculatedDiscountAmount =
-      discountPercentageValue > 0
-        ? baseTotal * (discountPercentageValue / 100)
-        : 0;
-  } else if (discountType === "amount") {
-    const discountAmountValue = toDecimal(discountAmount) ?? 0;
-    calculatedDiscountAmount = Math.max(
-      0,
-      Math.min(discountAmountValue, baseTotal),
-    );
+  let totalDisplacementFee = 0;
+  let totalDiscountAmount = 0;
+  let total = 0;
+
+  for (let day = 0; day < dayCount; day += 1) {
+    const dayFee = toDecimal(displacementFee[day] || "") ?? 0;
+    totalDisplacementFee += dayFee;
+
+    const baseTotal = daySubtotals[day] + dayFee;
+    const dayType = discountType[day] || "";
+
+    let dayDiscount = 0;
+    if (dayType === "percentage") {
+      const dayPercentage = Math.min(
+        Math.max(Number(discountPercentage[day] || 0), 0),
+        100,
+      );
+      dayDiscount = dayPercentage > 0 ? baseTotal * (dayPercentage / 100) : 0;
+    } else if (dayType === "amount") {
+      const dayAmount = toDecimal(discountAmount[day] || "") ?? 0;
+      dayDiscount = Math.max(0, Math.min(dayAmount, baseTotal));
+    }
+
+    totalDiscountAmount += dayDiscount;
+    total += baseTotal - dayDiscount;
   }
 
   return {
     subtotal,
-    displacementFee: displacementFeeValue,
-    discountAmount: calculatedDiscountAmount,
-    total: baseTotal - calculatedDiscountAmount,
+    displacementFee: totalDisplacementFee,
+    discountAmount: totalDiscountAmount,
+    total,
   };
 }

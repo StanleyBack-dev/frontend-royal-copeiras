@@ -27,5 +27,9 @@ export const viewTitles: Record<
     subtitle: "Gerenciar usuários de acesso",
   },
   events: { title: "Eventos", subtitle: "Agenda e histórico de eventos" },
+  publicIntake: {
+    title: "Links de Orçamento",
+    subtitle: "Gerar códigos para o cliente preencher os dados do orçamento",
+  },
   profile: { title: "Perfil", subtitle: "Informações da empresa" },
 };

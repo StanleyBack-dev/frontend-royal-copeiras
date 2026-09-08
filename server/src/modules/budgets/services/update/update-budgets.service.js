@@ -45,6 +45,7 @@ export class UpdateBudgetsService {
               totalPrice
               notes
               sortOrder
+              eventDateIndex
               createdAt
               updatedAt
             }

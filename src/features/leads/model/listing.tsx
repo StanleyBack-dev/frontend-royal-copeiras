@@ -7,6 +7,7 @@ import { colors } from "../../../config";
 import type { Lead } from "../../../api/leads/schema";
 import { budgetRoutePaths, leadRoutePaths } from "../../../router";
 import { formatDateTimeDisplay } from "../../../utils/format";
+import GenerateLinkAction from "../components/GenerateLinkAction";
 import { leadUiCopy } from "./messages";
 
 export function filterLeadsBySearch(leads: Lead[], search: string) {
@@ -61,6 +62,7 @@ export function getLeadTableColumns(): DataTableColumn<Lead>[] {
           >
             Orçamento
           </Link>
+          <GenerateLinkAction lead={lead} />
           <Link
             to={leadRoutePaths.edit(lead.idLeads)}
             title={leadUiCopy.listing.actions.edit}
