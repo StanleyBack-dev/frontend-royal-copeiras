@@ -11,6 +11,7 @@ import {
   signatureRoutePaths,
   eventRoutePaths,
   leadRoutePaths,
+  publicIntakeRoutePaths,
   routePaths,
   utilityRoutePaths,
 } from "../navigation";
@@ -21,6 +22,7 @@ import { PaymentsProviderOutlet } from "../../features/payments";
 import { SignaturesProviderOutlet } from "../../features/signatures";
 import { LeadsProviderOutlet } from "../../features/leads";
 import { EventsProviderOutlet } from "../../features/events";
+import { PublicIntakeProviderOutlet } from "../../features/public-intake";
 import { ManagementRoutes } from "./ManagementRoutes";
 
 const AccessDenied = lazy(() => import("../../pages/AccessDenied"));
@@ -32,6 +34,9 @@ const Contracts = lazy(() => import("../../pages/contracts/Contracts"));
 const Signatures = lazy(() => import("../../pages/signatures/Signatures"));
 const Events = lazy(() => import("../../pages/events/Events"));
 const EventDetail = lazy(() => import("../../pages/events/EventDetail"));
+const PublicIntakeCodes = lazy(
+  () => import("../../pages/public-intake/PublicIntakeCodes"),
+);
 const PaymentForm = lazy(() => import("../../pages/payments/PaymentForm"));
 const Payments = lazy(() => import("../../pages/payments/Payments"));
 const LeadForm = lazy(() => import("../../pages/leads/LeadForm"));
@@ -99,6 +104,22 @@ export function AppShellRoutes({ userId }: AppShellRoutesProps) {
           <Route
             path={eventRoutePaths.detail()}
             element={withPageSuspense(<EventDetail />)}
+          />
+        </Route>
+      </Route>
+      <Route element={<RequirePageAccessRoute view="publicIntake" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={authRoutePaths.login}
+              ProviderOutlet={PublicIntakeProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={publicIntakeRoutePaths.list}
+            element={withPageSuspense(<PublicIntakeCodes />)}
           />
         </Route>
       </Route>

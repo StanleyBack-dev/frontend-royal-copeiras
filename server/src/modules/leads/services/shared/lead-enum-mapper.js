@@ -4,6 +4,7 @@ const LEAD_SOURCE_ENUM_VALUES = new Set([
   "WEBSITE",
   "WHATSAPP",
   "EVENT",
+  "PUBLIC_FORM",
   "OTHER",
 ]);
 

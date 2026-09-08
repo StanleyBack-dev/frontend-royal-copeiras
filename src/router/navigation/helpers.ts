@@ -10,6 +10,7 @@ import {
   contractRoutePaths,
   paymentRoutePaths,
   signatureRoutePaths,
+  publicIntakeRoutePaths,
 } from "./paths";
 
 export function getActiveView(pathname: string): ActiveView {
@@ -72,6 +73,8 @@ export function getActiveView(pathname: string): ActiveView {
 
   if (pathname.startsWith(routePaths.events)) return "events";
 
+  if (pathname.startsWith(publicIntakeRoutePaths.list)) return "publicIntake";
+
   if (pathname.startsWith(routePaths.profile)) return "profile";
   return "dashboard";
 }
@@ -100,6 +103,8 @@ export function getPathForView(view: ActiveView) {
       return userRoutePaths.list;
     case "events":
       return routePaths.events;
+    case "publicIntake":
+      return publicIntakeRoutePaths.list;
     case "profile":
       return routePaths.profile;
     default:

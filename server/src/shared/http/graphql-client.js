@@ -174,6 +174,7 @@ export async function executeGraphql({
   requestId,
   timeoutMs,
   maxRetries,
+  isPublic = false,
 }) {
   const operationName = getOperationName(query);
   const startedAt = Date.now();
@@ -188,11 +189,15 @@ export async function executeGraphql({
   });
 
   try {
+    // Public mutations (no session expected) never need the dev-auth
+    // fallback — that convenience exists so authenticated endpoints work
+    // locally without a full login flow, and would otherwise try (and can
+    // fail) to sign in as a dev user for a call that doesn't need auth at all.
     const resolvedAuthHeaders = authorization
       ? { Authorization: authorization }
       : cookieHeader
         ? { Cookie: cookieHeader }
-        : devAuthConfig.enabled
+        : devAuthConfig.enabled && !isPublic
           ? await getDevAuthHeaders()
           : {};
 

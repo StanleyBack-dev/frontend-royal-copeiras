@@ -17,6 +17,7 @@ export const pagePermissionOptions: PagePermissionOption[] = [
   { key: "USERS", label: "Usuários" },
   { key: "EVENTS", label: "Eventos" },
   { key: "PAYMENTS", label: "Pagamentos" },
+  { key: "PUBLIC_INTAKE", label: "Links de Orçamento" },
 ];
 
 export { getDefaultPagePermissionsByGroup };

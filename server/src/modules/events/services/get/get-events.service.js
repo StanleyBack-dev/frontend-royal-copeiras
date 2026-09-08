@@ -23,6 +23,11 @@ export class GetEventsService {
             leadName
             eventDates
             eventLocation
+            eventArrivalTimes
+            eventDepartureTimes
+            eventLocationPerDay
+            guestCountPerDay
+            durationHoursPerDay
             displacementFee
             discountTotal
             overtimeMinutes
@@ -34,6 +39,7 @@ export class GetEventsService {
               unitPrice
               totalPrice
               sortOrder
+              eventDateIndex
             }
             totalRevenue
             totalCost
@@ -49,6 +55,7 @@ export class GetEventsService {
               isActive
               budgetItemDescription
               budgetItemQuantity
+              eventDateIndex
               employeeName
               createdAt
               updatedAt

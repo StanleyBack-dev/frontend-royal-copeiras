@@ -1,0 +1,1093 @@
+import { useState, type FormEvent } from "react";
+import { CheckCircle2 } from "lucide-react";
+import AccordionSection from "@/components/molecules/AccordionSection";
+import Button from "@/components/atoms/Button";
+import Input from "@/components/atoms/Input";
+import Select from "@/components/atoms/Select";
+import CrownIcon from "@/components/atoms/icons/CrownIcon";
+import { colors, typography } from "@/config";
+import {
+  verifyPublicIntakeCode,
+  submitPublicIntake,
+} from "@/api/public-intake/methods";
+import { getHttpErrorMessage } from "@/api/shared/http-error";
+import {
+  formatCNPJ,
+  formatCPF,
+  formatLandline,
+  formatPhone,
+  onlyDigits,
+} from "@/utils/format";
+import {
+  BUDGET_EVENT_MAX_DAYS,
+  budgetDurationOptions,
+  budgetEventDateModeOptions,
+  budgetServiceTypeOptions,
+  buildBudgetServiceDescription,
+  buildEventDates,
+  buildEventTimes,
+  type BudgetServiceType,
+} from "@/features/budgets";
+import {
+  serviceComboKey,
+  serviceGenderOptions,
+  type ServiceGenderOption,
+} from "@/features/budgets/model/service-items";
+import { budgetValidationMessages } from "@/features/budgets/model/messages";
+
+type Step = "code" | "form" | "done";
+type DocumentType = "individual" | "company";
+type ContactType = "mobile" | "landline";
+type EventDateMode = (typeof budgetEventDateModeOptions)[number];
+
+interface PublicBudgetItem {
+  serviceType: BudgetServiceType | "";
+  gender: ServiceGenderOption | "";
+  quantity: string;
+  eventDateIndex: number;
+}
+
+const DOCUMENT_DIGITS_CPF = 11;
+const DOCUMENT_DIGITS_CNPJ = 14;
+const CPF_MASK_LENGTH = 14;
+const CNPJ_MASK_LENGTH = 18;
+const PHONE_DIGITS_MOBILE = 11;
+const PHONE_DIGITS_LANDLINE = 10;
+const PHONE_MASK_LENGTH_MOBILE = 15;
+const PHONE_MASK_LENGTH_LANDLINE = 14;
+const EVENT_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const EVENT_TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const TOTAL_SERVICE_COMBOS =
+  budgetServiceTypeOptions.length * serviceGenderOptions.length;
+
+const emptyPublicBudgetItem: PublicBudgetItem = {
+  serviceType: "",
+  gender: "",
+  quantity: "1",
+  eventDateIndex: 0,
+};
+
+export default function RequestBudget() {
+  const [step, setStep] = useState<Step>("code");
+  const [code, setCode] = useState("");
+  const [formToken, setFormToken] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [contactType, setContactType] = useState<ContactType>("mobile");
+  const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [documentType, setDocumentType] = useState<DocumentType>("individual");
+  const [cpf, setCpf] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [documentError, setDocumentError] = useState("");
+
+  const [eventDateMode, setEventDateMode] = useState<EventDateMode>("single");
+  const [eventDaysCount, setEventDaysCount] = useState("1");
+  const [eventDates, setEventDates] = useState<string[]>([""]);
+  const [eventArrivalTimes, setEventArrivalTimes] = useState<string[]>([""]);
+  const [eventDepartureTimes, setEventDepartureTimes] = useState<string[]>([
+    "",
+  ]);
+  const [eventScheduleError, setEventScheduleError] = useState("");
+
+  const [durationHours, setDurationHours] = useState<string[]>([""]);
+  const [durationError, setDurationError] = useState("");
+
+  const [eventLocation, setEventLocation] = useState<string[]>([""]);
+  const [eventLocationError, setEventLocationError] = useState("");
+  const [guestCount, setGuestCount] = useState<string[]>([""]);
+  const [guestCountError, setGuestCountError] = useState("");
+
+  const [items, setItems] = useState<PublicBudgetItem[]>([
+    { ...emptyPublicBudgetItem },
+  ]);
+  const [itemsError, setItemsError] = useState("");
+
+  const [openSteps, setOpenSteps] = useState({ contact: true, event: true });
+  const toggleStep = (step: keyof typeof openSteps) =>
+    setOpenSteps((previous) => ({ ...previous, [step]: !previous[step] }));
+
+  function handleDocumentTypeChange(nextType: DocumentType) {
+    setDocumentType(nextType);
+    setDocumentError("");
+    if (nextType === "individual") {
+      setCnpj("");
+    } else {
+      setCpf("");
+    }
+  }
+
+  function handleContactTypeChange(nextType: ContactType) {
+    setContactType(nextType);
+    setPhoneError("");
+    setPhone("");
+  }
+
+  function resizeEventSchedule(count: number) {
+    setEventDates((previous) => buildEventDates(count, previous));
+    setEventArrivalTimes((previous) => buildEventTimes(count, previous));
+    setEventDepartureTimes((previous) => buildEventTimes(count, previous));
+    setEventLocation((previous) => buildEventTimes(count, previous));
+    setGuestCount((previous) => buildEventTimes(count, previous));
+    setDurationHours((previous) => buildEventTimes(count, previous));
+    setItems((previous) => {
+      const resized = previous.map((item) => ({
+        ...item,
+        eventDateIndex: Math.min(item.eventDateIndex, count - 1),
+      }));
+      const coveredDays = new Set(resized.map((item) => item.eventDateIndex));
+      const missingDayItems = Array.from({ length: count }, (_, day) => day)
+        .filter((day) => !coveredDays.has(day))
+        .map((day) => ({ ...emptyPublicBudgetItem, eventDateIndex: day }));
+
+      return [...resized, ...missingDayItems];
+    });
+  }
+
+  function handleEventDateModeChange(nextMode: EventDateMode) {
+    setEventDateMode(nextMode);
+    setEventScheduleError("");
+    const nextCount = nextMode === "multiple" ? 2 : 1;
+    setEventDaysCount(String(nextCount));
+    resizeEventSchedule(nextCount);
+  }
+
+  function handleEventDaysCountChange(value: string) {
+    setEventDaysCount(value);
+    setEventScheduleError("");
+    resizeEventSchedule(Number(value) || 2);
+  }
+
+  function updateEventDate(index: number, value: string) {
+    setEventScheduleError("");
+    setEventDates((previous) => {
+      const next = [...previous];
+      next[index] = value;
+      return next;
+    });
+  }
+
+  function updateEventArrivalTime(index: number, value: string) {
+    setEventScheduleError("");
+    setEventArrivalTimes((previous) => {
+      const next = [...previous];
+      next[index] = value;
+      return next;
+    });
+  }
+
+  function updateEventDepartureTime(index: number, value: string) {
+    setEventScheduleError("");
+    setEventDepartureTimes((previous) => {
+      const next = [...previous];
+      next[index] = value;
+      return next;
+    });
+  }
+
+  function updateEventLocation(index: number, value: string) {
+    setEventLocationError("");
+    setEventLocation((previous) => {
+      const next = [...previous];
+      next[index] = value;
+      return next;
+    });
+  }
+
+  function updateGuestCount(index: number, value: string) {
+    setGuestCountError("");
+    setGuestCount((previous) => {
+      const next = [...previous];
+      next[index] = value;
+      return next;
+    });
+  }
+
+  function updateDurationHours(index: number, value: string) {
+    setDurationError("");
+    setDurationHours((previous) => {
+      const next = [...previous];
+      next[index] = value;
+      return next;
+    });
+  }
+
+  function addItem(dayIndex: number) {
+    setItemsError("");
+    setItems((previous) => [
+      ...previous,
+      { ...emptyPublicBudgetItem, eventDateIndex: dayIndex },
+    ]);
+  }
+
+  function removeItem(index: number) {
+    setItemsError("");
+    setItems((previous) =>
+      previous.length > 1 ? previous.filter((_, i) => i !== index) : previous,
+    );
+  }
+
+  function updateItem(index: number, patch: Partial<PublicBudgetItem>) {
+    setItemsError("");
+    setItems((previous) =>
+      previous.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+    );
+  }
+
+  const eventDayCount =
+    eventDateMode === "multiple"
+      ? Math.min(
+          Math.max(Number(eventDaysCount || 2), 2),
+          BUDGET_EVENT_MAX_DAYS,
+        )
+      : 1;
+  const eventDateValues = buildEventDates(eventDayCount, eventDates);
+  const eventArrivalTimeValues = buildEventTimes(
+    eventDayCount,
+    eventArrivalTimes,
+  );
+  const eventDepartureTimeValues = buildEventTimes(
+    eventDayCount,
+    eventDepartureTimes,
+  );
+  const eventLocationValues = buildEventTimes(eventDayCount, eventLocation);
+  const guestCountValues = buildEventTimes(eventDayCount, guestCount);
+  const durationHoursValues = buildEventTimes(eventDayCount, durationHours);
+
+  async function handleVerifyCode(event: FormEvent) {
+    event.preventDefault();
+    setError("");
+    setVerifying(true);
+    try {
+      const verified = await verifyPublicIntakeCode(code.trim());
+      setFormToken(verified.formToken);
+      setStep("form");
+    } catch (submitError) {
+      setError(
+        getHttpErrorMessage(submitError, "Código inválido ou expirado."),
+      );
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError("");
+    setEmailError("");
+    setDocumentError("");
+    setPhoneError("");
+    setEventScheduleError("");
+    setDurationError("");
+    setEventLocationError("");
+    setGuestCountError("");
+    setItemsError("");
+
+    if (!name.trim()) {
+      setError("Preencha ao menos o nome.");
+      return;
+    }
+
+    if (!email.trim() || !EMAIL_PATTERN.test(email.trim())) {
+      setEmailError("Informe um e-mail válido.");
+      return;
+    }
+
+    const phoneDigits = onlyDigits(phone);
+    const requiredPhoneDigits =
+      contactType === "mobile" ? PHONE_DIGITS_MOBILE : PHONE_DIGITS_LANDLINE;
+
+    if (!phoneDigits || phoneDigits.length !== requiredPhoneDigits) {
+      setPhoneError(
+        contactType === "mobile"
+          ? `Informe um celular válido (${PHONE_DIGITS_MOBILE} dígitos)`
+          : `Informe um telefone fixo válido (${PHONE_DIGITS_LANDLINE} dígitos)`,
+      );
+      return;
+    }
+
+    const documentDigits =
+      documentType === "individual" ? onlyDigits(cpf) : onlyDigits(cnpj);
+    const requiredDocumentDigits =
+      documentType === "individual"
+        ? DOCUMENT_DIGITS_CPF
+        : DOCUMENT_DIGITS_CNPJ;
+
+    if (!documentDigits || documentDigits.length !== requiredDocumentDigits) {
+      setDocumentError(
+        documentType === "individual"
+          ? `Informe um CPF válido (${DOCUMENT_DIGITS_CPF} dígitos)`
+          : `Informe um CNPJ válido (${DOCUMENT_DIGITS_CNPJ} dígitos)`,
+      );
+      return;
+    }
+
+    const selectedEventDates = eventDateValues.slice(0, eventDayCount);
+    if (
+      selectedEventDates.length !== eventDayCount ||
+      selectedEventDates.some((value) => !EVENT_DATE_PATTERN.test(value))
+    ) {
+      setEventScheduleError(budgetValidationMessages.eventDateRequired);
+      return;
+    }
+
+    const selectedArrivalTimes = eventArrivalTimeValues.slice(0, eventDayCount);
+    if (
+      selectedArrivalTimes.length !== eventDayCount ||
+      selectedArrivalTimes.some((value) => !EVENT_TIME_PATTERN.test(value))
+    ) {
+      setEventScheduleError(budgetValidationMessages.eventArrivalTimeRequired);
+      return;
+    }
+
+    const selectedDepartureTimes = eventDepartureTimeValues.slice(
+      0,
+      eventDayCount,
+    );
+    if (
+      selectedDepartureTimes.length !== eventDayCount ||
+      selectedDepartureTimes.some((value) => !EVENT_TIME_PATTERN.test(value))
+    ) {
+      setEventScheduleError(
+        budgetValidationMessages.eventDepartureTimeRequired,
+      );
+      return;
+    }
+
+    const selectedDurationHours = durationHoursValues.slice(0, eventDayCount);
+    if (
+      selectedDurationHours.length !== eventDayCount ||
+      selectedDurationHours.some((value) => {
+        const hours = Number(value);
+        return !value || !Number.isInteger(hours) || hours < 1 || hours > 24;
+      })
+    ) {
+      setDurationError(budgetValidationMessages.durationRequired);
+      return;
+    }
+
+    const selectedEventLocations = eventLocationValues.slice(0, eventDayCount);
+    if (
+      selectedEventLocations.length !== eventDayCount ||
+      selectedEventLocations.some((value) => !value.trim())
+    ) {
+      setEventLocationError(budgetValidationMessages.eventLocationRequired);
+      return;
+    }
+
+    const selectedGuestCounts = guestCountValues.slice(0, eventDayCount);
+    if (
+      selectedGuestCounts.length !== eventDayCount ||
+      selectedGuestCounts.some((value) => {
+        const guests = Number(value);
+        return !value || !Number.isInteger(guests) || guests <= 0;
+      })
+    ) {
+      setGuestCountError(budgetValidationMessages.guestCountInvalid);
+      return;
+    }
+
+    if (items.length < 1) {
+      setItemsError(budgetValidationMessages.itemsRequired);
+      return;
+    }
+
+    const coveredDays = new Set(items.map((item) => item.eventDateIndex));
+    if (coveredDays.size < eventDayCount) {
+      setItemsError(budgetValidationMessages.dayMissingItems);
+      return;
+    }
+
+    const hasIncompleteItem = items.some(
+      (item) => !item.serviceType || !item.gender || Number(item.quantity) <= 0,
+    );
+    if (hasIncompleteItem) {
+      setItemsError(budgetValidationMessages.itemServiceTypeRequired);
+      return;
+    }
+
+    const itemCombos = items.map(
+      (item) =>
+        `${item.eventDateIndex}:${serviceComboKey(item.serviceType, item.gender)}`,
+    );
+    if (new Set(itemCombos).size !== itemCombos.length) {
+      setItemsError(budgetValidationMessages.itemServiceTypeDuplicated);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await submitPublicIntake({
+        formToken,
+        name: name.trim(),
+        email: email.trim(),
+        phone: phoneDigits,
+        document: documentDigits,
+        eventDates: selectedEventDates,
+        eventArrivalTimes: selectedArrivalTimes,
+        eventDepartureTimes: selectedDepartureTimes,
+        eventLocation: selectedEventLocations.map((value) => value.trim()),
+        guestCount: selectedGuestCounts.map((value) => Number(value)),
+        durationHours: selectedDurationHours.map((value) => Number(value)),
+        items: items.map((item) => {
+          const quantity = Number(item.quantity);
+          const serviceType = item.serviceType as BudgetServiceType;
+          const gender = item.gender as ServiceGenderOption;
+
+          return {
+            description: buildBudgetServiceDescription(
+              serviceType,
+              quantity,
+              gender,
+            ),
+            gender,
+            quantity,
+            eventDateIndex: item.eventDateIndex,
+          };
+        }),
+      });
+      setStep("done");
+    } catch (submitError) {
+      setError(
+        getHttpErrorMessage(
+          submitError,
+          "Não foi possível enviar suas informações. Tente novamente.",
+        ),
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      className="flex min-h-screen items-center justify-center px-4 py-8"
+      style={{ background: "#faf6f2" }}
+    >
+      <div className="w-full max-w-md md:max-w-2xl">
+        <div className="mb-6 flex select-none flex-col items-center">
+          <div
+            className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-md"
+            style={{ background: "linear-gradient(135deg, #C9A227, #a8811a)" }}
+          >
+            <CrownIcon size={32} color="white" />
+          </div>
+          <h1
+            className="text-2xl font-bold tracking-tight"
+            style={{
+              color: colors.brown[800],
+              fontFamily: typography.fontFamily,
+            }}
+          >
+            Royal Copeiras
+          </h1>
+          <p
+            className="mt-1 text-sm"
+            style={{
+              color: colors.brown[500],
+              fontFamily: typography.fontFamily,
+            }}
+          >
+            Solicitação de orçamento
+          </p>
+        </div>
+
+        <div
+          className="rounded-2xl border bg-white px-6 py-6 shadow-md md:px-8 md:py-8"
+          style={{ borderColor: colors.brown[100] }}
+        >
+          {step === "code" ? (
+            <form
+              onSubmit={(event) => void handleVerifyCode(event)}
+              noValidate
+              className="flex flex-col gap-5"
+            >
+              <p className="text-sm" style={{ color: colors.brown[500] }}>
+                Digite o código de 6 dígitos que você recebeu para liberar o
+                formulário.
+              </p>
+              <Input
+                label="Código de acesso"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={code}
+                onChange={(event) => setCode(onlyDigits(event.target.value, 6))}
+                error={error || undefined}
+                autoFocus
+              />
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={verifying || code.length !== 6}
+              >
+                {verifying ? "Verificando..." : "Continuar"}
+              </Button>
+            </form>
+          ) : null}
+
+          {step === "form" ? (
+            <form
+              onSubmit={(event) => void handleSubmit(event)}
+              noValidate
+              className="flex flex-col gap-4"
+            >
+              <p className="text-sm" style={{ color: colors.brown[500] }}>
+                Conte pra gente sobre você e o seu evento.
+              </p>
+
+              <AccordionSection
+                title="Seus dados"
+                description="Como podemos te identificar e entrar em contato."
+                stepNumber={1}
+                hasError={Boolean(emailError || phoneError || documentError)}
+                isOpen={openSteps.contact}
+                onToggle={() => toggleStep("contact")}
+              >
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="md:col-span-2">
+                    <Input
+                      label="Seu nome *"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Input
+                      label="E-mail *"
+                      type="email"
+                      value={email}
+                      onChange={(event) => {
+                        setEmailError("");
+                        setEmail(event.target.value);
+                      }}
+                      error={emailError || undefined}
+                    />
+                  </div>
+                  <Select
+                    label="Tipo de telefone *"
+                    value={contactType}
+                    onChange={(event) =>
+                      handleContactTypeChange(event.target.value as ContactType)
+                    }
+                  >
+                    <option value="mobile">Celular</option>
+                    <option value="landline">Fixo</option>
+                  </Select>
+                  <Input
+                    label="Telefone / WhatsApp *"
+                    placeholder={
+                      contactType === "landline"
+                        ? "(11) 2345-6789"
+                        : "(11) 91234-5678"
+                    }
+                    inputMode="tel"
+                    maxLength={
+                      contactType === "landline"
+                        ? PHONE_MASK_LENGTH_LANDLINE
+                        : PHONE_MASK_LENGTH_MOBILE
+                    }
+                    value={phone}
+                    onChange={(event) => {
+                      setPhoneError("");
+                      setPhone(
+                        contactType === "landline"
+                          ? formatLandline(event.target.value)
+                          : formatPhone(event.target.value),
+                      );
+                    }}
+                    error={phoneError || undefined}
+                  />
+                  <Select
+                    label="Tipo de documento *"
+                    value={documentType}
+                    onChange={(event) =>
+                      handleDocumentTypeChange(
+                        event.target.value as DocumentType,
+                      )
+                    }
+                  >
+                    <option value="individual">Pessoa Física</option>
+                    <option value="company">Empresa</option>
+                  </Select>
+                  {documentType === "individual" ? (
+                    <Input
+                      label="CPF *"
+                      placeholder="123.456.789-09"
+                      inputMode="numeric"
+                      maxLength={CPF_MASK_LENGTH}
+                      value={cpf}
+                      onChange={(event) => {
+                        setDocumentError("");
+                        setCpf(formatCPF(event.target.value));
+                      }}
+                      error={documentError || undefined}
+                    />
+                  ) : (
+                    <Input
+                      label="CNPJ *"
+                      placeholder="12.345.678/0001-90"
+                      inputMode="numeric"
+                      maxLength={CNPJ_MASK_LENGTH}
+                      value={cnpj}
+                      onChange={(event) => {
+                        setDocumentError("");
+                        setCnpj(formatCNPJ(event.target.value));
+                      }}
+                      error={documentError || undefined}
+                    />
+                  )}
+                </div>
+              </AccordionSection>
+
+              <AccordionSection
+                title="Sobre o evento"
+                description="Datas, local, convidados e serviços de cada dia do evento."
+                stepNumber={2}
+                hasError={Boolean(
+                  eventScheduleError ||
+                  durationError ||
+                  eventLocationError ||
+                  guestCountError ||
+                  itemsError,
+                )}
+                isOpen={openSteps.event}
+                onToggle={() => toggleStep("event")}
+              >
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Select
+                    label="Período do evento *"
+                    value={eventDateMode}
+                    onChange={(event) =>
+                      handleEventDateModeChange(
+                        event.target.value as EventDateMode,
+                      )
+                    }
+                  >
+                    <option value="single">Dia único</option>
+                    <option value="multiple">Mais de um dia</option>
+                  </Select>
+
+                  {eventDateMode === "multiple" ? (
+                    <Select
+                      label="Quantidade de dias *"
+                      value={eventDaysCount}
+                      onChange={(event) =>
+                        handleEventDaysCountChange(event.target.value)
+                      }
+                    >
+                      {Array.from(
+                        { length: BUDGET_EVENT_MAX_DAYS - 1 },
+                        (_, index) => index + 2,
+                      ).map((days) => (
+                        <option key={days} value={String(days)}>
+                          {days} dias
+                        </option>
+                      ))}
+                    </Select>
+                  ) : null}
+
+                  <div className="flex flex-col gap-3 md:col-span-2">
+                    {eventDateValues.map((eventDateValue, index) => (
+                      <div
+                        key={`event-schedule-${index}`}
+                        className="rounded-2xl border p-4"
+                        style={{ borderColor: colors.brown[100] }}
+                      >
+                        <p
+                          className="mb-3 text-xs font-semibold uppercase tracking-wide"
+                          style={{ color: colors.brown[500] }}
+                        >
+                          Dia {index + 1}
+                        </p>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                          <Input
+                            label={`Data ${index + 1} *`}
+                            type="date"
+                            value={eventDateValue}
+                            onChange={(event) =>
+                              updateEventDate(index, event.target.value)
+                            }
+                            error={
+                              index === 0
+                                ? eventScheduleError || undefined
+                                : undefined
+                            }
+                          />
+                          <Input
+                            label={`Início do evento ${index + 1} *`}
+                            type="time"
+                            value={eventArrivalTimeValues[index] || ""}
+                            onChange={(event) =>
+                              updateEventArrivalTime(index, event.target.value)
+                            }
+                          />
+                          <Input
+                            label={`Fim do evento ${index + 1} *`}
+                            type="time"
+                            value={eventDepartureTimeValues[index] || ""}
+                            onChange={(event) =>
+                              updateEventDepartureTime(
+                                index,
+                                event.target.value,
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                          <Input
+                            label={`Local do evento ${index + 1} *`}
+                            value={eventLocationValues[index] || ""}
+                            onChange={(event) =>
+                              updateEventLocation(index, event.target.value)
+                            }
+                            error={
+                              index === 0
+                                ? eventLocationError || undefined
+                                : undefined
+                            }
+                          />
+                          <Input
+                            label={`Convidados ${index + 1} *`}
+                            type="number"
+                            min={1}
+                            value={guestCountValues[index] || ""}
+                            onChange={(event) =>
+                              updateGuestCount(index, event.target.value)
+                            }
+                            error={
+                              index === 0
+                                ? guestCountError || undefined
+                                : undefined
+                            }
+                          />
+                          <div>
+                            <Select
+                              label={`Duração ${index + 1} *`}
+                              value={durationHoursValues[index] || ""}
+                              onChange={(event) =>
+                                updateDurationHours(index, event.target.value)
+                              }
+                            >
+                              <option value="">Selecione a duração</option>
+                              {budgetDurationOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </Select>
+                            {index === 0 && durationError ? (
+                              <p className="mt-1 text-xs text-red-600">
+                                {durationError}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        <div
+                          className="mt-4 border-t pt-3"
+                          style={{ borderColor: colors.brown[100] }}
+                        >
+                          <div className="mb-3 flex items-start justify-between gap-3">
+                            <div>
+                              <p
+                                className="text-xs font-semibold uppercase tracking-wide"
+                                style={{ color: colors.brown[500] }}
+                              >
+                                {eventDayCount > 1
+                                  ? `Serviços — Dia ${index + 1} *`
+                                  : "Serviços desejados *"}
+                              </p>
+                              <p
+                                className="text-sm"
+                                style={{ color: colors.brown[500] }}
+                              >
+                                Selecione os tipos de serviço e a quantidade
+                                necessária.
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => addItem(index)}
+                              disabled={
+                                items.filter(
+                                  (dayItem) => dayItem.eventDateIndex === index,
+                                ).length >= TOTAL_SERVICE_COMBOS
+                              }
+                            >
+                              Adicionar serviço
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            {items
+                              .map((item, globalIndex) => ({
+                                item,
+                                globalIndex,
+                              }))
+                              .filter(
+                                ({ item }) => item.eventDateIndex === index,
+                              )
+                              .map(({ item, globalIndex }) => {
+                                const dayItemCount = items.filter(
+                                  (dayItem) => dayItem.eventDateIndex === index,
+                                ).length;
+                                const otherCombos = new Set(
+                                  items
+                                    .filter(
+                                      (other, i) =>
+                                        i !== globalIndex &&
+                                        other.eventDateIndex === index,
+                                    )
+                                    .map((other) =>
+                                      other.serviceType && other.gender
+                                        ? serviceComboKey(
+                                            other.serviceType,
+                                            other.gender,
+                                          )
+                                        : null,
+                                    )
+                                    .filter(Boolean) as string[],
+                                );
+                                const isTypeAvailable = (
+                                  type: BudgetServiceType,
+                                ) =>
+                                  serviceGenderOptions.some(
+                                    (gender) =>
+                                      !otherCombos.has(
+                                        serviceComboKey(type, gender),
+                                      ),
+                                  );
+
+                                return (
+                                  <div
+                                    key={`budget-item-${globalIndex}`}
+                                    className="rounded-2xl border p-4"
+                                    style={{ borderColor: colors.brown[100] }}
+                                  >
+                                    <Select
+                                      label="Tipo de serviço *"
+                                      value={item.serviceType}
+                                      onChange={(event) => {
+                                        const nextType = event.target.value as
+                                          | BudgetServiceType
+                                          | "";
+                                        const preferredGender: ServiceGenderOption =
+                                          "Masculino";
+                                        const nextGender =
+                                          nextType &&
+                                          !otherCombos.has(
+                                            serviceComboKey(
+                                              nextType,
+                                              preferredGender,
+                                            ),
+                                          )
+                                            ? preferredGender
+                                            : nextType
+                                              ? (serviceGenderOptions.find(
+                                                  (gender) =>
+                                                    !otherCombos.has(
+                                                      serviceComboKey(
+                                                        nextType,
+                                                        gender,
+                                                      ),
+                                                    ),
+                                                ) ?? "")
+                                              : "";
+                                        updateItem(globalIndex, {
+                                          serviceType: nextType,
+                                          gender: nextGender,
+                                        });
+                                      }}
+                                    >
+                                      <option value="">
+                                        Selecione o tipo de serviço
+                                      </option>
+                                      {budgetServiceTypeOptions
+                                        .filter(
+                                          (type) =>
+                                            type === item.serviceType ||
+                                            isTypeAvailable(type),
+                                        )
+                                        .map((type) => (
+                                          <option key={type} value={type}>
+                                            {type}
+                                          </option>
+                                        ))}
+                                    </Select>
+
+                                    {item.serviceType ? (
+                                      <div className="mt-2 flex gap-4">
+                                        {serviceGenderOptions.map(
+                                          (genderOption) => {
+                                            const isTaken = otherCombos.has(
+                                              serviceComboKey(
+                                                item.serviceType,
+                                                genderOption,
+                                              ),
+                                            );
+                                            return (
+                                              <label
+                                                key={genderOption}
+                                                className="flex cursor-pointer items-center gap-1.5 text-sm"
+                                                style={{
+                                                  color: colors.brown[800],
+                                                  opacity: isTaken ? 0.4 : 1,
+                                                  pointerEvents: isTaken
+                                                    ? "none"
+                                                    : "auto",
+                                                }}
+                                              >
+                                                <input
+                                                  type="radio"
+                                                  name={`item-gender-${globalIndex}`}
+                                                  value={genderOption}
+                                                  checked={
+                                                    item.gender === genderOption
+                                                  }
+                                                  onChange={() =>
+                                                    updateItem(globalIndex, {
+                                                      gender: genderOption,
+                                                    })
+                                                  }
+                                                  disabled={isTaken}
+                                                />
+                                                {genderOption}
+                                              </label>
+                                            );
+                                          },
+                                        )}
+                                      </div>
+                                    ) : null}
+
+                                    <div className="mt-3">
+                                      <Input
+                                        label="Quantidade *"
+                                        type="number"
+                                        min={1}
+                                        step={1}
+                                        value={item.quantity}
+                                        onChange={(event) =>
+                                          updateItem(globalIndex, {
+                                            quantity: event.target.value,
+                                          })
+                                        }
+                                      />
+                                    </div>
+
+                                    <div className="mt-3 flex justify-end">
+                                      <Button
+                                        type="button"
+                                        variant="secondary"
+                                        onClick={() => removeItem(globalIndex)}
+                                        disabled={dayItemCount <= 1}
+                                      >
+                                        Remover
+                                      </Button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {itemsError ? (
+                  <p className="text-sm text-red-600">{itemsError}</p>
+                ) : null}
+              </AccordionSection>
+
+              {items.some((item) => item.serviceType && item.gender) ? (
+                <div
+                  className="rounded-2xl border p-4"
+                  style={{
+                    borderColor: colors.brown[100],
+                    background: "#faf6f2",
+                  }}
+                >
+                  <p
+                    className="mb-2 text-xs font-semibold uppercase tracking-wide"
+                    style={{ color: colors.brown[500] }}
+                  >
+                    Resumo dos serviços
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {items
+                      .filter((item) => item.serviceType && item.gender)
+                      .map((item, index) => (
+                        <div
+                          key={`summary-item-${index}`}
+                          className="flex items-center justify-between text-sm"
+                          style={{ color: colors.brown[800] }}
+                        >
+                          <span>
+                            {eventDayCount > 1
+                              ? `Dia ${item.eventDateIndex + 1} — `
+                              : ""}
+                            {item.serviceType} ({item.gender})
+                          </span>
+                          <span className="font-semibold">
+                            {item.quantity || 0}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                  <div
+                    className="mt-2 flex items-center justify-between border-t pt-2 text-sm font-semibold"
+                    style={{
+                      borderColor: colors.brown[100],
+                      color: colors.brown[800],
+                    }}
+                  >
+                    <span>Total de profissionais</span>
+                    <span>
+                      {items.reduce(
+                        (sum, item) =>
+                          item.serviceType && item.gender
+                            ? sum + (Number(item.quantity) || 0)
+                            : sum,
+                        0,
+                      )}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              <Button type="submit" variant="primary" disabled={submitting}>
+                {submitting ? "Enviando..." : "Enviar informações"}
+              </Button>
+            </form>
+          ) : null}
+
+          {step === "done" ? (
+            <div className="flex flex-col items-center gap-3 text-center">
+              <CheckCircle2 size={40} className="text-green-600" />
+              <p
+                className="text-base font-semibold"
+                style={{ color: colors.brown[800] }}
+              >
+                Informações recebidas!
+              </p>
+              <p className="text-sm" style={{ color: colors.brown[500] }}>
+                Obrigado! Vamos analisar os detalhes do seu evento e entrar em
+                contato em breve com o orçamento.
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}

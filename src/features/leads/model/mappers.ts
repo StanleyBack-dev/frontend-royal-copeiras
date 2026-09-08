@@ -31,6 +31,11 @@ export function mapLeadToFormValues(lead: Lead): LeadFormValues {
     phone: lead.phone || "",
     cpf: type === "individual" ? lead.document || "" : "",
     cnpj: type === "company" ? lead.document || "" : "",
+    legalName: lead.legalName || "",
+    address: lead.address || "",
+    addressCity: lead.addressCity || "",
+    addressState: lead.addressState || "",
+    addressZipCode: lead.addressZipCode || "",
     source: lead.source || "",
     notes: lead.notes || "",
     status: lead.status,
@@ -53,6 +58,13 @@ export function mapLeadFormToPayload(
       values.type === "individual"
         ? onlyDigits(values.cpf ?? "", LEAD_DOCUMENT_DIGITS_CPF)
         : onlyDigits(values.cnpj ?? "", LEAD_DOCUMENT_DIGITS_CNPJ),
+    legalName: values.type === "company" ? (values.legalName ?? "").trim() : "",
+    address: (values.address ?? "").trim(),
+    addressCity: (values.addressCity ?? "").trim(),
+    addressState: (values.addressState ?? "").trim().toUpperCase(),
+    addressZipCode: onlyDigits(values.addressZipCode ?? "").length
+      ? (values.addressZipCode ?? "").trim()
+      : "",
     source: values.source ?? "",
     notes: (values.notes ?? "").trim(),
     status: values.status,

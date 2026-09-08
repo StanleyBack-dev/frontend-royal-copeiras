@@ -14,6 +14,7 @@ const pageAccessByView: Partial<Record<ActiveView, PageAccessKey>> = {
   positions: "POSITIONS",
   users: "USERS",
   events: "EVENTS",
+  publicIntake: "PUBLIC_INTAKE",
 };
 
 export function getGroupDefaultPagePermissions(

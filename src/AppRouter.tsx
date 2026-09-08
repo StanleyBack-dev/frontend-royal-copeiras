@@ -7,6 +7,7 @@ import RequireAuthenticatedRoute from "./features/auth/guards/RequireAuthenticat
 import { useAuthSession } from "./features/auth/context/useAuthSession";
 import { AppShellRoutes } from "./router/routes/AppShellRoutes";
 import { AuthRoutes } from "./router/routes/AuthRoutes";
+import { PublicFormRoutes } from "./router/routes/PublicFormRoutes";
 import SplashScreen from "./pages/SplashScreen";
 
 export default function AppRouter() {
@@ -21,6 +22,7 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         {AuthRoutes()}
+        {PublicFormRoutes()}
 
         <Route element={<RequireAuthenticatedRoute />}>
           <Route

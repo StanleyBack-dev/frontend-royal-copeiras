@@ -1,9 +1,11 @@
 import ActionBar, {
   type ActionBarAction,
 } from "@/components/molecules/ActionBar";
+import AccordionSection from "@/components/molecules/AccordionSection";
 import Button from "@/components/atoms/Button";
 import GenericForm from "@/components/organisms/GenericForm";
 import Input from "@/components/atoms/Input";
+import Select from "@/components/atoms/Select";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
 import StatusBadge from "@/components/atoms/StatusBadge";
 import {
@@ -12,9 +14,12 @@ import {
 } from "@/features/budgets/model/status";
 import {
   budgetUiCopy,
-  getBudgetFormFields,
   buildEventDates,
   buildEventTimes,
+  budgetAdvancePercentageOptions,
+  budgetDurationOptions,
+  budgetDiscountPercentageOptions,
+  budgetPaymentMethodOptions,
   budgetFormSchema,
   normalizeBudgetFormValues,
   type BudgetFormValues,
@@ -23,7 +28,6 @@ import {
 } from "@/features/budgets";
 import { useAuthSession } from "@/features/auth";
 import BudgetItemsEditor from "@/features/budgets/components/BudgetItemsEditor";
-import BudgetDisplacementFeeCard from "@/features/budgets/components/BudgetDisplacementFeeCard";
 import { useBudgetsContext } from "@/features/budgets/context/useBudgetsContext";
 import { useToast } from "@/shared/toast/useToast";
 import { budgetRoutePaths, contractRoutePaths } from "@/router";
@@ -82,6 +86,10 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   });
 
   const [hasContract, setHasContract] = useState(false);
+  const [openSteps, setOpenSteps] = useState({ details: true, event: true });
+
+  const toggleStep = (step: keyof typeof openSteps) =>
+    setOpenSteps((previous) => ({ ...previous, [step]: !previous[step] }));
 
   const isNonDraftLocked =
     mode === "edit" && Boolean(editing && editing.status !== "draft");
@@ -181,6 +189,45 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
       isMounted = false;
     };
   }, []);
+
+  /**
+   * Items created through the public budget link have no idPositions —
+   * they only carry a description, which BudgetFormValues then infers a
+   * serviceType label from. The "Tipo de serviço" select here binds to a
+   * real position id, though, so an item stuck with an inferred label but
+   * no id renders as unselected. Once positions are loaded, resolve that
+   * id by matching the inferred label against an active position's name.
+   */
+  useEffect(() => {
+    if (!positions.length || !form.items.length) {
+      return;
+    }
+
+    const needsReconciliation = form.items.some(
+      (item) => !item.idPositions && item.serviceType,
+    );
+
+    if (!needsReconciliation) {
+      return;
+    }
+
+    const reconciledItems = form.items.map((item) => {
+      if (item.idPositions || !item.serviceType) {
+        return item;
+      }
+
+      const matchedPosition = positions.find(
+        (position) => position.isActive && position.name === item.serviceType,
+      );
+
+      return matchedPosition
+        ? { ...item, idPositions: matchedPosition.idPositions }
+        : item;
+    });
+
+    setForm({ ...form, items: reconciledItems });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [positions, editing?.idBudgets]);
 
   async function handleSave(values: BudgetFormValues) {
     if (isNonDraftLocked) return;
@@ -544,15 +591,84 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     eventDayCount,
     form.eventDepartureTimes,
   );
+  const eventLocationValues = buildEventTimes(
+    eventDayCount,
+    form.eventLocation,
+  );
+  const guestCountValues = buildEventTimes(eventDayCount, form.guestCount);
+  const durationHoursValues = buildEventTimes(
+    eventDayCount,
+    form.durationHours,
+  );
+  const displacementFeeValues = buildEventTimes(
+    eventDayCount,
+    form.displacementFee,
+  );
+  const discountTypeValues = buildEventTimes(eventDayCount, form.discountType);
+  const discountPercentageValues = buildEventTimes(
+    eventDayCount,
+    form.discountPercentage,
+  );
+  const discountAmountValues = buildEventTimes(
+    eventDayCount,
+    form.discountAmount,
+  );
   const showDisplacementSummary = totals.displacementFee > 0;
   const showDiscountSummary =
-    Boolean(form.discountType) || totals.discountAmount > 0;
+    discountTypeValues.some((type) => type) || totals.discountAmount > 0;
   const summaryGridColumnsClass =
     showDisplacementSummary && showDiscountSummary
       ? "md:grid-cols-4"
       : showDisplacementSummary || showDiscountSummary
         ? "md:grid-cols-3"
         : "md:grid-cols-2";
+
+  const visibleLeads = leads.filter(
+    (lead) => lead.isActive || lead.idLeads === editing?.idLeads,
+  );
+  const leadOptions = [
+    { value: "", label: budgetUiCopy.form.placeholders.lead },
+    ...visibleLeads.map((lead) => ({
+      value: lead.idLeads,
+      label: lead.isActive ? lead.name : `${lead.name} (inativo)`,
+    })),
+  ];
+
+  const paymentMethodLabel = (
+    option: (typeof budgetPaymentMethodOptions)[number],
+  ) =>
+    option === "PIX"
+      ? budgetUiCopy.form.paymentMethodOptions.pix
+      : option === "Boleto"
+        ? budgetUiCopy.form.paymentMethodOptions.boleto
+        : option === "Cartão de Crédito"
+          ? budgetUiCopy.form.paymentMethodOptions.creditCard
+          : option === "Cartão de Débito"
+            ? budgetUiCopy.form.paymentMethodOptions.debitCard
+            : option === "Transferência Bancária"
+              ? budgetUiCopy.form.paymentMethodOptions.bankTransfer
+              : budgetUiCopy.form.paymentMethodOptions.cash;
+
+  const detailsHasError = Boolean(
+    errors.idLeads ||
+    errors.issueDate ||
+    errors.validUntil ||
+    errors.paymentMethod ||
+    errors.advancePercentage,
+  );
+  const eventHasError = Boolean(
+    errors.eventDates ||
+    errors.eventArrivalTimes ||
+    errors.eventDepartureTimes ||
+    errors.eventLocation ||
+    errors.guestCount ||
+    errors.durationHours ||
+    errors.items ||
+    errors.displacementFee ||
+    errors.discountType ||
+    errors.discountPercentage ||
+    errors.discountAmount,
+  );
 
   return (
     <ManagementPanelTemplate
@@ -602,14 +718,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
       ) : null}
 
       <GenericForm<BudgetFormValues>
-        fields={getBudgetFormFields(form, {
-          isEditing: mode === "edit",
-          leads,
-          disableAll: isNonDraftLocked,
-          currentLeadId: editing?.idLeads,
-        })}
-        contentAfterFieldName={mode === "edit" ? "createdAt" : "idLeads"}
-        contentAfterField={formGuidanceContent}
+        fields={[]}
         values={form}
         setValues={setForm}
         onSubmit={(event) => {
@@ -625,94 +734,366 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
         }
         onCancel={() => navigate(budgetRoutePaths.list)}
       >
-        <div className="mb-6 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
-          <div className="mb-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-[#7a4430]">
-              {budgetUiCopy.form.labels.eventDates}
-            </h3>
-            <p className="mt-1 text-sm text-[#7a4430]">
-              Defina as datas reais do evento conforme o período selecionado.
-            </p>
-          </div>
+        <div className="flex flex-col gap-4">
+          <AccordionSection
+            title="Dados do Orçamento"
+            description="Lead, prazos e condições comerciais do orçamento."
+            stepNumber={1}
+            hasError={detailsHasError}
+            isOpen={openSteps.details}
+            onToggle={() => toggleStep("details")}
+          >
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {mode === "edit" ? (
+                <>
+                  <Input
+                    label={budgetUiCopy.form.labels.budgetNumber}
+                    value={form.budgetNumber}
+                    readOnly
+                    disabled
+                  />
+                  <Input
+                    label="Criado em"
+                    value={form.createdAt}
+                    readOnly
+                    disabled
+                  />
+                </>
+              ) : null}
 
-          <div className="grid grid-cols-1 gap-4">
-            {eventDateValues.map((eventDate: string, index: number) => (
-              <div
-                key={`event-schedule-${index}`}
-                className="rounded-2xl border border-[#eadfd6] bg-white/70 p-4"
-              >
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                  Dia {index + 1}
-                </p>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <Input
-                    label={`Data ${index + 1} *`}
-                    type="date"
-                    value={eventDate}
-                    disabled={isNonDraftLocked}
-                    onChange={(event) => {
-                      const nextEventDates = [...eventDateValues];
-                      nextEventDates[index] = event.target.value;
-                      setForm({
-                        ...form,
-                        eventDates: nextEventDates,
-                      });
-                    }}
-                    error={index === 0 ? errors.eventDates : undefined}
-                  />
-                  <Input
-                    label={`Chegada ${index + 1} *`}
-                    type="time"
-                    value={eventArrivalTimeValues[index] || ""}
-                    disabled={isNonDraftLocked}
-                    onChange={(event) => {
-                      const nextEventArrivalTimes = [...eventArrivalTimeValues];
-                      nextEventArrivalTimes[index] = event.target.value;
-                      setForm({
-                        ...form,
-                        eventArrivalTimes: nextEventArrivalTimes,
-                      });
-                    }}
-                    error={index === 0 ? errors.eventArrivalTimes : undefined}
-                  />
-                  <Input
-                    label={`Partida ${index + 1} *`}
-                    type="time"
-                    value={eventDepartureTimeValues[index] || ""}
-                    disabled={isNonDraftLocked}
-                    onChange={(event) => {
-                      const nextEventDepartureTimes = [
-                        ...eventDepartureTimeValues,
-                      ];
-                      nextEventDepartureTimes[index] = event.target.value;
-                      setForm({
-                        ...form,
-                        eventDepartureTimes: nextEventDepartureTimes,
-                      });
-                    }}
-                    error={index === 0 ? errors.eventDepartureTimes : undefined}
-                  />
-                </div>
+              <div className="md:col-span-2">
+                <Select
+                  label={`${budgetUiCopy.form.labels.lead} *`}
+                  value={form.idLeads}
+                  disabled={isNonDraftLocked}
+                  onChange={(event) =>
+                    setForm({ ...form, idLeads: event.target.value })
+                  }
+                  error={errors.idLeads}
+                >
+                  {leadOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
               </div>
-            ))}
-          </div>
+
+              {formGuidanceContent ? (
+                <div className="md:col-span-2">{formGuidanceContent}</div>
+              ) : null}
+
+              <Input
+                label={`${budgetUiCopy.form.labels.issueDate} *`}
+                type="date"
+                value={form.issueDate}
+                disabled={isNonDraftLocked}
+                onChange={(event) =>
+                  setForm({ ...form, issueDate: event.target.value })
+                }
+                error={errors.issueDate}
+              />
+              <Input
+                label={`${budgetUiCopy.form.labels.validUntil} *`}
+                type="date"
+                value={form.validUntil}
+                disabled={isNonDraftLocked}
+                onChange={(event) =>
+                  setForm({ ...form, validUntil: event.target.value })
+                }
+                error={errors.validUntil}
+              />
+              <Select
+                label={`${budgetUiCopy.form.labels.eventDateMode} *`}
+                value={form.eventDateMode}
+                disabled={isNonDraftLocked}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    eventDateMode: event.target
+                      .value as BudgetFormValues["eventDateMode"],
+                  })
+                }
+              >
+                <option value="single">
+                  {budgetUiCopy.form.options.singleDay}
+                </option>
+                <option value="multiple">
+                  {budgetUiCopy.form.options.multipleDays}
+                </option>
+              </Select>
+              {form.eventDateMode === "multiple" ? (
+                <Select
+                  label={`${budgetUiCopy.form.labels.eventDaysCount} *`}
+                  value={form.eventDaysCount}
+                  disabled={isNonDraftLocked}
+                  onChange={(event) =>
+                    setForm({ ...form, eventDaysCount: event.target.value })
+                  }
+                >
+                  {Array.from({ length: 9 }, (_, index) => (
+                    <option key={index} value={String(index + 2)}>
+                      {index + 2} dias
+                    </option>
+                  ))}
+                </Select>
+              ) : null}
+              <Select
+                label={`${budgetUiCopy.form.labels.paymentMethod} *`}
+                value={form.paymentMethod}
+                disabled={isNonDraftLocked}
+                onChange={(event) =>
+                  setForm({ ...form, paymentMethod: event.target.value })
+                }
+                error={errors.paymentMethod}
+              >
+                <option value="">Selecione a forma de pagamento</option>
+                {budgetPaymentMethodOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {paymentMethodLabel(option)}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                label={`${budgetUiCopy.form.labels.advancePercentage} *`}
+                value={form.advancePercentage}
+                disabled={isNonDraftLocked}
+                onChange={(event) =>
+                  setForm({ ...form, advancePercentage: event.target.value })
+                }
+                error={errors.advancePercentage}
+              >
+                <option value="">Sem entrada</option>
+                {budgetAdvancePercentageOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </AccordionSection>
+
+          <AccordionSection
+            title="Datas, Local e Serviços do Evento"
+            description="Defina as datas reais do evento, local, convidados, serviços, deslocamento e desconto de cada dia."
+            stepNumber={2}
+            hasError={eventHasError}
+            isOpen={openSteps.event}
+            onToggle={() => toggleStep("event")}
+          >
+            <div className="grid grid-cols-1 gap-4">
+              {eventDateValues.map((eventDate: string, index: number) => (
+                <div
+                  key={`event-schedule-${index}`}
+                  className="rounded-2xl border border-[#eadfd6] bg-white/70 p-4"
+                >
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
+                    Dia {index + 1}
+                  </p>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Input
+                      label={`Data ${index + 1} *`}
+                      type="date"
+                      value={eventDate}
+                      disabled={isNonDraftLocked}
+                      onChange={(event) => {
+                        const nextEventDates = [...eventDateValues];
+                        nextEventDates[index] = event.target.value;
+                        setForm({
+                          ...form,
+                          eventDates: nextEventDates,
+                        });
+                      }}
+                      error={index === 0 ? errors.eventDates : undefined}
+                    />
+                    <Input
+                      label={`Chegada ${index + 1} *`}
+                      type="time"
+                      value={eventArrivalTimeValues[index] || ""}
+                      disabled={isNonDraftLocked}
+                      onChange={(event) => {
+                        const nextEventArrivalTimes = [
+                          ...eventArrivalTimeValues,
+                        ];
+                        nextEventArrivalTimes[index] = event.target.value;
+                        setForm({
+                          ...form,
+                          eventArrivalTimes: nextEventArrivalTimes,
+                        });
+                      }}
+                      error={index === 0 ? errors.eventArrivalTimes : undefined}
+                    />
+                    <Input
+                      label={`Partida ${index + 1} *`}
+                      type="time"
+                      value={eventDepartureTimeValues[index] || ""}
+                      disabled={isNonDraftLocked}
+                      onChange={(event) => {
+                        const nextEventDepartureTimes = [
+                          ...eventDepartureTimeValues,
+                        ];
+                        nextEventDepartureTimes[index] = event.target.value;
+                        setForm({
+                          ...form,
+                          eventDepartureTimes: nextEventDepartureTimes,
+                        });
+                      }}
+                      error={
+                        index === 0 ? errors.eventDepartureTimes : undefined
+                      }
+                    />
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Input
+                      label={`Local do Evento ${index + 1} *`}
+                      value={eventLocationValues[index] || ""}
+                      disabled={isNonDraftLocked}
+                      placeholder={budgetUiCopy.form.placeholders.eventLocation}
+                      onChange={(event) => {
+                        const nextEventLocations = [...eventLocationValues];
+                        nextEventLocations[index] = event.target.value;
+                        setForm({ ...form, eventLocation: nextEventLocations });
+                      }}
+                      error={index === 0 ? errors.eventLocation : undefined}
+                    />
+                    <Input
+                      label={`Convidados ${index + 1} *`}
+                      inputMode="numeric"
+                      value={guestCountValues[index] || ""}
+                      disabled={isNonDraftLocked}
+                      placeholder={budgetUiCopy.form.placeholders.guestCount}
+                      onChange={(event) => {
+                        const nextGuestCounts = [...guestCountValues];
+                        nextGuestCounts[index] = event.target.value;
+                        setForm({ ...form, guestCount: nextGuestCounts });
+                      }}
+                      error={index === 0 ? errors.guestCount : undefined}
+                    />
+                    <Select
+                      label={`Duração ${index + 1} *`}
+                      value={durationHoursValues[index] || ""}
+                      disabled={isNonDraftLocked}
+                      onChange={(event) => {
+                        const nextDurationHours = [...durationHoursValues];
+                        nextDurationHours[index] = event.target.value;
+                        setForm({ ...form, durationHours: nextDurationHours });
+                      }}
+                      error={index === 0 ? errors.durationHours : undefined}
+                    >
+                      <option value="">Selecione a duração</option>
+                      {budgetDurationOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div className="mt-4">
+                    {(() => {
+                      const dayItems = form.items
+                        .map((item, itemIndex) => ({ item, itemIndex }))
+                        .filter(
+                          ({ item }) => (item.eventDateIndex ?? 0) === index,
+                        );
+
+                      return (
+                        <BudgetItemsEditor
+                          items={dayItems.map(({ item }) => item)}
+                          positions={positions}
+                          onAddItem={() => addItem(index)}
+                          onRemoveItem={(localIndex) =>
+                            removeItem(dayItems[localIndex].itemIndex)
+                          }
+                          onUpdateItem={(localIndex, patch) =>
+                            updateItem(dayItems[localIndex].itemIndex, patch)
+                          }
+                          disabled={isNonDraftLocked}
+                          title={
+                            eventDayCount > 1
+                              ? `Serviços — Dia ${index + 1}`
+                              : budgetUiCopy.form.labels.items
+                          }
+                        />
+                      );
+                    })()}
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Input
+                      label={`${budgetUiCopy.form.labels.displacementFee} ${index + 1} *`}
+                      value={displacementFeeValues[index] || ""}
+                      disabled={isNonDraftLocked}
+                      placeholder="R$ 0,00"
+                      inputMode="decimal"
+                      onChange={(event) => {
+                        const next = [...displacementFeeValues];
+                        next[index] = event.target.value;
+                        setForm({ ...form, displacementFee: next });
+                      }}
+                      error={index === 0 ? errors.displacementFee : undefined}
+                    />
+                    <Select
+                      label={`Tipo de Desconto ${index + 1}`}
+                      value={discountTypeValues[index] || ""}
+                      disabled={isNonDraftLocked}
+                      onChange={(event) => {
+                        const next = [...discountTypeValues];
+                        next[index] = event.target.value;
+                        setForm({
+                          ...form,
+                          discountType:
+                            next as BudgetFormValues["discountType"],
+                        });
+                      }}
+                      error={index === 0 ? errors.discountType : undefined}
+                    >
+                      <option value="">Sem desconto</option>
+                      <option value="percentage">Desconto (%)</option>
+                      <option value="amount">Desconto (R$)</option>
+                    </Select>
+                    {discountTypeValues[index] === "percentage" ? (
+                      <Select
+                        label={`Desconto (%) ${index + 1} *`}
+                        value={discountPercentageValues[index] || ""}
+                        disabled={isNonDraftLocked}
+                        onChange={(event) => {
+                          const next = [...discountPercentageValues];
+                          next[index] = event.target.value;
+                          setForm({ ...form, discountPercentage: next });
+                        }}
+                        error={
+                          index === 0 ? errors.discountPercentage : undefined
+                        }
+                      >
+                        <option value="">Selecione o desconto</option>
+                        {budgetDiscountPercentageOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+                    ) : discountTypeValues[index] === "amount" ? (
+                      <Input
+                        label={`Desconto (R$) ${index + 1} *`}
+                        value={discountAmountValues[index] || ""}
+                        disabled={isNonDraftLocked}
+                        placeholder="Ex: R$ 150,00"
+                        inputMode="numeric"
+                        onChange={(event) => {
+                          const next = [...discountAmountValues];
+                          next[index] = event.target.value;
+                          setForm({ ...form, discountAmount: next });
+                        }}
+                        error={index === 0 ? errors.discountAmount : undefined}
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </AccordionSection>
         </div>
-
-        <BudgetDisplacementFeeCard
-          value={form.displacementFee}
-          onChange={(value) => setForm({ ...form, displacementFee: value })}
-          error={errors.displacementFee}
-          disabled={isNonDraftLocked}
-        />
-
-        <BudgetItemsEditor
-          items={form.items}
-          positions={positions}
-          onAddItem={addItem}
-          onRemoveItem={removeItem}
-          onUpdateItem={updateItem}
-          disabled={isNonDraftLocked}
-        />
 
         <div
           className={`mt-6 grid gap-3 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4 ${summaryGridColumnsClass}`}
@@ -754,60 +1135,6 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
             </p>
           </div>
         </div>
-
-        {form.discountType === "percentage" &&
-        form.discountPercentage &&
-        Number(form.discountPercentage) > 0 ? (
-          <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                  Desconto ({form.discountPercentage}%)
-                </p>
-                <p className="text-sm font-semibold text-red-600">
-                  -{formatCurrency(totals.discountAmount)}
-                </p>
-              </div>
-              <div className="border-t border-[#e8d5c9] pt-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                    Total com Desconto
-                  </p>
-                  <p className="text-lg font-bold text-[#2c1810]">
-                    {formatCurrency(totals.total)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {form.discountType === "amount" &&
-        form.discountAmount &&
-        Number(form.discountAmount.replace(/\D/g, "") || 0) > 0 ? (
-          <div className="mt-4 rounded-2xl border border-[#e8d5c9] bg-[#faf6f2] p-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                  Desconto (Valor Fixo)
-                </p>
-                <p className="text-sm font-semibold text-red-600">
-                  -{formatCurrency(totals.discountAmount)}
-                </p>
-              </div>
-              <div className="border-t border-[#e8d5c9] pt-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7a4430]">
-                    Total com Desconto
-                  </p>
-                  <p className="text-lg font-bold text-[#2c1810]">
-                    {formatCurrency(totals.total)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : null}
       </GenericForm>
     </ManagementPanelTemplate>
   );

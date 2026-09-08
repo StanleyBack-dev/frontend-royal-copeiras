@@ -17,6 +17,8 @@ interface BudgetItemsEditorProps {
   onRemoveItem: (index: number) => void;
   onUpdateItem: (index: number, patch: Partial<BudgetItemFormValues>) => void;
   disabled?: boolean;
+  title?: string;
+  description?: string;
 }
 
 function formatCurrency(value: number) {
@@ -33,6 +35,8 @@ export default function BudgetItemsEditor({
   onRemoveItem,
   onUpdateItem,
   disabled = false,
+  title,
+  description,
 }: BudgetItemsEditorProps) {
   const selectablePositions = positions.filter((position) => position.isActive);
 
@@ -68,11 +72,11 @@ export default function BudgetItemsEditor({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold uppercase tracking-wide text-[#7a4430]">
-            {budgetUiCopy.form.labels.items}
+            {title ?? budgetUiCopy.form.labels.items}
           </h3>
           <p className="mt-1 text-sm text-[#7a4430]">
-            Estruture o escopo comercial em linhas independentes para facilitar
-            revisão e totalização.
+            {description ??
+              "Estruture o escopo comercial em linhas independentes para facilitar revisão e totalização."}
           </p>
         </div>
         <Button

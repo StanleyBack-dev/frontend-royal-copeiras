@@ -1,9 +1,14 @@
 import type { FormField } from "../../../components/organisms/GenericForm";
 import { leadSourceOptions } from "../../../api/leads/schema";
 import {
+  LEAD_ADDRESS_CITY_MAX_LENGTH,
+  LEAD_ADDRESS_MAX_LENGTH,
+  LEAD_ADDRESS_STATE_LENGTH,
+  LEAD_ADDRESS_ZIP_CODE_MASK_LENGTH,
   LEAD_CNPJ_MASK_LENGTH,
   LEAD_CPF_MASK_LENGTH,
   LEAD_EMAIL_MAX_LENGTH,
+  LEAD_LEGAL_NAME_MAX_LENGTH,
   LEAD_NAME_MAX_LENGTH,
   LEAD_PHONE_LANDLINE_MASK_LENGTH,
   LEAD_PHONE_MOBILE_MASK_LENGTH,
@@ -71,7 +76,39 @@ export function getLeadFormFields(
             maxLength: LEAD_CNPJ_MASK_LENGTH,
             inputMode: "numeric" as const,
           },
+          {
+            name: "legalName",
+            label: leadUiCopy.form.labels.legalName,
+            placeholder: leadUiCopy.form.placeholders.legalName,
+            maxLength: LEAD_LEGAL_NAME_MAX_LENGTH,
+            colSpan: 2 as const,
+          },
         ]),
+    {
+      name: "address",
+      label: leadUiCopy.form.labels.address,
+      placeholder: leadUiCopy.form.placeholders.address,
+      maxLength: LEAD_ADDRESS_MAX_LENGTH,
+      colSpan: 2,
+    },
+    {
+      name: "addressCity",
+      label: leadUiCopy.form.labels.addressCity,
+      placeholder: leadUiCopy.form.placeholders.addressCity,
+      maxLength: LEAD_ADDRESS_CITY_MAX_LENGTH,
+    },
+    {
+      name: "addressState",
+      label: leadUiCopy.form.labels.addressState,
+      placeholder: leadUiCopy.form.placeholders.addressState,
+      maxLength: LEAD_ADDRESS_STATE_LENGTH,
+    },
+    {
+      name: "addressZipCode",
+      label: leadUiCopy.form.labels.addressZipCode,
+      placeholder: leadUiCopy.form.placeholders.addressZipCode,
+      maxLength: LEAD_ADDRESS_ZIP_CODE_MASK_LENGTH,
+    },
     {
       name: "contactType",
       label: leadUiCopy.form.labels.contactType,

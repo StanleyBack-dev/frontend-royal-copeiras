@@ -200,28 +200,31 @@ export function useContractPdfActions({
         typeof navigator.canShare === "function" &&
         navigator.canShare({ files: [file] });
 
+      const digits = phone.replace(/\D/g, "");
+      const normalized = digits.startsWith("55") ? digits : `55${digits}`;
+
       if (canShare) {
         // WhatsApp's Android share target silently drops the attached file
         // when the Web Share payload combines `files` with `text` in the
         // same call — it only keeps whichever one it picks up. Sharing the
-        // file alone is what reliably arrives as an actual attachment.
+        // file alone is what reliably arrives as an actual attachment; the
+        // message is delivered separately via a wa.me deep link straight
+        // into the lead's chat, pre-filled and ready to send, instead of
+        // relying on the user noticing a toast and pasting it manually.
         await navigator.share({ files: [file] });
 
-        try {
-          await navigator.clipboard.writeText(shareText);
-          showSuccess(
-            "PDF compartilhado com sucesso",
-            "Mensagem copiada — cole na conversa do WhatsApp.",
-          );
-        } catch {
-          showSuccess("PDF compartilhado com sucesso");
-        }
+        window.open(
+          `https://wa.me/${normalized}?text=${encodeURIComponent(shareText)}`,
+          "_blank",
+        );
+        showSuccess(
+          "PDF compartilhado com sucesso",
+          "Mensagem pronta no WhatsApp — é só enviar.",
+        );
 
         return "shared";
       }
 
-      const digits = phone.replace(/\D/g, "");
-      const normalized = digits.startsWith("55") ? digits : `55${digits}`;
       const fallbackText =
         `Ola, ${leadName}! Temos um contrato para voce.\n` +
         `Contrato: ${contractNumber || ""}\n` +

@@ -8,11 +8,11 @@ export { useBudgetForm } from "./hooks/useBudgetForm";
 export { useBudgetPdfActions } from "./hooks/useBudgetPdfActions";
 export { useBudgetsList } from "./hooks/useBudgetsList";
 export * from "./model/constants";
-export { getBudgetFormFields } from "./model/fields";
 export {
   buildEventDates,
   buildEventTimes,
   budgetAdvancePercentageOptions,
+  budgetDiscountPercentageOptions,
   budgetDurationOptions,
   budgetEventDateModeOptions,
   budgetPaymentMethodOptions,

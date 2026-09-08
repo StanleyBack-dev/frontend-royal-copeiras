@@ -111,6 +111,7 @@ export interface BudgetItemFormValues {
   description: string;
   quantity: string;
   unitPrice: string;
+  eventDateIndex: number;
 }
 
 export interface BudgetFormValues {
@@ -125,15 +126,15 @@ export interface BudgetFormValues {
   eventDates: string[];
   eventArrivalTimes: string[];
   eventDepartureTimes: string[];
-  eventLocation: string;
-  guestCount: string;
-  durationHours: string;
+  eventLocation: string[];
+  guestCount: string[];
+  durationHours: string[];
   paymentMethod: string;
   advancePercentage: string;
-  discountPercentage: string;
-  discountType: "percentage" | "amount" | "";
-  discountAmount: string;
-  displacementFee: string;
+  discountPercentage: string[];
+  discountType: ("percentage" | "amount" | "")[];
+  discountAmount: string[];
+  displacementFee: string[];
   items: BudgetItemFormValues[];
 }
 
@@ -144,6 +145,7 @@ export const emptyBudgetItemFormValues: BudgetItemFormValues = {
   description: "",
   quantity: "1",
   unitPrice: "",
+  eventDateIndex: 0,
 };
 
 export function createEmptyBudgetFormValues(
@@ -163,15 +165,15 @@ export function createEmptyBudgetFormValues(
     eventDates: [""],
     eventArrivalTimes: [""],
     eventDepartureTimes: [""],
-    eventLocation: "",
-    guestCount: "",
-    durationHours: "",
+    eventLocation: [""],
+    guestCount: [""],
+    durationHours: [""],
     paymentMethod: "PIX",
     advancePercentage: "30",
-    discountPercentage: "",
-    discountType: "",
-    discountAmount: "",
-    displacementFee: "0,00",
+    discountPercentage: [""],
+    discountType: [""],
+    discountAmount: [""],
+    displacementFee: ["0,00"],
     items: [{ ...emptyBudgetItemFormValues }],
   };
 }
@@ -197,18 +199,9 @@ const budgetFormSchemaBase = z.object({
   eventDates: z.array(z.string()),
   eventArrivalTimes: z.array(z.string()),
   eventDepartureTimes: z.array(z.string()),
-  eventLocation: z
-    .string()
-    .trim()
-    .min(1, budgetValidationMessages.eventLocationRequired),
-  guestCount: z
-    .string()
-    .trim()
-    .min(1, budgetValidationMessages.guestCountRequired),
-  durationHours: z
-    .string()
-    .trim()
-    .min(1, budgetValidationMessages.durationRequired),
+  eventLocation: z.array(z.string()),
+  guestCount: z.array(z.string()),
+  durationHours: z.array(z.string()),
   paymentMethod: z
     .string()
     .trim()
@@ -217,10 +210,12 @@ const budgetFormSchemaBase = z.object({
     .string()
     .trim()
     .min(1, budgetValidationMessages.advancePercentageRequired),
-  discountPercentage: z.string().trim().optional(),
-  discountType: z.enum(budgetDiscountTypeOptions).or(z.literal("")).optional(),
-  discountAmount: z.string().trim().optional(),
-  displacementFee: z.string().trim(),
+  discountPercentage: z.array(z.string()),
+  discountType: z.array(
+    z.enum(budgetDiscountTypeOptions).or(z.literal("")),
+  ),
+  discountAmount: z.array(z.string()),
+  displacementFee: z.array(z.string()),
   items: z.array(
     z.object({
       id: z.string().optional(),
@@ -242,6 +237,7 @@ const budgetFormSchemaBase = z.object({
         .string()
         .trim()
         .min(1, budgetValidationMessages.itemUnitPriceInvalid),
+      eventDateIndex: z.number().int().min(0),
     }),
   ),
 });
@@ -315,7 +311,25 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
       });
     }
 
-    if (Number(data.guestCount) <= 0) {
+    const selectedEventLocations = data.eventLocation.slice(0, eventDatesCount);
+
+    if (
+      selectedEventLocations.length !== eventDatesCount ||
+      selectedEventLocations.some((location) => !location.trim())
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["eventLocation"],
+        message: budgetValidationMessages.eventLocationRequired,
+      });
+    }
+
+    const selectedGuestCounts = data.guestCount.slice(0, eventDatesCount);
+
+    if (
+      selectedGuestCounts.length !== eventDatesCount ||
+      selectedGuestCounts.some((value) => !(Number(value) > 0))
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["guestCount"],
@@ -323,12 +337,18 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
       });
     }
 
-    const durationHours = Number(data.durationHours);
+    const selectedDurationHours = data.durationHours.slice(0, eventDatesCount);
 
     if (
-      !Number.isInteger(durationHours) ||
-      durationHours < 1 ||
-      durationHours > BUDGET_DURATION_HOURS_MAX
+      selectedDurationHours.length !== eventDatesCount ||
+      selectedDurationHours.some((value) => {
+        const hours = Number(value);
+        return (
+          !Number.isInteger(hours) ||
+          hours < 1 ||
+          hours > BUDGET_DURATION_HOURS_MAX
+        );
+      })
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -351,42 +371,54 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
       });
     }
 
-    if (data.discountType === "percentage") {
-      const discountPercentage = Number(data.discountPercentage || 0);
+    const selectedDiscountType = data.discountType.slice(0, eventDatesCount);
+    const selectedDiscountPercentage = data.discountPercentage.slice(
+      0,
+      eventDatesCount,
+    );
+    const selectedDiscountAmount = data.discountAmount.slice(
+      0,
+      eventDatesCount,
+    );
 
-      if (
-        !data.discountPercentage ||
-        !Number.isFinite(discountPercentage) ||
-        discountPercentage <= 0 ||
-        discountPercentage > 100
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["discountPercentage"],
-          message: budgetValidationMessages.discountPercentageRequired,
-        });
+    for (let day = 0; day < eventDatesCount; day += 1) {
+      const dayType = selectedDiscountType[day] ?? "";
+
+      if (dayType === "percentage") {
+        const percentage = Number(selectedDiscountPercentage[day] || 0);
+
+        if (
+          !selectedDiscountPercentage[day] ||
+          !Number.isFinite(percentage) ||
+          percentage <= 0 ||
+          percentage > 100
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["discountPercentage"],
+            message: budgetValidationMessages.discountPercentageRequired,
+          });
+        }
       }
-    }
 
-    if (data.discountType === "amount") {
-      const discountAmountDigits = (data.discountAmount || "").replace(
-        /[^\d]/g,
-        "",
-      );
-      const discountAmountValue = discountAmountDigits
-        ? Number(discountAmountDigits) / 100
-        : 0;
+      if (dayType === "amount") {
+        const amountDigits = (selectedDiscountAmount[day] || "").replace(
+          /[^\d]/g,
+          "",
+        );
+        const amountValue = amountDigits ? Number(amountDigits) / 100 : 0;
 
-      if (
-        !discountAmountDigits ||
-        !Number.isFinite(discountAmountValue) ||
-        discountAmountValue <= 0
-      ) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["discountAmount"],
-          message: budgetValidationMessages.discountAmountRequired,
-        });
+        if (
+          !amountDigits ||
+          !Number.isFinite(amountValue) ||
+          amountValue <= 0
+        ) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["discountAmount"],
+            message: budgetValidationMessages.discountAmountRequired,
+          });
+        }
       }
     }
 
@@ -399,9 +431,21 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
       return;
     }
 
-    // Validate uniqueness of position + gender combinations
+    const coveredDays = new Set(
+      data.items.map((item) => item.eventDateIndex ?? 0),
+    );
+    if (coveredDays.size < eventDatesCount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["items"],
+        message: budgetValidationMessages.dayMissingItems,
+      });
+    }
+
+    // Validate uniqueness of position + gender combinations within the same day
     const selectedCombos = data.items.map(
-      (item) => `${item.idPositions.trim()}:${item.gender.trim()}`,
+      (item) =>
+        `${item.eventDateIndex ?? 0}:${item.idPositions.trim()}:${item.gender.trim()}`,
     );
     const uniqueCombos = new Set(selectedCombos);
 
@@ -422,12 +466,19 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
       });
     }
 
-    const displacementFeeDigits = data.displacementFee.replace(/[^\d]/g, "");
-    const displacementFeeValue = displacementFeeDigits
-      ? Number(displacementFeeDigits) / 100
-      : 0;
+    const selectedDisplacementFee = data.displacementFee.slice(
+      0,
+      eventDatesCount,
+    );
 
-    if (!Number.isFinite(displacementFeeValue) || displacementFeeValue < 0) {
+    if (
+      selectedDisplacementFee.length !== eventDatesCount ||
+      selectedDisplacementFee.some((value) => {
+        const digits = (value || "").replace(/[^\d]/g, "");
+        const amount = digits ? Number(digits) / 100 : 0;
+        return !Number.isFinite(amount) || amount < 0;
+      })
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["displacementFee"],

@@ -18,6 +18,11 @@ export class CreateLeadsService {
             email
             phone
             document
+            legalName
+            address
+            addressCity
+            addressState
+            addressZipCode
             source
             notes
             status

@@ -12,6 +12,7 @@ export const routePaths: Record<ActiveView, string> = {
   positions: "/cargos",
   users: "/usuarios",
   events: "/eventos",
+  publicIntake: "/links-orcamento",
   profile: "/perfil",
 };
 
@@ -91,6 +92,15 @@ export const signatureRoutePaths = {
 export const eventRoutePaths = {
   list: "/eventos",
   detail: (id = ":id") => `/eventos/${id}`,
+};
+
+export const publicIntakeRoutePaths = {
+  list: "/links-orcamento",
+};
+
+/** The client-facing form, reachable without logging in. */
+export const publicFormRoutePaths = {
+  requestBudget: "/solicitar-orcamento",
 };
 
 export const authRoutePaths = {
