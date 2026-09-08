@@ -20,7 +20,9 @@ function buildShareMessage(
   issued: GeneratedPublicIntakeCode,
   leadName?: string,
 ): string {
-  const greeting = leadName ? `Olá, ${leadName}! Tudo bem? 😊` : "Olá! Tudo bem? 😊";
+  const greeting = leadName
+    ? `Olá, ${leadName}! Tudo bem? 😊`
+    : "Olá! Tudo bem? 😊";
 
   return (
     `${greeting}\n\n` +
@@ -67,15 +69,15 @@ export default function GeneratedCodeDialog({
       ? `https://wa.me/${normalized}`
       : "https://wa.me/";
 
-    window.open(
-      `${target}?text=${encodeURIComponent(shareMessage)}`,
-      "_blank",
-    );
+    window.open(`${target}?text=${encodeURIComponent(shareMessage)}`, "_blank");
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-[#e8d5c4]">
         <div className="flex items-start justify-between gap-4 p-6 pb-4">

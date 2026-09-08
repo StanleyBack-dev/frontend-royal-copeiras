@@ -211,9 +211,7 @@ const budgetFormSchemaBase = z.object({
     .trim()
     .min(1, budgetValidationMessages.advancePercentageRequired),
   discountPercentage: z.array(z.string()),
-  discountType: z.array(
-    z.enum(budgetDiscountTypeOptions).or(z.literal("")),
-  ),
+  discountType: z.array(z.enum(budgetDiscountTypeOptions).or(z.literal(""))),
   discountAmount: z.array(z.string()),
   displacementFee: z.array(z.string()),
   items: z.array(

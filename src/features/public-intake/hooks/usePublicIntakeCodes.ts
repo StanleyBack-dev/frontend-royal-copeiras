@@ -82,26 +82,25 @@ export function usePublicIntakeCodes() {
     );
   }, []);
 
-  const generateCode = useCallback(async (): Promise<
-    GeneratedPublicIntakeCode | null
-  > => {
-    setGenerating(true);
-    try {
-      const issued = await generatePublicIntakeCode();
-      showSuccess(publicIntakeUiCopy.success.generated);
-      await load();
-      return issued;
-    } catch (error) {
-      const message = getHttpErrorMessage(
-        error,
-        publicIntakeUiCopy.errors.generateFallback,
-      );
-      showError(publicIntakeUiCopy.errors.generateFallback, message);
-      return null;
-    } finally {
-      setGenerating(false);
-    }
-  }, [load, showError, showSuccess]);
+  const generateCode =
+    useCallback(async (): Promise<GeneratedPublicIntakeCode | null> => {
+      setGenerating(true);
+      try {
+        const issued = await generatePublicIntakeCode();
+        showSuccess(publicIntakeUiCopy.success.generated);
+        await load();
+        return issued;
+      } catch (error) {
+        const message = getHttpErrorMessage(
+          error,
+          publicIntakeUiCopy.errors.generateFallback,
+        );
+        showError(publicIntakeUiCopy.errors.generateFallback, message);
+        return null;
+      } finally {
+        setGenerating(false);
+      }
+    }, [load, showError, showSuccess]);
 
   const columns = useMemo(() => getPublicIntakeCodeTableColumns(), []);
 
