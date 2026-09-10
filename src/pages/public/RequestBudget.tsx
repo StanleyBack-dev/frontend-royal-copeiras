@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Info } from "lucide-react";
 import AccordionSection from "@/components/molecules/AccordionSection";
 import Button from "@/components/atoms/Button";
 import Input from "@/components/atoms/Input";
@@ -10,8 +10,12 @@ import {
   verifyPublicIntakeCode,
   submitPublicIntake,
 } from "@/api/public-intake/methods";
+import type { PublicIntakeSupply } from "@/api/public-intake/schema";
 import { getHttpErrorMessage } from "@/api/shared/http-error";
+import { formatSupplyUnit } from "@/features/supplies/model/units";
+import { BRAZILIAN_STATE_OPTIONS } from "@/shared/constants/brazilian-states";
 import {
+  formatCEP,
   formatCNPJ,
   formatCPF,
   formatLandline,
@@ -41,8 +45,13 @@ type ContactType = "mobile" | "landline";
 type EventDateMode = (typeof budgetEventDateModeOptions)[number];
 
 interface PublicBudgetItem {
+  itemType: "LABOR" | "SUPPLY";
   serviceType: BudgetServiceType | "";
   gender: ServiceGenderOption | "";
+  // SUPPLY-only: id of the catalog material chosen (name + unit follow from it)
+  idSupplies: string;
+  description: string;
+  unit: string;
   quantity: string;
   eventDateIndex: number;
 }
@@ -62,16 +71,26 @@ const TOTAL_SERVICE_COMBOS =
   budgetServiceTypeOptions.length * serviceGenderOptions.length;
 
 const emptyPublicBudgetItem: PublicBudgetItem = {
+  itemType: "LABOR",
   serviceType: "",
   gender: "",
+  idSupplies: "",
+  description: "",
+  unit: "",
   quantity: "1",
   eventDateIndex: 0,
+};
+
+const emptyPublicSupplyItem: PublicBudgetItem = {
+  ...emptyPublicBudgetItem,
+  itemType: "SUPPLY",
 };
 
 export default function RequestBudget() {
   const [step, setStep] = useState<Step>("code");
   const [code, setCode] = useState("");
   const [formToken, setFormToken] = useState("");
+  const [supplies, setSupplies] = useState<PublicIntakeSupply[]>([]);
   const [verifying, setVerifying] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -86,6 +105,15 @@ export default function RequestBudget() {
   const [cpf, setCpf] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [documentError, setDocumentError] = useState("");
+
+  const [addressStreet, setAddressStreet] = useState("");
+  const [addressNumber, setAddressNumber] = useState("");
+  const [addressNoNumber, setAddressNoNumber] = useState(false);
+  const [addressComplement, setAddressComplement] = useState("");
+  const [addressNeighborhood, setAddressNeighborhood] = useState("");
+  const [addressCity, setAddressCity] = useState("");
+  const [addressState, setAddressState] = useState("");
+  const [addressZipCode, setAddressZipCode] = useState("");
 
   const [eventDateMode, setEventDateMode] = useState<EventDateMode>("single");
   const [eventDaysCount, setEventDaysCount] = useState("1");
@@ -109,7 +137,11 @@ export default function RequestBudget() {
   ]);
   const [itemsError, setItemsError] = useState("");
 
-  const [openSteps, setOpenSteps] = useState({ contact: true, event: true });
+  const [openSteps, setOpenSteps] = useState({
+    contact: true,
+    address: false,
+    event: true,
+  });
   const toggleStep = (step: keyof typeof openSteps) =>
     setOpenSteps((previous) => ({ ...previous, [step]: !previous[step] }));
 
@@ -226,6 +258,14 @@ export default function RequestBudget() {
     ]);
   }
 
+  function addSupplyItem(dayIndex: number) {
+    setItemsError("");
+    setItems((previous) => [
+      ...previous,
+      { ...emptyPublicSupplyItem, eventDateIndex: dayIndex },
+    ]);
+  }
+
   function removeItem(index: number) {
     setItemsError("");
     setItems((previous) =>
@@ -267,6 +307,7 @@ export default function RequestBudget() {
     try {
       const verified = await verifyPublicIntakeCode(code.trim());
       setFormToken(verified.formToken);
+      setSupplies(verified.supplies ?? []);
       setStep("form");
     } catch (submitError) {
       setError(
@@ -404,17 +445,24 @@ export default function RequestBudget() {
       return;
     }
 
-    const hasIncompleteItem = items.some(
-      (item) => !item.serviceType || !item.gender || Number(item.quantity) <= 0,
+    const hasIncompleteItem = items.some((item) =>
+      item.itemType === "SUPPLY"
+        ? !item.idSupplies || Number(item.quantity) <= 0
+        : !item.serviceType || !item.gender || Number(item.quantity) <= 0,
     );
     if (hasIncompleteItem) {
-      setItemsError(budgetValidationMessages.itemServiceTypeRequired);
+      setItemsError(
+        items.some((item) => item.itemType === "SUPPLY" && !item.idSupplies)
+          ? "Selecione um material do catálogo em cada linha de material."
+          : budgetValidationMessages.itemServiceTypeRequired,
+      );
       return;
     }
 
-    const itemCombos = items.map(
-      (item) =>
-        `${item.eventDateIndex}:${serviceComboKey(item.serviceType, item.gender)}`,
+    const itemCombos = items.map((item) =>
+      item.itemType === "SUPPLY"
+        ? `S:${item.eventDateIndex}:${item.idSupplies}`
+        : `L:${item.eventDateIndex}:${serviceComboKey(item.serviceType, item.gender)}`,
     );
     if (new Set(itemCombos).size !== itemCombos.length) {
       setItemsError(budgetValidationMessages.itemServiceTypeDuplicated);
@@ -429,6 +477,16 @@ export default function RequestBudget() {
         email: email.trim(),
         phone: phoneDigits,
         document: documentDigits,
+        addressStreet: addressStreet.trim(),
+        addressNumber: addressNumber.trim(),
+        addressComplement: addressComplement.trim(),
+        addressNeighborhood: addressNeighborhood.trim(),
+        addressCity: addressCity.trim(),
+        addressState: addressState.trim().toUpperCase(),
+        addressZipCode:
+          onlyDigits(addressZipCode).length === 8
+            ? formatCEP(addressZipCode)
+            : "",
         eventDates: selectedEventDates,
         eventArrivalTimes: selectedArrivalTimes,
         eventDepartureTimes: selectedDepartureTimes,
@@ -437,10 +495,26 @@ export default function RequestBudget() {
         durationHours: selectedDurationHours.map((value) => Number(value)),
         items: items.map((item) => {
           const quantity = Number(item.quantity);
+
+          if (item.itemType === "SUPPLY") {
+            const supply = supplies.find(
+              (candidate) => candidate.idSupplies === item.idSupplies,
+            );
+            return {
+              itemType: "SUPPLY" as const,
+              idSupplies: item.idSupplies,
+              description: (supply?.name ?? item.description).trim(),
+              unit: (supply?.defaultUnit ?? item.unit).trim() || undefined,
+              quantity,
+              eventDateIndex: item.eventDateIndex,
+            };
+          }
+
           const serviceType = item.serviceType as BudgetServiceType;
           const gender = item.gender as ServiceGenderOption;
 
           return {
+            itemType: "LABOR" as const,
             description: buildBudgetServiceDescription(
               serviceType,
               quantity,
@@ -467,10 +541,16 @@ export default function RequestBudget() {
 
   return (
     <div
-      className="flex min-h-screen items-center justify-center px-4 py-8"
+      className="flex min-h-screen justify-center px-4 py-8 sm:px-6 md:items-center lg:px-8"
       style={{ background: "#faf6f2" }}
     >
-      <div className="w-full max-w-md md:max-w-2xl">
+      <div
+        className={`w-full ${
+          step === "form"
+            ? "max-w-lg md:max-w-3xl lg:max-w-5xl xl:max-w-6xl"
+            : "max-w-md md:max-w-lg"
+        }`}
+      >
         <div className="mb-6 flex select-none flex-col items-center">
           <div
             className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl shadow-md"
@@ -499,7 +579,7 @@ export default function RequestBudget() {
         </div>
 
         <div
-          className="rounded-2xl border bg-white px-6 py-6 shadow-md md:px-8 md:py-8"
+          className="rounded-2xl border bg-white px-4 py-6 shadow-md sm:px-6 md:px-8 md:py-8 lg:px-10 lg:py-10"
           style={{ borderColor: colors.brown[100] }}
         >
           {step === "code" ? (
@@ -648,9 +728,113 @@ export default function RequestBudget() {
               </AccordionSection>
 
               <AccordionSection
+                title="Endereço do responsável"
+                description="Opcional. Usamos estes dados apenas para emitir o contrato caso o orçamento seja aprovado."
+                stepNumber={2}
+                isOpen={openSteps.address}
+                onToggle={() => toggleStep("address")}
+              >
+                <div className="mb-3 flex items-start gap-2 rounded-lg border border-[#e8d5c9] bg-[#faf6f2] px-3 py-2">
+                  <Info
+                    size={16}
+                    className="mt-0.5 shrink-0 text-[#7a4430]"
+                    aria-hidden
+                  />
+                  <p
+                    className="text-xs"
+                    style={{ color: colors.brown[500] }}
+                    title="O endereço é necessário para gerar o instrumento de contrato de prestação de serviços após a aprovação do orçamento. Nenhum campo é obrigatório."
+                  >
+                    Coletamos o endereço somente para elaborar o contrato de
+                    prestação de serviços após a aprovação do orçamento. Todos
+                    os campos são opcionais.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  <Input
+                    label="CEP"
+                    value={addressZipCode}
+                    inputMode="numeric"
+                    maxLength={9}
+                    placeholder="00000-000"
+                    onChange={(event) =>
+                      setAddressZipCode(formatCEP(event.target.value))
+                    }
+                  />
+                  <Input
+                    label="Logradouro"
+                    value={addressStreet}
+                    maxLength={160}
+                    placeholder="Rua 6"
+                    wrapperClassName="sm:col-span-2"
+                    onChange={(event) => setAddressStreet(event.target.value)}
+                  />
+                  <div>
+                    <Input
+                      label="Número"
+                      value={addressNumber}
+                      maxLength={20}
+                      placeholder="123"
+                      disabled={addressNoNumber}
+                      onChange={(event) => setAddressNumber(event.target.value)}
+                    />
+                    <label className="mt-1 flex items-center gap-1.5 text-xs text-[#7a4430]">
+                      <input
+                        type="checkbox"
+                        checked={addressNoNumber}
+                        onChange={(event) => {
+                          setAddressNoNumber(event.target.checked);
+                          setAddressNumber(event.target.checked ? "S/N" : "");
+                        }}
+                      />
+                      Sem número
+                    </label>
+                  </div>
+                  <Input
+                    label="Complemento"
+                    value={addressComplement}
+                    maxLength={120}
+                    placeholder="Quadra 22 Lote 03"
+                    onChange={(event) =>
+                      setAddressComplement(event.target.value)
+                    }
+                  />
+                  <Input
+                    label="Bairro/Distrito"
+                    value={addressNeighborhood}
+                    maxLength={120}
+                    placeholder="Polo Empresarial"
+                    onChange={(event) =>
+                      setAddressNeighborhood(event.target.value)
+                    }
+                  />
+                  <Input
+                    label="Município"
+                    value={addressCity}
+                    maxLength={80}
+                    placeholder="Aparecida de Goiânia"
+                    onChange={(event) => setAddressCity(event.target.value)}
+                  />
+                  <Select
+                    label="UF"
+                    value={addressState}
+                    onChange={(event) => setAddressState(event.target.value)}
+                  >
+                    <option value="">Selecione a UF</option>
+                    {BRAZILIAN_STATE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </AccordionSection>
+
+              <AccordionSection
                 title="Sobre o evento"
                 description="Datas, local, convidados e serviços de cada dia do evento."
-                stepNumber={2}
+                stepNumber={3}
                 hasError={Boolean(
                   eventScheduleError ||
                   durationError ||
@@ -813,21 +997,46 @@ export default function RequestBudget() {
                                 necessária.
                               </p>
                             </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => addItem(index)}
-                              disabled={
-                                items.filter(
-                                  (dayItem) => dayItem.eventDateIndex === index,
-                                ).length >= TOTAL_SERVICE_COMBOS
-                              }
-                            >
-                              Adicionar serviço
-                            </Button>
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                style={{
+                                  background: "#f0e0bb",
+                                  color: "#6b4a2b",
+                                }}
+                                onClick={() => addItem(index)}
+                                disabled={
+                                  items.filter(
+                                    (dayItem) =>
+                                      dayItem.eventDateIndex === index &&
+                                      dayItem.itemType !== "SUPPLY",
+                                  ).length >= TOTAL_SERVICE_COMBOS
+                                }
+                              >
+                                Adicionar serviço
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                style={{
+                                  background: "#e7dcf3",
+                                  color: "#4b3a66",
+                                }}
+                                onClick={() => addSupplyItem(index)}
+                                disabled={supplies.length === 0}
+                                title={
+                                  supplies.length === 0
+                                    ? "Nenhum material disponível no catálogo"
+                                    : undefined
+                                }
+                              >
+                                Adicionar material
+                              </Button>
+                            </div>
                           </div>
 
-                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             {items
                               .map((item, globalIndex) => ({
                                 item,
@@ -840,6 +1049,100 @@ export default function RequestBudget() {
                                 const dayItemCount = items.filter(
                                   (dayItem) => dayItem.eventDateIndex === index,
                                 ).length;
+
+                                if (item.itemType === "SUPPLY") {
+                                  const usedSupplyIds = new Set(
+                                    items
+                                      .filter(
+                                        (other, i) =>
+                                          i !== globalIndex &&
+                                          other.itemType === "SUPPLY" &&
+                                          other.eventDateIndex === index,
+                                      )
+                                      .map((other) => other.idSupplies)
+                                      .filter(Boolean),
+                                  );
+                                  const supplyOptions = supplies.filter(
+                                    (supply) =>
+                                      supply.idSupplies === item.idSupplies ||
+                                      !usedSupplyIds.has(supply.idSupplies),
+                                  );
+
+                                  return (
+                                    <div
+                                      key={`budget-item-${globalIndex}`}
+                                      className="rounded-2xl border p-4"
+                                      style={{
+                                        borderColor: colors.brown[100],
+                                      }}
+                                    >
+                                      <Select
+                                        label="Material *"
+                                        value={item.idSupplies}
+                                        onChange={(event) => {
+                                          const supply = supplies.find(
+                                            (candidate) =>
+                                              candidate.idSupplies ===
+                                              event.target.value,
+                                          );
+                                          updateItem(globalIndex, {
+                                            idSupplies: event.target.value,
+                                            description: supply?.name ?? "",
+                                            unit: supply?.defaultUnit ?? "",
+                                          });
+                                        }}
+                                      >
+                                        <option value="">
+                                          {supplies.length
+                                            ? "Selecione um material"
+                                            : "Nenhum material disponível"}
+                                        </option>
+                                        {supplyOptions.map((supply) => (
+                                          <option
+                                            key={supply.idSupplies}
+                                            value={supply.idSupplies}
+                                          >
+                                            {supply.name}
+                                          </option>
+                                        ))}
+                                      </Select>
+                                      <div className="mt-3 grid grid-cols-2 gap-3">
+                                        <Input
+                                          label="Unidade"
+                                          value={formatSupplyUnit(item.unit)}
+                                          readOnly
+                                          disabled
+                                          placeholder="Definida no material"
+                                        />
+                                        <Input
+                                          label="Quantidade *"
+                                          type="number"
+                                          min={1}
+                                          step={1}
+                                          value={item.quantity}
+                                          onChange={(event) =>
+                                            updateItem(globalIndex, {
+                                              quantity: event.target.value,
+                                            })
+                                          }
+                                        />
+                                      </div>
+                                      <div className="mt-3 flex justify-end">
+                                        <Button
+                                          type="button"
+                                          variant="secondary"
+                                          onClick={() =>
+                                            removeItem(globalIndex)
+                                          }
+                                          disabled={dayItemCount <= 1}
+                                        >
+                                          Remover
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
                                 const otherCombos = new Set(
                                   items
                                     .filter(
@@ -1008,7 +1311,11 @@ export default function RequestBudget() {
                 ) : null}
               </AccordionSection>
 
-              {items.some((item) => item.serviceType && item.gender) ? (
+              {items.some(
+                (item) =>
+                  (item.serviceType && item.gender) ||
+                  (item.itemType === "SUPPLY" && item.idSupplies),
+              ) ? (
                 <div
                   className="rounded-2xl border p-4"
                   style={{
@@ -1020,47 +1327,105 @@ export default function RequestBudget() {
                     className="mb-2 text-xs font-semibold uppercase tracking-wide"
                     style={{ color: colors.brown[500] }}
                   >
-                    Resumo dos serviços
+                    Resumo do pedido
                   </p>
-                  <div className="flex flex-col gap-1">
-                    {items
-                      .filter((item) => item.serviceType && item.gender)
-                      .map((item, index) => (
-                        <div
-                          key={`summary-item-${index}`}
-                          className="flex items-center justify-between text-sm"
-                          style={{ color: colors.brown[800] }}
-                        >
-                          <span>
-                            {eventDayCount > 1
-                              ? `Dia ${item.eventDateIndex + 1} — `
-                              : ""}
-                            {item.serviceType} ({item.gender})
-                          </span>
-                          <span className="font-semibold">
-                            {item.quantity || 0}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                  <div
-                    className="mt-2 flex items-center justify-between border-t pt-2 text-sm font-semibold"
-                    style={{
-                      borderColor: colors.brown[100],
-                      color: colors.brown[800],
-                    }}
-                  >
-                    <span>Total de profissionais</span>
-                    <span>
-                      {items.reduce(
-                        (sum, item) =>
-                          item.serviceType && item.gender
-                            ? sum + (Number(item.quantity) || 0)
-                            : sum,
-                        0,
-                      )}
-                    </span>
-                  </div>
+
+                  {items.some((item) => item.serviceType && item.gender) ? (
+                    <>
+                      <p
+                        className="mb-1 text-xs font-semibold"
+                        style={{ color: colors.brown[500] }}
+                      >
+                        Serviços
+                      </p>
+                      <div className="flex flex-col gap-1">
+                        {items
+                          .filter((item) => item.serviceType && item.gender)
+                          .map((item, index) => (
+                            <div
+                              key={`summary-service-${index}`}
+                              className="flex items-center justify-between text-sm"
+                              style={{ color: colors.brown[800] }}
+                            >
+                              <span>
+                                {eventDayCount > 1
+                                  ? `Dia ${item.eventDateIndex + 1} — `
+                                  : ""}
+                                {item.serviceType} ({item.gender})
+                              </span>
+                              <span className="font-semibold">
+                                {item.quantity || 0}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                      <div
+                        className="mt-2 flex items-center justify-between border-t pt-2 text-sm font-semibold"
+                        style={{
+                          borderColor: colors.brown[100],
+                          color: colors.brown[800],
+                        }}
+                      >
+                        <span>Total de profissionais</span>
+                        <span>
+                          {items.reduce(
+                            (sum, item) =>
+                              item.serviceType && item.gender
+                                ? sum + (Number(item.quantity) || 0)
+                                : sum,
+                            0,
+                          )}
+                        </span>
+                      </div>
+                    </>
+                  ) : null}
+
+                  {items.some(
+                    (item) => item.itemType === "SUPPLY" && item.idSupplies,
+                  ) ? (
+                    <>
+                      <p
+                        className="mb-1 mt-3 text-xs font-semibold"
+                        style={{ color: colors.brown[500] }}
+                      >
+                        Materiais
+                      </p>
+                      <div className="flex flex-col gap-1">
+                        {items
+                          .filter(
+                            (item) =>
+                              item.itemType === "SUPPLY" && item.idSupplies,
+                          )
+                          .map((item, index) => {
+                            const supply = supplies.find(
+                              (candidate) =>
+                                candidate.idSupplies === item.idSupplies,
+                            );
+                            const unitLabel = formatSupplyUnit(
+                              supply?.defaultUnit ?? item.unit,
+                            );
+                            return (
+                              <div
+                                key={`summary-supply-${index}`}
+                                className="flex items-center justify-between text-sm"
+                                style={{ color: colors.brown[800] }}
+                              >
+                                <span>
+                                  {eventDayCount > 1
+                                    ? `Dia ${item.eventDateIndex + 1} — `
+                                    : ""}
+                                  {supply?.name ?? item.description}
+                                  {unitLabel ? ` (${unitLabel})` : ""}
+                                </span>
+                                <span className="font-semibold">
+                                  {item.quantity || 0}
+                                </span>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </>
+                  ) : null}
                 </div>
               ) : null}
 

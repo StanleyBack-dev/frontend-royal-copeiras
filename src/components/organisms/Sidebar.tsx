@@ -191,7 +191,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-5 lg:py-6">
+        <nav className="sidebar-scroll min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-5 lg:py-6">
           <p
             className="mb-4 px-3 text-xs font-semibold uppercase tracking-widest"
             style={{

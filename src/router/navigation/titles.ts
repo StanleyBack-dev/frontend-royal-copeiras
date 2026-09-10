@@ -22,6 +22,10 @@ export const viewTitles: Record<
     title: "Cargos",
     subtitle: "Gerenciar cargos da equipe",
   },
+  supplies: {
+    title: "Materiais",
+    subtitle: "Catálogo de materiais e insumos dos orçamentos",
+  },
   users: {
     title: "Usuários",
     subtitle: "Gerenciar usuários de acesso",

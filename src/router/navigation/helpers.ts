@@ -3,6 +3,7 @@ import {
   customerRoutePaths,
   employeeRoutePaths,
   positionRoutePaths,
+  supplyRoutePaths,
   routePaths,
   userRoutePaths,
   leadRoutePaths,
@@ -65,6 +66,13 @@ export function getActiveView(pathname: string): ActiveView {
   }
 
   if (
+    pathname.startsWith(supplyRoutePaths.list) ||
+    pathname.startsWith(supplyRoutePaths.legacyList)
+  ) {
+    return "supplies";
+  }
+
+  if (
     pathname.startsWith(userRoutePaths.list) ||
     pathname.startsWith(userRoutePaths.legacyList)
   ) {
@@ -99,6 +107,8 @@ export function getPathForView(view: ActiveView) {
       return employeeRoutePaths.list;
     case "positions":
       return positionRoutePaths.list;
+    case "supplies":
+      return supplyRoutePaths.list;
     case "users":
       return userRoutePaths.list;
     case "events":

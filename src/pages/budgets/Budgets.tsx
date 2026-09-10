@@ -1,4 +1,5 @@
 import DataTable from "@/components/organisms/DataTable";
+import ConfirmDialog from "@/components/molecules/ConfirmDialog";
 import FilterBar from "@/components/molecules/FilterBar";
 import ListFiltersPanel from "@/components/molecules/ListFiltersPanel";
 import ListPager from "@/components/molecules/ListPager";
@@ -12,6 +13,7 @@ import { budgetRoutePaths } from "@/router";
 import { budgetUiCopy, useBudgetsList } from "@/features/budgets";
 import { fetchContracts } from "@/features/contracts/services/contract.service";
 import type { Contract } from "@/api/contracts/schema";
+import type { Budget } from "@/api/budgets/schema";
 import { useAuthSession } from "@/features/auth";
 import { useBudgetsContext } from "@/features/budgets/context/useBudgetsContext";
 
@@ -52,10 +54,15 @@ export default function Budgets() {
     };
   }, []);
 
+  const [budgetToDuplicate, setBudgetToDuplicate] = useState<Budget | null>(
+    null,
+  );
+
   const { search, setSearch, filteredBudgets, columns } = useBudgetsList({
     budgets,
     leads,
     contracts,
+    onDuplicateBudget: setBudgetToDuplicate,
   });
 
   const statusOptions = [
@@ -159,6 +166,26 @@ export default function Budgets() {
           />
         </>
       )}
+
+      <ConfirmDialog
+        open={budgetToDuplicate !== null}
+        title="Duplicar orçamento"
+        description={
+          budgetToDuplicate
+            ? `Criar um novo orçamento (rascunho) a partir de ${budgetToDuplicate.budgetNumber}? Os dados serão copiados e você poderá ajustá-los antes de salvar.`
+            : ""
+        }
+        confirmLabel="Duplicar"
+        onCancel={() => setBudgetToDuplicate(null)}
+        onConfirm={() => {
+          if (budgetToDuplicate) {
+            navigate(
+              `${budgetRoutePaths.create}?duplicateFrom=${budgetToDuplicate.idBudgets}`,
+            );
+          }
+          setBudgetToDuplicate(null);
+        }}
+      />
     </ManagementPanelTemplate>
   );
 }

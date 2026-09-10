@@ -20,6 +20,10 @@ export class UpdateLeadsService {
             document
             legalName
             address
+            addressStreet
+            addressNumber
+            addressComplement
+            addressNeighborhood
             addressCity
             addressState
             addressZipCode

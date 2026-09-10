@@ -39,7 +39,9 @@ export function useLeadForm({ mode, id, leads }: UseLeadFormParams) {
       const found = leads.find((lead) => lead.idLeads === id);
       if (found) {
         setEditing(found);
-        setForm(mapLeadToFormValues(found));
+        // Normalize on load so the CPF/CNPJ, phone and CEP masks render right
+        // away instead of showing the raw digits until the first keystroke.
+        setForm(normalizeLeadFormValues(mapLeadToFormValues(found)));
         setErrors({});
         return;
       }

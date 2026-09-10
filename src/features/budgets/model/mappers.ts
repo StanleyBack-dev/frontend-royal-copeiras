@@ -37,6 +37,21 @@ function mapBudgetItemFormToPayload(
   index: number,
 ): CreateBudgetItemPayload {
   const quantity = Number(item.quantity || 0);
+
+  if (item.itemType === "SUPPLY") {
+    return {
+      itemType: "SUPPLY",
+      idSupplies: item.idSupplies?.trim() || undefined,
+      unit: item.unit?.trim() || undefined,
+      description: item.description.trim(),
+      quantity,
+      unitPrice: toDecimal(item.unitPrice) ?? 0,
+      notes: "",
+      sortOrder: index,
+      eventDateIndex: item.eventDateIndex ?? 0,
+    };
+  }
+
   const effectiveGender =
     item.serviceType && item.gender ? item.gender : undefined;
   const description = item.serviceType
@@ -49,6 +64,7 @@ function mapBudgetItemFormToPayload(
     : undefined;
 
   return {
+    itemType: "LABOR",
     idPositions: item.idPositions,
     description,
     gender: genderForApi,
@@ -140,6 +156,22 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
         : "0,00",
     ),
     items: (budget.items || []).map((item) => {
+      if (item.itemType === "SUPPLY") {
+        return {
+          id: item.idBudgetItems,
+          itemType: "SUPPLY" as const,
+          idPositions: "",
+          serviceType: "" as const,
+          gender: "" as const,
+          idSupplies: item.idSupplies || "",
+          unit: item.unit || "",
+          description: item.description,
+          quantity: String(item.quantity),
+          unitPrice: formatCurrencyFromDecimal(item.unitPrice),
+          eventDateIndex: item.eventDateIndex ?? 0,
+        };
+      }
+
       const serviceType =
         item.position || inferBudgetServiceType(item.description);
 
@@ -157,9 +189,12 @@ export function mapBudgetToFormValues(budget: Budget): BudgetFormValues {
 
       return {
         id: item.idBudgetItems,
+        itemType: "LABOR" as const,
         idPositions: item.idPositions || "",
         serviceType,
         gender,
+        idSupplies: "",
+        unit: "",
         description: serviceType
           ? buildBudgetServiceDescription(
               serviceType,

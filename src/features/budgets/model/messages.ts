@@ -124,6 +124,8 @@ export const budgetValidationMessages = {
   dayMissingItems: "Cada dia do evento deve ter ao menos um serviço.",
   itemDescriptionRequired: "Preencha a descrição dos serviços.",
   itemServiceTypeRequired: "Selecione o tipo de serviço de cada item.",
+  itemSupplyRequired:
+    "Selecione um material cadastrado no catálogo para cada linha de material.",
   itemServiceTypeDuplicated:
     "Não é permitido repetir o mesmo tipo de serviço no mesmo dia do orçamento.",
   itemQuantityInvalid: "A quantidade de cada item deve ser maior que zero.",

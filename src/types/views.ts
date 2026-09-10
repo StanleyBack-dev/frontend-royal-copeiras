@@ -8,6 +8,7 @@ export type ActiveView =
   | "clients"
   | "employees"
   | "positions"
+  | "supplies"
   | "users"
   | "events"
   | "publicIntake"

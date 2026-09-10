@@ -4,12 +4,14 @@ import { Navigate, Route } from "react-router-dom";
 import { CustomersProviderOutlet } from "../../features/customers";
 import { EmployeesProviderOutlet } from "../../features/employees";
 import { PositionsProviderOutlet } from "../../features/positions";
+import { SuppliesProviderOutlet } from "../../features/supplies";
 import { UsersProviderOutlet } from "../../features/users";
 import RequirePageAccessRoute from "../../features/auth/guards/RequirePageAccessRoute";
 import {
   customerRoutePaths,
   employeeRoutePaths,
   positionRoutePaths,
+  supplyRoutePaths,
   userRoutePaths,
 } from "../navigation";
 
@@ -19,6 +21,8 @@ const EmployeeForm = lazy(() => import("../../pages/employees/EmployeeForm"));
 const Employees = lazy(() => import("../../pages/employees/Employees"));
 const PositionForm = lazy(() => import("../../pages/positions/PositionForm"));
 const Positions = lazy(() => import("../../pages/positions/Positions"));
+const SupplyForm = lazy(() => import("../../pages/supplies/SupplyForm"));
+const Supplies = lazy(() => import("../../pages/supplies/Supplies"));
 const UserForm = lazy(() => import("../../pages/users/UserForm"));
 const Users = lazy(() => import("../../pages/users/Users"));
 
@@ -165,6 +169,43 @@ export function ManagementRoutes({ userId, loginPath }: ManagementRoutesProps) {
       <Route
         path={positionRoutePaths.legacyEdit()}
         element={<Navigate to={positionRoutePaths.edit()} replace />}
+      />
+
+      <Route element={<RequirePageAccessRoute view="supplies" />}>
+        <Route
+          element={
+            <UserScopedProviderRoute
+              userId={userId}
+              loginPath={loginPath}
+              ProviderOutlet={SuppliesProviderOutlet}
+            />
+          }
+        >
+          <Route
+            path={supplyRoutePaths.list}
+            element={withPageSuspense(<Supplies />)}
+          />
+          <Route
+            path={supplyRoutePaths.create}
+            element={withPageSuspense(<SupplyForm mode="create" />)}
+          />
+          <Route
+            path={supplyRoutePaths.edit()}
+            element={withPageSuspense(<SupplyForm mode="edit" />)}
+          />
+        </Route>
+      </Route>
+      <Route
+        path={supplyRoutePaths.legacyList}
+        element={<Navigate to={supplyRoutePaths.list} replace />}
+      />
+      <Route
+        path={supplyRoutePaths.legacyCreate}
+        element={<Navigate to={supplyRoutePaths.create} replace />}
+      />
+      <Route
+        path={supplyRoutePaths.legacyEdit()}
+        element={<Navigate to={supplyRoutePaths.edit()} replace />}
       />
 
       <Route element={<RequirePageAccessRoute view="users" />}>

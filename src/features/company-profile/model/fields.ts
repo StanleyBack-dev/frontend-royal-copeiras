@@ -235,29 +235,35 @@ export function contractorIssueCity(values: ContractorValues): string {
   );
 }
 
-/** Payment reference used in the contract payment clause. */
+/**
+ * Payment reference used in the contract payment clause — always followed by
+ * the PIX key holder's name (representante, falling back to razão social):
+ * "CNPJ 64.062.038/0001-71 - Estevam Barros Rodrigues".
+ */
 export function contractorPaymentReference(values: ContractorValues): string {
   const document = values.document.trim();
   const pixKey = values.pixKey.trim();
   const pixKeyType = values.pixKeyType.trim().toLowerCase();
+  const ownerName = values.representativeName.trim() || values.legalName.trim();
+  const ownerSuffix = ownerName ? ` - ${ownerName}` : "";
 
   if (pixKey && pixKeyType === "cnpj") {
-    return `CNPJ ${pixKey}`;
+    return `CNPJ ${pixKey}${ownerSuffix}`;
   }
 
   if (pixKey && pixKeyType === "cpf") {
-    return `CPF ${pixKey}`;
+    return `CPF ${pixKey}${ownerSuffix}`;
   }
 
   if (pixKey) {
-    return `chave PIX ${pixKey}`;
+    return `chave PIX ${pixKey}${ownerSuffix}`;
   }
 
   if (document) {
-    return `CNPJ ${document}`;
+    return `CNPJ ${document}${ownerSuffix}`;
   }
 
-  return `CNPJ ${DEFAULT_DOCUMENT}`;
+  return `CNPJ ${DEFAULT_DOCUMENT}${ownerSuffix}`;
 }
 
 /** Builds the CONTRATADA override values from a contract's frozen snapshot. */

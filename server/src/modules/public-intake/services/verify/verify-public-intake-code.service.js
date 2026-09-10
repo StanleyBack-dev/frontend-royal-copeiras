@@ -11,6 +11,11 @@ export class VerifyPublicIntakeCodeService {
           data {
             formToken
             expiresAt
+            supplies {
+              idSupplies
+              name
+              defaultUnit
+            }
           }
         }
       }

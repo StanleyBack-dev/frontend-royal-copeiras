@@ -1,4 +1,5 @@
 import {
+  formatCEP,
   formatCNPJ,
   formatCPF,
   formatLandline,
@@ -26,6 +27,15 @@ export function normalizeLeadFormValues(
     phone = "";
   }
 
+  // "Sem número" toggle drives the number field: forces "S/N" when checked,
+  // clears it when just unchecked so the user types a real number.
+  let addressNumber = nextValues.addressNumber ?? "";
+  if (nextValues.addressNoNumber) {
+    addressNumber = "S/N";
+  } else if (previousValues.addressNoNumber) {
+    addressNumber = "";
+  }
+
   return {
     ...nextValues,
     phone:
@@ -34,6 +44,8 @@ export function normalizeLeadFormValues(
         : formatPhone(phone),
     cpf: formatCPF(cpf),
     cnpj: formatCNPJ(cnpj),
+    addressNumber,
+    addressZipCode: formatCEP(nextValues.addressZipCode ?? ""),
     name: nextValues.name.trimStart(),
     email: (nextValues.email ?? "").trim(),
     source: nextValues.source ?? "",

@@ -4,6 +4,7 @@ import {
   budgetFormSchema,
   createEmptyBudgetFormValues,
   emptyBudgetItemFormValues,
+  emptyBudgetSupplyItemFormValues,
   type BudgetFormValues,
 } from "@/features/budgets/model/form";
 import { normalizeBudgetFormValues } from "@/features/budgets/model/formatters";
@@ -161,6 +162,25 @@ export function useBudgetForm({
     );
   }
 
+  function addSupplyItem(dayIndex = 0) {
+    setForm((current: BudgetFormValues) =>
+      normalizeBudgetFormValues(
+        {
+          ...current,
+          items: [
+            ...current.items,
+            {
+              ...emptyBudgetSupplyItemFormValues,
+              description: "",
+              eventDateIndex: dayIndex,
+            },
+          ],
+        },
+        current,
+      ),
+    );
+  }
+
   function removeItem(index: number) {
     setForm((current: BudgetFormValues) =>
       normalizeBudgetFormValues(
@@ -258,6 +278,7 @@ export function useBudgetForm({
     errors,
     setForm: updateForm,
     addItem,
+    addSupplyItem,
     removeItem,
     updateItem,
     totals,

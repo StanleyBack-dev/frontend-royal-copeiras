@@ -43,10 +43,19 @@ export const budgetStatusOptions = [
   "canceled",
 ] as const;
 
+export const budgetItemTypeOptions = ["LABOR", "SUPPLY"] as const;
+
 export const BudgetItemSchema = z.object({
   idBudgetItems: z.string(),
+  itemType: z.preprocess(
+    (value) => (value == null ? "LABOR" : value),
+    z.enum(budgetItemTypeOptions).default("LABOR"),
+  ),
   idPositions: nullableStringToOptional(),
   position: nullableStringToOptional(),
+  idSupplies: nullableStringToOptional(),
+  supply: nullableStringToOptional(),
+  unit: nullableStringToOptional(),
   description: stringTrimmed(1),
   quantity: z.number().int().min(1),
   unitPrice: z.number().min(0),
@@ -63,7 +72,13 @@ export const BudgetItemSchema = z.object({
 });
 
 export const CreateBudgetItemPayloadSchema = z.object({
-  idPositions: uuidCanonicalString(),
+  // LABOR items carry a cargo (idPositions); SUPPLY items carry an optional
+  // catalog id (idSupplies) + a free unit label. Cross-field validity is
+  // enforced by the backend validator.
+  itemType: z.enum(budgetItemTypeOptions).default("LABOR"),
+  idPositions: uuidCanonicalString().optional(),
+  idSupplies: uuidCanonicalString().optional(),
+  unit: z.string().trim().max(32).optional().or(z.literal("")),
   description: stringTrimmed(1),
   // Accept both Portuguese and canonical english tokens
   gender: z.enum(["Masculino", "Feminino", "masculine", "feminine"]).optional(),
@@ -177,6 +192,7 @@ export const UpdateBudgetPayloadSchema =
 
 export type Budget = z.infer<typeof BudgetSchema>;
 export type BudgetStatus = (typeof budgetStatusOptions)[number];
+export type BudgetItemType = (typeof budgetItemTypeOptions)[number];
 export type BudgetItem = z.infer<typeof BudgetItemSchema>;
 export type CreateBudgetPayload = z.infer<typeof CreateBudgetPayloadSchema>;
 export type UpdateBudgetPayload = z.infer<typeof UpdateBudgetPayloadSchema>;

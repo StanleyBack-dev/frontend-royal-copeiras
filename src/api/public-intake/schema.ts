@@ -13,9 +13,19 @@ export const GeneratedPublicIntakeCodeSchema = z.object({
   expiresAt: z.string(),
 });
 
+export const PublicIntakeSupplySchema = z.object({
+  idSupplies: z.string(),
+  name: z.string(),
+  defaultUnit: z.preprocess(
+    (value) => (value == null ? "" : value),
+    z.string(),
+  ),
+});
+
 export const VerifiedPublicIntakeCodeSchema = z.object({
   formToken: z.string(),
   expiresAt: z.string(),
+  supplies: z.array(PublicIntakeSupplySchema).default([]),
 });
 
 export const SubmittedPublicIntakeSchema = z.object({
@@ -34,11 +44,17 @@ export const PublicIntakeCodeListItemSchema = z.object({
 });
 
 export const SubmitPublicIntakeItemPayloadSchema = z.object({
+  itemType: z.enum(["LABOR", "SUPPLY"]).default("LABOR"),
   description: z.string().trim().min(1),
+  idSupplies: z.string().optional(),
   gender: z.enum(["Masculino", "Feminino"]).optional(),
+  unit: z.string().trim().max(32).optional().or(z.literal("")),
   quantity: z.number().int().min(1),
   eventDateIndex: z.number().int().min(0).default(0),
 });
+
+const optionalAddressField = () =>
+  z.string().trim().optional().or(z.literal(""));
 
 export const SubmitPublicIntakePayloadSchema = z.object({
   formToken: z.string(),
@@ -46,6 +62,13 @@ export const SubmitPublicIntakePayloadSchema = z.object({
   email: z.string().trim().email().optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   document: z.string().optional().or(z.literal("")),
+  addressStreet: optionalAddressField(),
+  addressNumber: optionalAddressField(),
+  addressComplement: optionalAddressField(),
+  addressNeighborhood: optionalAddressField(),
+  addressCity: optionalAddressField(),
+  addressState: optionalAddressField(),
+  addressZipCode: optionalAddressField(),
   eventDates: z.array(z.string()).min(1),
   eventArrivalTimes: z.array(z.string()).min(1),
   eventDepartureTimes: z.array(z.string()).min(1),
@@ -61,6 +84,7 @@ export type GeneratedPublicIntakeCode = z.infer<
 export type VerifiedPublicIntakeCode = z.infer<
   typeof VerifiedPublicIntakeCodeSchema
 >;
+export type PublicIntakeSupply = z.infer<typeof PublicIntakeSupplySchema>;
 export type SubmittedPublicIntake = z.infer<typeof SubmittedPublicIntakeSchema>;
 export type PublicIntakeCodeListItem = z.infer<
   typeof PublicIntakeCodeListItemSchema
