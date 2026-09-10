@@ -65,6 +65,7 @@ export const userUiCopy = {
   },
   errors: {
     invalidCollectionData: "Dados de usuários inválidos",
+    invalidUserResponse: "Resposta de usuário inválida",
     invalidFormData: "Dados do formulário inválidos",
     invalidUserData: "Dados do usuário inválidos",
     invalidCreateUserResponse: "Resposta de criação de usuário inválida",

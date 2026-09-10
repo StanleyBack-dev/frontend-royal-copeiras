@@ -1,5 +1,8 @@
 import { createPosition } from "../../../api/positions/methods/create";
-import { getPositions } from "../../../api/positions/methods/get";
+import {
+  getPositionById,
+  getPositions,
+} from "../../../api/positions/methods/get";
 import { updatePosition } from "../../../api/positions/methods/update";
 import type {
   ListQueryParams,
@@ -44,6 +47,22 @@ export async function fetchPositions(
       hasNextPage: response.hasNextPage,
     },
   };
+}
+
+export async function fetchPositionById(id: string): Promise<Position | null> {
+  const response = await getPositionById(id);
+
+  if (!response) {
+    return null;
+  }
+
+  const parsed = PositionSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error(positionUiCopy.errors.invalidPositionResponse);
+  }
+
+  return parsed.data;
 }
 
 export async function savePosition({

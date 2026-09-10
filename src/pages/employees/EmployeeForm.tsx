@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import EmployeeFormTemplate from "@/components/templates/employees/EmployeeFormTemplate";
+import LoadingOverlay from "@/components/molecules/LoadingOverlay";
 import {
   employeeUiCopy,
   getEmployeeFormFields,
@@ -18,11 +19,12 @@ export default function EmployeeForm({ mode }: { mode: "create" | "edit" }) {
   const { employees, save, saving } = useEmployeesContext();
   const [positions, setPositions] = useState<Position[]>([]);
   const { showError } = useToast();
-  const { form, editing, errors, setForm, submit } = useEmployeeForm({
-    mode,
-    id,
-    employees,
-  });
+  const { form, editing, errors, loadingEmployee, setForm, submit } =
+    useEmployeeForm({
+      mode,
+      id,
+      employees,
+    });
 
   useEffect(() => {
     let isMounted = true;
@@ -74,22 +76,28 @@ export default function EmployeeForm({ mode }: { mode: "create" | "edit" }) {
   }
 
   return (
-    <EmployeeFormTemplate<EmployeeFormValues>
-      title={
-        mode === "edit"
-          ? employeeUiCopy.form.editTitle
-          : employeeUiCopy.form.createTitle
-      }
-      values={form}
-      setValues={setForm}
-      fields={getEmployeeFormFields(form, {
-        isEditing: mode === "edit",
-        positionOptions,
-      })}
-      onSubmit={handleSave}
-      errors={errors}
-      saving={saving}
-      onCancel={() => navigate("/funcionarios")}
-    />
+    <>
+      <LoadingOverlay
+        open={mode === "edit" && !editing && loadingEmployee}
+        label="Carregando funcionário..."
+      />
+      <EmployeeFormTemplate<EmployeeFormValues>
+        title={
+          mode === "edit"
+            ? employeeUiCopy.form.editTitle
+            : employeeUiCopy.form.createTitle
+        }
+        values={form}
+        setValues={setForm}
+        fields={getEmployeeFormFields(form, {
+          isEditing: mode === "edit",
+          positionOptions,
+        })}
+        onSubmit={handleSave}
+        errors={errors}
+        saving={saving}
+        onCancel={() => navigate("/funcionarios")}
+      />
+    </>
   );
 }

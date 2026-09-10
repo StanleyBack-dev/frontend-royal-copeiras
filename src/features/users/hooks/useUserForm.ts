@@ -19,6 +19,7 @@ import {
   mapUserFormToUpdateValidationInput,
   mapUserToFormValues,
 } from "../model/mappers";
+import { fetchUserById } from "../services/user.service";
 
 interface UseUserFormParams {
   mode: "create" | "edit";
@@ -40,22 +41,67 @@ export function useUserForm({ mode, id, users }: UseUserFormParams) {
   const [form, setForm] = useState<UserFormValues>(emptyUserFormValues);
   const [editing, setEditing] = useState<User | null>(null);
   const [errors, setErrors] = useState<UserFormErrors>({});
+  const [loadingUser, setLoadingUser] = useState(false);
 
   useEffect(() => {
-    if (mode === "edit" && id && users.length) {
+    if (mode === "edit") {
+      if (!id) {
+        return;
+      }
+
       const found = users.find((user) => user.idUsers === id);
       if (found) {
         setEditing(found);
         setForm(mapUserToFormValues(found));
         setErrors({});
-        return;
       }
+      // Not in the current list page: leave the by-id effect below to load it.
+      // Never blank the form out in edit mode — that is the pagination bug.
+      return;
     }
 
     setEditing(null);
     setForm(emptyUserFormValues);
     setErrors({});
   }, [users, id, mode]);
+
+  // Fallback for a deep link / refresh straight onto the edit form, where the
+  // record sits outside the loaded list page.
+  useEffect(() => {
+    if (mode !== "edit" || !id || editing?.idUsers === id) {
+      return;
+    }
+
+    if (users.some((user) => user.idUsers === id)) {
+      return;
+    }
+
+    let active = true;
+    setLoadingUser(true);
+
+    void fetchUserById(id)
+      .then((user) => {
+        if (!active || !user) {
+          return;
+        }
+
+        setEditing(user);
+        setForm(mapUserToFormValues(user));
+        setErrors({});
+      })
+      .catch(() => {
+        // Leave the form as-is; the user can navigate back.
+      })
+      .finally(() => {
+        if (active) {
+          setLoadingUser(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [users, editing, id, mode]);
 
   function updateForm(nextValues: UserFormValues) {
     setErrors({});
@@ -121,6 +167,7 @@ export function useUserForm({ mode, id, users }: UseUserFormParams) {
     form,
     editing,
     errors,
+    loadingUser,
     setForm: updateForm,
     submit,
   };

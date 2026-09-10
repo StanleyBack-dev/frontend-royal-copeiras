@@ -14,6 +14,7 @@ import {
   mapPositionFormToValidationInput,
   mapPositionToFormValues,
 } from "../model/mappers";
+import { fetchPositionById } from "../services/position.service";
 
 interface UsePositionFormParams {
   mode: "create" | "edit";
@@ -39,23 +40,67 @@ export function usePositionForm({
   const [form, setForm] = useState<PositionFormValues>(emptyPositionFormValues);
   const [editing, setEditing] = useState<Position | null>(null);
   const [errors, setErrors] = useState<PositionFormErrors>({});
+  const [loadingPosition, setLoadingPosition] = useState(false);
 
   useEffect(() => {
-    if (mode === "edit" && id && positions.length) {
-      const found = positions.find((position) => position.idPositions === id);
+    if (mode === "edit") {
+      if (!id) {
+        return;
+      }
 
+      const found = positions.find((position) => position.idPositions === id);
       if (found) {
         setEditing(found);
         setForm(mapPositionToFormValues(found));
         setErrors({});
-        return;
       }
+      // Not in the current list page: leave the by-id effect below to load it.
+      // Never blank the form out in edit mode — that is the pagination bug.
+      return;
     }
 
     setEditing(null);
     setForm(emptyPositionFormValues);
     setErrors({});
   }, [positions, id, mode]);
+
+  // Fallback for a deep link / refresh straight onto the edit form, where the
+  // record sits outside the loaded list page.
+  useEffect(() => {
+    if (mode !== "edit" || !id || editing?.idPositions === id) {
+      return;
+    }
+
+    if (positions.some((position) => position.idPositions === id)) {
+      return;
+    }
+
+    let active = true;
+    setLoadingPosition(true);
+
+    void fetchPositionById(id)
+      .then((position) => {
+        if (!active || !position) {
+          return;
+        }
+
+        setEditing(position);
+        setForm(mapPositionToFormValues(position));
+        setErrors({});
+      })
+      .catch(() => {
+        // Leave the form as-is; the user can navigate back.
+      })
+      .finally(() => {
+        if (active) {
+          setLoadingPosition(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [positions, editing, id, mode]);
 
   function updateForm(nextValues: PositionFormValues) {
     setErrors({});
@@ -114,6 +159,7 @@ export function usePositionForm({
     form,
     editing,
     errors,
+    loadingPosition,
     setForm: updateForm,
     submit,
   };

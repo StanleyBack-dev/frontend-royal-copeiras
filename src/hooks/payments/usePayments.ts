@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { paymentRoutePaths } from "@/router/navigation/paths";
 import type { Budget } from "@/api/budgets/schema";
 import type { Contract } from "@/api/contracts/schema";
 import { EventSchema, type Event } from "@/api/events/schema";
@@ -97,6 +98,16 @@ function applyOptionalSearchParam(
 
 export function usePayments(): UsePaymentsResult {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  // The list provider also wraps the create/edit form routes, which drop the
+  // `?page`/`?limit` query string. Without a guard the list would reload page 1
+  // at the default limit whenever a form opens, evicting rows beyond the first
+  // page from `payments` — leaving the edit form, which reads its record from
+  // that array, blank (the by-id fallback fetch would still fire, but this
+  // avoids the needless reload and flash). Off the list route we still fetch
+  // once (a deep link / refresh straight onto a form), but never again.
+  const isListRoute = location.pathname === paymentRoutePaths.list;
+  const hasFetchedRef = useRef(false);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -194,12 +205,17 @@ export function usePayments(): UsePaymentsResult {
   const filters = useMemo(() => readFilters(searchParams), [searchParams]);
 
   useEffect(() => {
+    if (!isListRoute && hasFetchedRef.current) {
+      return;
+    }
+
+    hasFetchedRef.current = true;
     void load({
       page: currentPage,
       limit: currentLimit,
       ...filters,
     });
-  }, [currentPage, currentLimit, filters, load]);
+  }, [isListRoute, currentPage, currentLimit, filters, load]);
 
   useEffect(() => {
     void loadFilterOptions();

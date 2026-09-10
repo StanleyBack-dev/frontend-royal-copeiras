@@ -15,6 +15,7 @@ import {
   mapCustomerFormToValidationInput,
   mapCustomerToFormValues,
 } from "../model/mappers";
+import { fetchCustomerById } from "../services/customer.service";
 
 interface UseCustomerFormParams {
   mode: "create" | "edit";
@@ -40,22 +41,67 @@ export function useCustomerForm({
   const [form, setForm] = useState<CustomerFormValues>(emptyCustomerFormValues);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [errors, setErrors] = useState<CustomerFormErrors>({});
+  const [loadingCustomer, setLoadingCustomer] = useState(false);
 
   useEffect(() => {
-    if (mode === "edit" && id && customers.length) {
+    if (mode === "edit") {
+      if (!id) {
+        return;
+      }
+
       const found = customers.find((customer) => customer.idCustomers === id);
       if (found) {
         setEditing(found);
         setForm(mapCustomerToFormValues(found));
         setErrors({});
-        return;
       }
+      // Not in the current list page: leave the by-id effect below to load it.
+      // Never blank the form out in edit mode — that is the pagination bug.
+      return;
     }
 
     setEditing(null);
     setForm(emptyCustomerFormValues);
     setErrors({});
   }, [customers, id, mode]);
+
+  // Fallback for a deep link / refresh straight onto the edit form, where the
+  // record sits outside the loaded list page.
+  useEffect(() => {
+    if (mode !== "edit" || !id || editing?.idCustomers === id) {
+      return;
+    }
+
+    if (customers.some((customer) => customer.idCustomers === id)) {
+      return;
+    }
+
+    let active = true;
+    setLoadingCustomer(true);
+
+    void fetchCustomerById(id)
+      .then((customer) => {
+        if (!active || !customer) {
+          return;
+        }
+
+        setEditing(customer);
+        setForm(mapCustomerToFormValues(customer));
+        setErrors({});
+      })
+      .catch(() => {
+        // Leave the form as-is; the user can navigate back.
+      })
+      .finally(() => {
+        if (active) {
+          setLoadingCustomer(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [customers, editing, id, mode]);
 
   function updateForm(nextValues: CustomerFormValues) {
     setErrors({});
@@ -115,6 +161,7 @@ export function useCustomerForm({
     form,
     editing,
     errors,
+    loadingCustomer,
     setForm: updateForm,
     submit,
   };

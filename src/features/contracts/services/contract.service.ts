@@ -1,5 +1,6 @@
 import {
   createContract,
+  getContractById,
   getContracts,
   updateContract,
   type ContractListQueryParams,
@@ -48,6 +49,22 @@ export async function fetchContracts(
       hasNextPage: response.hasNextPage,
     },
   };
+}
+
+export async function fetchContractById(id: string): Promise<Contract | null> {
+  const response = await getContractById(id);
+
+  if (!response) {
+    return null;
+  }
+
+  const parsed = ContractSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error(contractUiCopy.errors.invalidContractData);
+  }
+
+  return parsed.data;
 }
 
 export async function fetchApprovedBudgets(): Promise<Budget[]> {

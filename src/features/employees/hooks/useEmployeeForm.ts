@@ -15,6 +15,7 @@ import {
   mapEmployeeFormToValidationInput,
   mapEmployeeToFormValues,
 } from "../model/mappers";
+import { fetchEmployeeById } from "../services/employee.service";
 
 interface UseEmployeeFormParams {
   mode: "create" | "edit";
@@ -40,23 +41,67 @@ export function useEmployeeForm({
   const [form, setForm] = useState<EmployeeFormValues>(emptyEmployeeFormValues);
   const [editing, setEditing] = useState<Employee | null>(null);
   const [errors, setErrors] = useState<EmployeeFormErrors>({});
+  const [loadingEmployee, setLoadingEmployee] = useState(false);
 
   useEffect(() => {
-    if (mode === "edit" && id && employees.length) {
-      const found = employees.find((employee) => employee.idEmployees === id);
+    if (mode === "edit") {
+      if (!id) {
+        return;
+      }
 
+      const found = employees.find((employee) => employee.idEmployees === id);
       if (found) {
         setEditing(found);
         setForm(mapEmployeeToFormValues(found));
         setErrors({});
-        return;
       }
+      // Not in the current list page: leave the by-id effect below to load it.
+      // Never blank the form out in edit mode — that is the pagination bug.
+      return;
     }
 
     setEditing(null);
     setForm(emptyEmployeeFormValues);
     setErrors({});
   }, [employees, id, mode]);
+
+  // Fallback for a deep link / refresh straight onto the edit form, where the
+  // record sits outside the loaded list page.
+  useEffect(() => {
+    if (mode !== "edit" || !id || editing?.idEmployees === id) {
+      return;
+    }
+
+    if (employees.some((employee) => employee.idEmployees === id)) {
+      return;
+    }
+
+    let active = true;
+    setLoadingEmployee(true);
+
+    void fetchEmployeeById(id)
+      .then((employee) => {
+        if (!active || !employee) {
+          return;
+        }
+
+        setEditing(employee);
+        setForm(mapEmployeeToFormValues(employee));
+        setErrors({});
+      })
+      .catch(() => {
+        // Leave the form as-is; the user can navigate back.
+      })
+      .finally(() => {
+        if (active) {
+          setLoadingEmployee(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [employees, editing, id, mode]);
 
   function updateForm(nextValues: EmployeeFormValues) {
     setErrors({});
@@ -117,6 +162,7 @@ export function useEmployeeForm({
     form,
     editing,
     errors,
+    loadingEmployee,
     setForm: updateForm,
     submit,
   };

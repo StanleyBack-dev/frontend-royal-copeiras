@@ -1,5 +1,8 @@
 import { createCustomer } from "../../../api/customers/methods/create";
-import { getCustomers } from "../../../api/customers/methods/get";
+import {
+  getCustomerById,
+  getCustomers,
+} from "../../../api/customers/methods/get";
 import { updateCustomer } from "../../../api/customers/methods/update";
 import type {
   ListQueryParams,
@@ -44,6 +47,22 @@ export async function fetchCustomers(
       hasNextPage: response.hasNextPage,
     },
   };
+}
+
+export async function fetchCustomerById(id: string): Promise<Customer | null> {
+  const response = await getCustomerById(id);
+
+  if (!response) {
+    return null;
+  }
+
+  const parsed = CustomerSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error(customerUiCopy.errors.invalidCustomerResponse);
+  }
+
+  return parsed.data;
 }
 
 export async function saveCustomer({
