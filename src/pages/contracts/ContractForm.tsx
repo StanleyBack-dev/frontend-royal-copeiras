@@ -17,7 +17,11 @@ import ManagementPanelTemplate from "@/components/templates/management/Managemen
 import { useAuthSession } from "@/features/auth";
 import { contractUiCopy, useContractPdfActions } from "@/features/contracts";
 import { useContractsContext } from "@/features/contracts/context/useContractsContext";
-import { fetchContracts } from "@/features/contracts/services/contract.service";
+import {
+  fetchContractById,
+  fetchContracts,
+} from "@/features/contracts/services/contract.service";
+import type { Contract } from "@/api/contracts/schema";
 import {
   budgetRoutePaths,
   contractRoutePaths,
@@ -637,10 +641,57 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   );
   const [errors, setErrors] = useState<ContractFormErrors>({});
 
-  const editing = useMemo(
-    () => contracts.find((contract) => contract.idContracts === id) || null,
-    [contracts, id],
-  );
+  // Deep-link / refresh straight onto the edit form: the contract may sit
+  // outside the loaded list page, so fall back to a direct by-id fetch.
+  const [fetchedContract, setFetchedContract] = useState<Contract | null>(null);
+  const [loadingContract, setLoadingContract] = useState(false);
+
+  const editing = useMemo(() => {
+    const fromList = contracts.find((contract) => contract.idContracts === id);
+    if (fromList) {
+      return fromList;
+    }
+
+    return fetchedContract && fetchedContract.idContracts === id
+      ? fetchedContract
+      : null;
+  }, [contracts, fetchedContract, id]);
+
+  useEffect(() => {
+    if (mode !== "edit" || !id) {
+      return;
+    }
+
+    if (contracts.some((contract) => contract.idContracts === id)) {
+      return;
+    }
+
+    if (fetchedContract?.idContracts === id) {
+      return;
+    }
+
+    let active = true;
+    setLoadingContract(true);
+
+    void fetchContractById(id)
+      .then((contract) => {
+        if (active && contract) {
+          setFetchedContract(contract);
+        }
+      })
+      .catch(() => {
+        // Leave the form as-is; the user can navigate back.
+      })
+      .finally(() => {
+        if (active) {
+          setLoadingContract(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [contracts, fetchedContract, id, mode]);
 
   const selectedBudget = useMemo(
     () => budgets.find((budget) => budget.idBudgets === form.idBudgets) || null,
@@ -1381,6 +1432,10 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
               ? "Encerrando contrato..."
               : "Enviando para assinatura..."
         }
+      />
+      <LoadingOverlay
+        open={mode === "edit" && !editing && loadingContract}
+        label="Carregando contrato..."
       />
       {primaryAction || secondaryActions.length > 0 ? (
         <div className="mb-6">

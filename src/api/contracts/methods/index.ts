@@ -1,5 +1,5 @@
 export { createContract } from "./create";
-export { getContracts } from "./get";
+export { getContractById, getContracts } from "./get";
 export type { ContractListQueryParams } from "./get";
 export { updateContract } from "./update";
 export { generateContractPreviewPdf } from "./preview-pdf";

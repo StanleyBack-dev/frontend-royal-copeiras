@@ -1,5 +1,5 @@
 import { createUser } from "../../../api/users/methods/create";
-import { getUsers } from "../../../api/users/methods/get";
+import { getUserById, getUsers } from "../../../api/users/methods/get";
 import { getUserPagePermissions } from "../../../api/users/methods/get-page-permissions";
 import { updateUser } from "../../../api/users/methods/update";
 import { unlockUser } from "../../../api/users/methods/unlock";
@@ -52,6 +52,22 @@ export async function fetchUsers(
       hasNextPage: response.hasNextPage,
     },
   };
+}
+
+export async function fetchUserById(id: string): Promise<User | null> {
+  const response = await getUserById(id);
+
+  if (!response) {
+    return null;
+  }
+
+  const parsed = UserSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error(userUiCopy.errors.invalidUserResponse);
+  }
+
+  return parsed.data;
 }
 
 export async function saveUser({ formData, editing }: SaveUserParams) {

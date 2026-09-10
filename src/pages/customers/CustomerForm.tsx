@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import CustomerFormTemplate from "@/components/templates/customers/CustomerFormTemplate";
+import LoadingOverlay from "@/components/molecules/LoadingOverlay";
 import {
   customerUiCopy,
   getCustomerFormFields,
@@ -14,11 +15,12 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
   const navigate = useNavigate();
   const { customers, save, saving } = useCustomersContext();
   const { showError } = useToast();
-  const { form, editing, errors, setForm, submit } = useCustomerForm({
-    mode,
-    id,
-    customers,
-  });
+  const { form, editing, errors, loadingCustomer, setForm, submit } =
+    useCustomerForm({
+      mode,
+      id,
+      customers,
+    });
 
   async function handleSave(values: CustomerFormValues) {
     const result = submit(values);
@@ -34,19 +36,25 @@ export default function CustomerForm({ mode }: { mode: "create" | "edit" }) {
   }
 
   return (
-    <CustomerFormTemplate<CustomerFormValues>
-      title={
-        mode === "edit"
-          ? customerUiCopy.form.editTitle
-          : customerUiCopy.form.createTitle
-      }
-      values={form}
-      setValues={setForm}
-      fields={getCustomerFormFields(form, { isEditing: mode === "edit" })}
-      onSubmit={handleSave}
-      errors={errors}
-      saving={saving}
-      onCancel={() => navigate("/customers")}
-    />
+    <>
+      <LoadingOverlay
+        open={mode === "edit" && !editing && loadingCustomer}
+        label="Carregando cliente..."
+      />
+      <CustomerFormTemplate<CustomerFormValues>
+        title={
+          mode === "edit"
+            ? customerUiCopy.form.editTitle
+            : customerUiCopy.form.createTitle
+        }
+        values={form}
+        setValues={setForm}
+        fields={getCustomerFormFields(form, { isEditing: mode === "edit" })}
+        onSubmit={handleSave}
+        errors={errors}
+        saving={saving}
+        onCancel={() => navigate("/customers")}
+      />
+    </>
   );
 }

@@ -11,6 +11,7 @@ import {
   mapSupplyFormToValidationInput,
   mapSupplyToFormValues,
 } from "../model/mappers";
+import { fetchSupplyById } from "../services/supply.service";
 
 interface UseSupplyFormParams {
   mode: "create" | "edit";
@@ -32,23 +33,67 @@ export function useSupplyForm({ mode, id, supplies }: UseSupplyFormParams) {
   const [form, setForm] = useState<SupplyFormValues>(emptySupplyFormValues);
   const [editing, setEditing] = useState<Supply | null>(null);
   const [errors, setErrors] = useState<SupplyFormErrors>({});
+  const [loadingSupply, setLoadingSupply] = useState(false);
 
   useEffect(() => {
-    if (mode === "edit" && id && supplies.length) {
-      const found = supplies.find((supply) => supply.idSupplies === id);
+    if (mode === "edit") {
+      if (!id) {
+        return;
+      }
 
+      const found = supplies.find((supply) => supply.idSupplies === id);
       if (found) {
         setEditing(found);
         setForm(mapSupplyToFormValues(found));
         setErrors({});
-        return;
       }
+      // Not in the current list page: leave the by-id effect below to load it.
+      // Never blank the form out in edit mode — that is the pagination bug.
+      return;
     }
 
     setEditing(null);
     setForm(emptySupplyFormValues);
     setErrors({});
   }, [supplies, id, mode]);
+
+  // Fallback for a deep link / refresh straight onto the edit form, where the
+  // record sits outside the loaded list page.
+  useEffect(() => {
+    if (mode !== "edit" || !id || editing?.idSupplies === id) {
+      return;
+    }
+
+    if (supplies.some((supply) => supply.idSupplies === id)) {
+      return;
+    }
+
+    let active = true;
+    setLoadingSupply(true);
+
+    void fetchSupplyById(id)
+      .then((supply) => {
+        if (!active || !supply) {
+          return;
+        }
+
+        setEditing(supply);
+        setForm(mapSupplyToFormValues(supply));
+        setErrors({});
+      })
+      .catch(() => {
+        // Leave the form as-is; the user can navigate back.
+      })
+      .finally(() => {
+        if (active) {
+          setLoadingSupply(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [supplies, editing, id, mode]);
 
   function updateForm(nextValues: SupplyFormValues) {
     setErrors({});
@@ -104,6 +149,7 @@ export function useSupplyForm({ mode, id, supplies }: UseSupplyFormParams) {
     form,
     editing,
     errors,
+    loadingSupply,
     setForm: updateForm,
     submit,
   };

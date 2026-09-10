@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import UserFormTemplate from "@/components/templates/users/UserFormTemplate";
+import LoadingOverlay from "@/components/molecules/LoadingOverlay";
 import {
   fetchUserPagePermissions,
   getDefaultPagePermissionsByGroup,
@@ -24,7 +25,7 @@ export default function UserForm({ mode }: { mode: "create" | "edit" }) {
   const { users, save, saving, unlock } = useUsersContext();
   const { showError } = useToast();
   const { session, setSession } = useAuthSession();
-  const { form, editing, errors, setForm, submit } = useUserForm({
+  const { form, editing, errors, loadingUser, setForm, submit } = useUserForm({
     mode,
     id,
     users,
@@ -172,6 +173,10 @@ export default function UserForm({ mode }: { mode: "create" | "edit" }) {
 
   return (
     <div className="space-y-4">
+      <LoadingOverlay
+        open={mode === "edit" && !editing && loadingUser}
+        label="Carregando usuário..."
+      />
       <UserFormTemplate<UserFormValues>
         title={
           mode === "edit"

@@ -1,5 +1,5 @@
 import { createSupply } from "../../../api/supplies/methods/create";
-import { getSupplies } from "../../../api/supplies/methods/get";
+import { getSupplies, getSupplyById } from "../../../api/supplies/methods/get";
 import { updateSupply } from "../../../api/supplies/methods/update";
 import type {
   ListQueryParams,
@@ -44,6 +44,22 @@ export async function fetchSupplies(
       hasNextPage: response.hasNextPage,
     },
   };
+}
+
+export async function fetchSupplyById(id: string): Promise<Supply | null> {
+  const response = await getSupplyById(id);
+
+  if (!response) {
+    return null;
+  }
+
+  const parsed = SupplySchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error(supplyUiCopy.errors.invalidSupplyResponse);
+  }
+
+  return parsed.data;
 }
 
 export async function saveSupply({

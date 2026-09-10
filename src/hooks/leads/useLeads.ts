@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { leadRoutePaths } from "../../router/navigation/paths";
 import type { CreateLeadPayload, Lead } from "../../api/leads/schema";
 import type { PaginationMeta } from "../../api/shared/contracts";
 import { getHttpErrorMessage } from "../../api/shared/http-error";
@@ -79,6 +80,16 @@ function applyOptionalSearchParam(
 
 export function useLeads(): UseLeadsResult {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  // The list provider also wraps the create/edit form routes, but those URLs
+  // drop the `?page`/`?limit` query string. Without a guard the list would
+  // silently reload page 1 at the default limit whenever a form opens,
+  // evicting any row beyond the first page from `leads` — so the edit form,
+  // which reads its record from that array, would render blank. Off the list
+  // route we still fetch once (a deep link / refresh straight onto a form),
+  // but never again, so an already-loaded list is preserved.
+  const isListRoute = location.pathname === leadRoutePaths.list;
+  const hasFetchedRef = useRef(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -177,12 +188,17 @@ export function useLeads(): UseLeadsResult {
   const filters = useMemo(() => readFilters(searchParams), [searchParams]);
 
   useEffect(() => {
+    if (!isListRoute && hasFetchedRef.current) {
+      return;
+    }
+
+    hasFetchedRef.current = true;
     void load({
       page: currentPage,
       limit: currentLimit,
       ...filters,
     });
-  }, [currentPage, currentLimit, filters, load]);
+  }, [isListRoute, currentPage, currentLimit, filters, load]);
 
   useEffect(() => {
     if (!pagination.hasNextPage) {

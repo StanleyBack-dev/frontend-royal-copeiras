@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import SupplyFormTemplate from "@/components/templates/supplies/SupplyFormTemplate";
+import LoadingOverlay from "@/components/molecules/LoadingOverlay";
 import {
   getSupplyFormFields,
   supplyUiCopy,
@@ -15,11 +16,12 @@ export default function SupplyForm({ mode }: { mode: "create" | "edit" }) {
   const navigate = useNavigate();
   const { supplies, save, saving } = useSuppliesContext();
   const { showError } = useToast();
-  const { form, editing, errors, setForm, submit } = useSupplyForm({
-    mode,
-    id,
-    supplies,
-  });
+  const { form, editing, errors, loadingSupply, setForm, submit } =
+    useSupplyForm({
+      mode,
+      id,
+      supplies,
+    });
 
   async function handleSave(values: SupplyFormValues) {
     const result = submit(values);
@@ -37,19 +39,25 @@ export default function SupplyForm({ mode }: { mode: "create" | "edit" }) {
   }
 
   return (
-    <SupplyFormTemplate<SupplyFormValues>
-      title={
-        mode === "edit"
-          ? supplyUiCopy.form.editTitle
-          : supplyUiCopy.form.createTitle
-      }
-      values={form}
-      setValues={setForm}
-      fields={getSupplyFormFields(form, { isEditing: mode === "edit" })}
-      onSubmit={handleSave}
-      errors={errors}
-      saving={saving}
-      onCancel={() => navigate(supplyRoutePaths.list)}
-    />
+    <>
+      <LoadingOverlay
+        open={mode === "edit" && !editing && loadingSupply}
+        label="Carregando material..."
+      />
+      <SupplyFormTemplate<SupplyFormValues>
+        title={
+          mode === "edit"
+            ? supplyUiCopy.form.editTitle
+            : supplyUiCopy.form.createTitle
+        }
+        values={form}
+        setValues={setForm}
+        fields={getSupplyFormFields(form, { isEditing: mode === "edit" })}
+        onSubmit={handleSave}
+        errors={errors}
+        saving={saving}
+        onCancel={() => navigate(supplyRoutePaths.list)}
+      />
+    </>
   );
 }

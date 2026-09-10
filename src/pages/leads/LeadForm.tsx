@@ -24,11 +24,16 @@ export default function LeadForm({ mode }: { mode: "create" | "edit" }) {
     leads,
   });
 
+  const leadInList = leads.some((lead) => lead.idLeads === id);
+
+  // Re-run whenever the record is missing from the list — not just on mount —
+  // so a background list refresh that drops it is recovered instead of leaving
+  // the form blank.
   useEffect(() => {
-    if (mode === "edit" && id) {
+    if (mode === "edit" && id && !leadInList) {
       void ensureLeadLoaded(id);
     }
-  }, [mode, id, ensureLeadLoaded]);
+  }, [mode, id, leadInList, ensureLeadLoaded]);
 
   const isLoadingLeadForEdit = mode === "edit" && !editing && loading;
 

@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom";
 import PositionFormTemplate from "@/components/templates/positions/PositionFormTemplate";
+import LoadingOverlay from "@/components/molecules/LoadingOverlay";
 import {
   getPositionFormFields,
   positionUiCopy,
@@ -15,11 +16,12 @@ export default function PositionForm({ mode }: { mode: "create" | "edit" }) {
   const navigate = useNavigate();
   const { positions, save, saving } = usePositionsContext();
   const { showError } = useToast();
-  const { form, editing, errors, setForm, submit } = usePositionForm({
-    mode,
-    id,
-    positions,
-  });
+  const { form, editing, errors, loadingPosition, setForm, submit } =
+    usePositionForm({
+      mode,
+      id,
+      positions,
+    });
 
   async function handleSave(values: PositionFormValues) {
     const result = submit(values);
@@ -37,19 +39,25 @@ export default function PositionForm({ mode }: { mode: "create" | "edit" }) {
   }
 
   return (
-    <PositionFormTemplate<PositionFormValues>
-      title={
-        mode === "edit"
-          ? positionUiCopy.form.editTitle
-          : positionUiCopy.form.createTitle
-      }
-      values={form}
-      setValues={setForm}
-      fields={getPositionFormFields(form, { isEditing: mode === "edit" })}
-      onSubmit={handleSave}
-      errors={errors}
-      saving={saving}
-      onCancel={() => navigate(positionRoutePaths.list)}
-    />
+    <>
+      <LoadingOverlay
+        open={mode === "edit" && !editing && loadingPosition}
+        label="Carregando cargo..."
+      />
+      <PositionFormTemplate<PositionFormValues>
+        title={
+          mode === "edit"
+            ? positionUiCopy.form.editTitle
+            : positionUiCopy.form.createTitle
+        }
+        values={form}
+        setValues={setForm}
+        fields={getPositionFormFields(form, { isEditing: mode === "edit" })}
+        onSubmit={handleSave}
+        errors={errors}
+        saving={saving}
+        onCancel={() => navigate(positionRoutePaths.list)}
+      />
+    </>
   );
 }

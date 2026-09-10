@@ -9,7 +9,7 @@ export function getUsersController() {
   return async (req, res) => {
     try {
       const auth = getAuthContext(req);
-      const input = buildListInput(req.query);
+      const input = buildListInput(req.query, ["idUsers"]);
       const users = await getUsersService.findAll(auth.userId, input, {
         authorization: auth.authorization,
         cookieHeader: auth.cookieHeader,

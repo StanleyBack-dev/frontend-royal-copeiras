@@ -4,7 +4,8 @@ import type {
   PaginationMeta,
 } from "../../api/shared/contracts";
 import { getHttpErrorMessage } from "../../api/shared/http-error";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { employeeRoutePaths } from "../../router/navigation/paths";
 import {
   type Employee,
   type CreateEmployeePayload,
@@ -55,6 +56,15 @@ function toPositiveInt(value: string | null, fallback: number): number {
 
 export function useEmployees(): UseEmployeesResult {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  // The list provider also wraps the create/edit form routes, which drop the
+  // `?page`/`?limit` query string. Without a guard the list would reload page 1
+  // at the default limit whenever a form opens, evicting rows beyond the first
+  // page from `employees` — leaving the edit form, which reads its record from
+  // that array, blank. Off the list route we still fetch once (a deep link /
+  // refresh straight onto a form), but never again.
+  const isListRoute = location.pathname === employeeRoutePaths.list;
+  const hasFetchedRef = useRef(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -102,8 +112,13 @@ export function useEmployees(): UseEmployeesResult {
   const currentLimit = toPositiveInt(searchParams.get("limit"), DEFAULT_LIMIT);
 
   useEffect(() => {
+    if (!isListRoute && hasFetchedRef.current) {
+      return;
+    }
+
+    hasFetchedRef.current = true;
     void load({ page: currentPage, limit: currentLimit });
-  }, [currentPage, currentLimit, load]);
+  }, [isListRoute, currentPage, currentLimit, load]);
 
   useEffect(() => {
     if (!pagination.hasNextPage) {

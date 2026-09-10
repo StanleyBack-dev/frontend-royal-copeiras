@@ -1,5 +1,8 @@
 import { createEmployee } from "../../../api/employees/methods/create";
-import { getEmployees } from "../../../api/employees/methods/get";
+import {
+  getEmployeeById,
+  getEmployees,
+} from "../../../api/employees/methods/get";
 import { updateEmployee } from "../../../api/employees/methods/update";
 import type {
   ListQueryParams,
@@ -44,6 +47,22 @@ export async function fetchEmployees(
       hasNextPage: response.hasNextPage,
     },
   };
+}
+
+export async function fetchEmployeeById(id: string): Promise<Employee | null> {
+  const response = await getEmployeeById(id);
+
+  if (!response) {
+    return null;
+  }
+
+  const parsed = EmployeeSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error(employeeUiCopy.errors.invalidEmployeeResponse);
+  }
+
+  return parsed.data;
 }
 
 export async function saveEmployee({
