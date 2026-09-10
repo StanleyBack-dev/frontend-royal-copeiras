@@ -1,5 +1,9 @@
 import type { CreateLeadPayload, Lead } from "../../../api/leads/schema";
-import { formatDateTimeDisplay, onlyDigits } from "../../../utils/format";
+import {
+  formatCEP,
+  formatDateTimeDisplay,
+  onlyDigits,
+} from "../../../utils/format";
 import {
   LEAD_DOCUMENT_DIGITS_CNPJ,
   LEAD_DOCUMENT_DIGITS_CPF,
@@ -32,9 +36,14 @@ export function mapLeadToFormValues(lead: Lead): LeadFormValues {
     cpf: type === "individual" ? lead.document || "" : "",
     cnpj: type === "company" ? lead.document || "" : "",
     legalName: lead.legalName || "",
-    address: lead.address || "",
+    addressStreet: lead.addressStreet || lead.address || "",
+    addressNumber: lead.addressNumber || "",
+    addressNoNumber: (lead.addressNumber || "").trim().toUpperCase() === "S/N",
+    addressComplement: lead.addressComplement || "",
+    addressNeighborhood: lead.addressNeighborhood || "",
     addressCity: lead.addressCity || "",
-    addressState: lead.addressState || "",
+    // Uppercased so legacy lowercase values still match the UF select options.
+    addressState: (lead.addressState || "").trim().toUpperCase(),
     addressZipCode: lead.addressZipCode || "",
     source: lead.source || "",
     notes: lead.notes || "",
@@ -59,12 +68,28 @@ export function mapLeadFormToPayload(
         ? onlyDigits(values.cpf ?? "", LEAD_DOCUMENT_DIGITS_CPF)
         : onlyDigits(values.cnpj ?? "", LEAD_DOCUMENT_DIGITS_CNPJ),
     legalName: values.type === "company" ? (values.legalName ?? "").trim() : "",
-    address: (values.address ?? "").trim(),
+    addressStreet: (values.addressStreet ?? "").trim(),
+    addressNumber: values.addressNoNumber
+      ? "S/N"
+      : (values.addressNumber ?? "").trim(),
+    addressComplement: (values.addressComplement ?? "").trim(),
+    addressNeighborhood: (values.addressNeighborhood ?? "").trim(),
+    // Keep the legacy free-text column in sync so contract PDFs for leads that
+    // are read before re-saving still have an address fallback.
+    address: [
+      (values.addressStreet ?? "").trim(),
+      (values.addressNumber ?? "").trim(),
+      (values.addressComplement ?? "").trim(),
+      (values.addressNeighborhood ?? "").trim(),
+    ]
+      .filter(Boolean)
+      .join(", "),
     addressCity: (values.addressCity ?? "").trim(),
     addressState: (values.addressState ?? "").trim().toUpperCase(),
-    addressZipCode: onlyDigits(values.addressZipCode ?? "").length
-      ? (values.addressZipCode ?? "").trim()
-      : "",
+    addressZipCode:
+      onlyDigits(values.addressZipCode ?? "").length === 8
+        ? formatCEP(values.addressZipCode ?? "")
+        : "",
     source: values.source ?? "",
     notes: (values.notes ?? "").trim(),
     status: values.status,

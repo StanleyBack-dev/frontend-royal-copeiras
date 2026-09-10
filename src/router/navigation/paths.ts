@@ -10,6 +10,7 @@ export const routePaths: Record<ActiveView, string> = {
   clients: "/clientes",
   employees: "/funcionarios",
   positions: "/cargos",
+  supplies: "/materiais",
   users: "/usuarios",
   events: "/eventos",
   publicIntake: "/links-orcamento",
@@ -41,6 +42,15 @@ export const positionRoutePaths = {
   legacyList: "/positions",
   legacyCreate: "/positions/new",
   legacyEdit: (id = ":id") => `/positions/${id}/edit`,
+};
+
+export const supplyRoutePaths = {
+  list: "/materiais",
+  create: "/materiais/new",
+  edit: (id = ":id") => `/materiais/${id}/edit`,
+  legacyList: "/supplies",
+  legacyCreate: "/supplies/new",
+  legacyEdit: (id = ":id") => `/supplies/${id}/edit`,
 };
 
 export const userRoutePaths = {

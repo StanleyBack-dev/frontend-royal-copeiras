@@ -103,11 +103,18 @@ export const budgetDiscountPercentageOptions = Array.from(
   },
 );
 
+export const budgetItemTypeValues = ["LABOR", "SUPPLY"] as const;
+export type BudgetItemTypeValue = (typeof budgetItemTypeValues)[number];
+
 export interface BudgetItemFormValues {
   id?: string;
+  itemType: BudgetItemTypeValue;
   idPositions: string;
   serviceType: BudgetServiceType | "";
   gender: ServiceGenderOption | "";
+  // SUPPLY-only fields (ignored for LABOR rows)
+  idSupplies: string;
+  unit: string;
   description: string;
   quantity: string;
   unitPrice: string;
@@ -139,13 +146,21 @@ export interface BudgetFormValues {
 }
 
 export const emptyBudgetItemFormValues: BudgetItemFormValues = {
+  itemType: "LABOR",
   idPositions: "",
   serviceType: "",
   gender: "",
+  idSupplies: "",
+  unit: "",
   description: "",
   quantity: "1",
   unitPrice: "",
   eventDateIndex: 0,
+};
+
+export const emptyBudgetSupplyItemFormValues: BudgetItemFormValues = {
+  ...emptyBudgetItemFormValues,
+  itemType: "SUPPLY",
 };
 
 export function createEmptyBudgetFormValues(
@@ -217,12 +232,12 @@ const budgetFormSchemaBase = z.object({
   items: z.array(
     z.object({
       id: z.string().optional(),
-      idPositions: z
-        .string()
-        .trim()
-        .min(1, budgetValidationMessages.itemServiceTypeRequired),
+      itemType: z.enum(budgetItemTypeValues),
+      idPositions: z.string().trim(),
       serviceType: z.string(),
       gender: z.enum(serviceGenderOptions).or(z.literal("")),
+      idSupplies: z.string().trim(),
+      unit: z.string(),
       description: z
         .string()
         .trim()
@@ -440,10 +455,39 @@ export const budgetFormSchema = budgetFormSchemaBase.superRefine(
       });
     }
 
-    // Validate uniqueness of position + gender combinations within the same day
-    const selectedCombos = data.items.map(
-      (item) =>
-        `${item.eventDateIndex ?? 0}:${item.idPositions.trim()}:${item.gender.trim()}`,
+    // A staffing (LABOR) row must reference a cargo.
+    if (
+      data.items.some(
+        (item) => item.itemType === "LABOR" && !item.idPositions.trim(),
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["items"],
+        message: budgetValidationMessages.itemServiceTypeRequired,
+      });
+    }
+
+    // A material (SUPPLY) row must reference a registered supply from the
+    // catalog — free-text materials are no longer accepted here.
+    if (
+      data.items.some(
+        (item) => item.itemType === "SUPPLY" && !item.idSupplies.trim(),
+      )
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["items"],
+        message: budgetValidationMessages.itemSupplyRequired,
+      });
+    }
+
+    // Validate uniqueness within the same day, namespaced per item type so a
+    // cargo and a material never collide.
+    const selectedCombos = data.items.map((item) =>
+      item.itemType === "SUPPLY"
+        ? `S:${item.eventDateIndex ?? 0}:${item.idSupplies.trim() || item.description.trim().toLowerCase()}`
+        : `L:${item.eventDateIndex ?? 0}:${item.idPositions.trim()}:${item.gender.trim()}`,
     );
     const uniqueCombos = new Set(selectedCombos);
 

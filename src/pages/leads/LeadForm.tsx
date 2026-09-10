@@ -1,4 +1,5 @@
 import GenericForm from "@/components/organisms/GenericForm";
+import LoadingOverlay from "@/components/molecules/LoadingOverlay";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
 import {
   getLeadFormFields,
@@ -9,18 +10,27 @@ import {
 import { useLeadsContext } from "@/features/leads/context/useLeadsContext";
 import { useToast } from "@/shared/toast/useToast";
 import { leadRoutePaths } from "@/router";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 export default function LeadForm({ mode }: { mode: "create" | "edit" }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { leads, save, saving } = useLeadsContext();
+  const { leads, save, saving, ensureLeadLoaded, loading } = useLeadsContext();
   const { showError } = useToast();
   const { form, editing, errors, setForm, submit } = useLeadForm({
     mode,
     id,
     leads,
   });
+
+  useEffect(() => {
+    if (mode === "edit" && id) {
+      void ensureLeadLoaded(id);
+    }
+  }, [mode, id, ensureLeadLoaded]);
+
+  const isLoadingLeadForEdit = mode === "edit" && !editing && loading;
 
   async function handleSave(values: LeadFormValues) {
     const result = submit(values);
@@ -46,6 +56,7 @@ export default function LeadForm({ mode }: { mode: "create" | "edit" }) {
       }
       description="Mantenha os dados comerciais organizados antes da conversão em orçamento."
     >
+      <LoadingOverlay open={isLoadingLeadForEdit} label="Carregando lead..." />
       <GenericForm<LeadFormValues>
         fields={getLeadFormFields(form, { isEditing: mode === "edit" })}
         values={form}

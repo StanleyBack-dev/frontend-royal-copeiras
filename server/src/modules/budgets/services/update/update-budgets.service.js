@@ -37,8 +37,12 @@ export class UpdateBudgetsService {
             sentAt
             items {
               idBudgetItems
+              itemType
               idPositions
               position
+              idSupplies
+              supply
+              unit
               description
               quantity
               unitPrice
@@ -46,6 +50,7 @@ export class UpdateBudgetsService {
               notes
               sortOrder
               eventDateIndex
+              serviceGender
               createdAt
               updatedAt
             }

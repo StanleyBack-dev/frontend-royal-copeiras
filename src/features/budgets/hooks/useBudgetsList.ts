@@ -8,10 +8,12 @@ export function useBudgetsList({
   budgets,
   leads,
   contracts,
+  onDuplicateBudget,
 }: {
   budgets: Budget[];
   leads: Lead[];
   contracts?: Contract[];
+  onDuplicateBudget?: (budget: Budget) => void;
 }) {
   const [search, setSearch] = useState("");
 
@@ -61,8 +63,13 @@ export function useBudgetsList({
   );
 
   const columns = useMemo(
-    () => getBudgetTableColumns(resolveLeadName, resolveContract),
-    [resolveLeadName, resolveContract],
+    () =>
+      getBudgetTableColumns(
+        resolveLeadName,
+        resolveContract,
+        onDuplicateBudget,
+      ),
+    [resolveLeadName, resolveContract, onDuplicateBudget],
   );
 
   return {

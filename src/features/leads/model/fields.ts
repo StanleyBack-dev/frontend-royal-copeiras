@@ -1,9 +1,12 @@
 import type { FormField } from "../../../components/organisms/GenericForm";
 import { leadSourceOptions } from "../../../api/leads/schema";
+import { BRAZILIAN_STATE_OPTIONS } from "../../../shared/constants/brazilian-states";
 import {
   LEAD_ADDRESS_CITY_MAX_LENGTH,
-  LEAD_ADDRESS_MAX_LENGTH,
-  LEAD_ADDRESS_STATE_LENGTH,
+  LEAD_ADDRESS_COMPLEMENT_MAX_LENGTH,
+  LEAD_ADDRESS_NEIGHBORHOOD_MAX_LENGTH,
+  LEAD_ADDRESS_NUMBER_MAX_LENGTH,
+  LEAD_ADDRESS_STREET_MAX_LENGTH,
   LEAD_ADDRESS_ZIP_CODE_MASK_LENGTH,
   LEAD_CNPJ_MASK_LENGTH,
   LEAD_CPF_MASK_LENGTH,
@@ -85,10 +88,42 @@ export function getLeadFormFields(
           },
         ]),
     {
-      name: "address",
-      label: leadUiCopy.form.labels.address,
-      placeholder: leadUiCopy.form.placeholders.address,
-      maxLength: LEAD_ADDRESS_MAX_LENGTH,
+      name: "addressZipCode",
+      label: leadUiCopy.form.labels.addressZipCode,
+      placeholder: leadUiCopy.form.placeholders.addressZipCode,
+      maxLength: LEAD_ADDRESS_ZIP_CODE_MASK_LENGTH,
+      inputMode: "numeric",
+    },
+    {
+      name: "addressStreet",
+      label: leadUiCopy.form.labels.addressStreet,
+      placeholder: leadUiCopy.form.placeholders.addressStreet,
+      maxLength: LEAD_ADDRESS_STREET_MAX_LENGTH,
+      colSpan: 2,
+    },
+    {
+      name: "addressNumber",
+      label: leadUiCopy.form.labels.addressNumber,
+      placeholder: leadUiCopy.form.placeholders.addressNumber,
+      maxLength: LEAD_ADDRESS_NUMBER_MAX_LENGTH,
+      disabled: values.addressNoNumber,
+    },
+    {
+      name: "addressNoNumber",
+      label: leadUiCopy.form.labels.addressNoNumber,
+      type: "checkbox",
+    },
+    {
+      name: "addressComplement",
+      label: leadUiCopy.form.labels.addressComplement,
+      placeholder: leadUiCopy.form.placeholders.addressComplement,
+      maxLength: LEAD_ADDRESS_COMPLEMENT_MAX_LENGTH,
+    },
+    {
+      name: "addressNeighborhood",
+      label: leadUiCopy.form.labels.addressNeighborhood,
+      placeholder: leadUiCopy.form.placeholders.addressNeighborhood,
+      maxLength: LEAD_ADDRESS_NEIGHBORHOOD_MAX_LENGTH,
       colSpan: 2,
     },
     {
@@ -100,14 +135,14 @@ export function getLeadFormFields(
     {
       name: "addressState",
       label: leadUiCopy.form.labels.addressState,
-      placeholder: leadUiCopy.form.placeholders.addressState,
-      maxLength: LEAD_ADDRESS_STATE_LENGTH,
-    },
-    {
-      name: "addressZipCode",
-      label: leadUiCopy.form.labels.addressZipCode,
-      placeholder: leadUiCopy.form.placeholders.addressZipCode,
-      maxLength: LEAD_ADDRESS_ZIP_CODE_MASK_LENGTH,
+      as: "select",
+      options: [
+        { value: "", label: "Selecione a UF" },
+        ...BRAZILIAN_STATE_OPTIONS.map((option) => ({
+          value: option.value,
+          label: option.label,
+        })),
+      ],
     },
     {
       name: "contactType",

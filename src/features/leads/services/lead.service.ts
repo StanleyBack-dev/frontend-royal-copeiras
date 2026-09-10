@@ -1,5 +1,6 @@
 import { createLead } from "../../../api/leads/methods/create";
 import {
+  getLeadById,
   getLeads,
   type LeadListQueryParams,
 } from "../../../api/leads/methods/get";
@@ -46,6 +47,24 @@ export async function fetchLeads(
       hasNextPage: response.hasNextPage,
     },
   };
+}
+
+// Single-lead fetch used when opening a lead for edit that is not on the
+// currently loaded (paginated/filtered) list page.
+export async function fetchLeadById(id: string): Promise<Lead | null> {
+  const response = await getLeadById(id);
+
+  if (!response) {
+    return null;
+  }
+
+  const parsed = LeadSchema.safeParse(response);
+
+  if (!parsed.success) {
+    throw new Error(leadUiCopy.errors.invalidLeadResponse);
+  }
+
+  return parsed.data;
 }
 
 export async function saveLead({

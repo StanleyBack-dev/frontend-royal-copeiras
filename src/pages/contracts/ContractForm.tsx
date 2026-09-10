@@ -17,6 +17,7 @@ import ManagementPanelTemplate from "@/components/templates/management/Managemen
 import { useAuthSession } from "@/features/auth";
 import { contractUiCopy, useContractPdfActions } from "@/features/contracts";
 import { useContractsContext } from "@/features/contracts/context/useContractsContext";
+import { fetchContracts } from "@/features/contracts/services/contract.service";
 import {
   budgetRoutePaths,
   contractRoutePaths,
@@ -25,6 +26,10 @@ import {
 import { getEvents } from "@/api/events/methods";
 import { useToast } from "@/shared/toast/useToast";
 import { type Budget, type BudgetItem } from "@/api/budgets/schema";
+import {
+  isFeminineSupplyUnit,
+  pluralizeSupplyUnit,
+} from "@/features/supplies/model/units";
 import {
   inferBudgetServiceType,
   getServiceLabels,
@@ -362,18 +367,36 @@ function buildDefaultContractBody(
   const totalAmount =
     typeof budget?.totalAmount === "number" ? budget.totalAmount : 0;
   const totalAmountLabel = formatCurrencyExtended(totalAmount);
-  const displacementFee = (budget?.displacementFee || []).reduce(
-    (sum, value) => sum + (typeof value === "number" ? value : 0),
+  const displacementPerDay = (budget?.displacementFee || []).map((value) =>
+    typeof value === "number" ? value : 0,
+  );
+  const displacementFee = displacementPerDay.reduce(
+    (sum, value) => sum + value,
     0,
   );
   const displacementFeeLabel = formatCurrencyExtended(displacementFee);
+  const displacementPerDayParts = displacementPerDay
+    .map((value, index) => ({ value, day: index + 1 }))
+    .filter((entry) => entry.value > 0)
+    .map(
+      (entry) =>
+        `${formatCurrencyExtended(entry.value)} referente ao ${entry.day}º dia`,
+    );
+  const displacementValueText =
+    displacementPerDayParts.length > 1
+      ? `no valor total de ${displacementFeeLabel}, sendo ${displacementPerDayParts.join(
+          ", ",
+        )}`
+      : `no valor de ${displacementFeeLabel}`;
   const advancePercentage =
     typeof budget?.advancePercentage === "number"
       ? budget.advancePercentage
       : 30;
 
-  // build services block: one line per item with quantity, service label and description
-  const items = budget?.items || [];
+  // Staffing lines feed Cláusula 1ª and 5.4; material/supply lines feed 3.2.
+  const allItems = budget?.items || [];
+  const items = allItems.filter((it) => it.itemType !== "SUPPLY");
+  const supplyItems = allItems.filter((it) => it.itemType === "SUPPLY");
 
   const buildItemLine = (it: BudgetItem) => {
     const qty =
@@ -410,7 +433,7 @@ function buildDefaultContractBody(
 
   const displacementClause =
     displacementFee > 0
-      ? `\n1.4. O presente contrato inclui uma taxa de deslocamento no valor de ${displacementFeeLabel}, referente ao deslocamento da equipe ao local do evento, conforme acordado entre as partes.`
+      ? `\n1.4. O presente contrato inclui uma taxa de deslocamento ${displacementValueText}, referente ao deslocamento da equipe ao local do evento, conforme acordado entre as partes.`
       : "";
 
   function numberToPtWords(
@@ -559,7 +582,31 @@ function buildDefaultContractBody(
 
   const penaltyClause = `\n5.5. Em caso de descumprimento, pela CONTRATADA, das obrigações previstas nas Cláusulas 5.1 a 5.3 (pontualidade, qualidade e adequação da equipe, fornecimento dos materiais previstos na Cláusula 3ª), a CONTRATADA sujeitar-se-á à multa de 10% (dez por cento) sobre o valor total do contrato, sem prejuízo do direito da CONTRATANTE de exigir o cumprimento da obrigação ou de rescindir o contrato, bem como de pleitear indenização por perdas e danos comprovados.`;
 
-  return `CLÁUSULA 1ª - SERVIÇOS CONTRATADOS:\n\n1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada, consistentes na disponibilização de:\n${servicesBlock}\n1.2. ${durationClauseText}\n1.3. O evento está previsto para ocorrer ${eventDatesText}, ${eventScheduleText}, ${guestCountLabel ? `com previsão de ${guestCountLabel},` : ""} no local ${eventLocationText}.${displacementClause}\n\nCLÁUSULA 2ª - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}${displacementFee > 0 ? `, sendo ${displacementFeeLabel} referente à taxa de deslocamento` : ""}.\n2.2. O pagamento deverá ser realizado à vista, via pix (${paymentReference}) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n2.3. Caso a prestação dos serviços ultrapasse o horário previamente acordado, será necessário contratar horas adicionais, no valor de R$ 90,00 (noventa reais) por hora extra, por profissional.\n\nCLÁUSULA 3ª - DOS MATERIAIS DE LIMPEZA:\n\n3.1. A contratada se responsabiliza por disponibilizar, para a adequada execução dos serviços durante o evento, os seguintes materiais de limpeza: desinfetante, aromatizante de ambiente (cheirinho de banheiro), pano de chão, rodo, vassoura, pá de lixo, sacos de lixo, luvas e álcool.\n3.2. Caso o contratante deseje a inclusão de papel toalha e papel higiênico, este valor será cobrado à parte e adicionado ao valor total do serviço. Ressalta-se que os materiais mencionados acima serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.\n\nCLÁUSULA 4ª - RESPONSABILIDADES DO CONTRATANTE:\n\n4.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n4.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLÁUSULA 5ª - RESPONSABILIDADES DA CONTRATADA:\n\n5.1. A ${tradeName} compromete-se a cumprir rigorosamente os horários acordados para a prestação dos serviços, garantindo a pontualidade da equipe designada para o evento.\n5.2. A ${tradeName} compromete-se a prestar os serviços contratados com equipe qualificada, assegurando a adequação técnica e comportamental dos profissionais designados.\n5.3. A contratada se responsabiliza pelo fornecimento dos materiais previstos na Cláusula 3ª, necessários à adequada execução dos serviços contratados.${replacementClause}${penaltyClause}\n\nCLÁUSULA 6ª - CANCELAMENTO E REEMBOLSO:\n\n6.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n6.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n6.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLÁUSULA 7ª - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n7.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n7.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da ${tradeName}.\n7.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLÁUSULA 8ª - VIGÊNCIA:\n\n8.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLÁUSULA 9ª - CONDIÇÕES GERAIS:\n\n9.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe ${tradeName}`;
+  // Cláusula 3.2 — mirror do backend: quando o orçamento tem materiais, lista-os
+  // com a frase padrão "qtd unidade de nome"; senão mantém o texto genérico.
+  const buildSupplyLine = (it: BudgetItem) => {
+    const qty =
+      Number.isFinite(it.quantity) && it.quantity > 0 ? it.quantity : 1;
+    const name = String(it.supply || it.description || "material")
+      .trim()
+      .toLowerCase();
+    const rawUnit = String(it.unit || "unidade").trim();
+    const qtyWords = numberToPtWords(
+      qty,
+      isFeminineSupplyUnit(rawUnit) ? "feminine" : "masculine",
+    );
+    return `${qty} (${qtyWords}) ${pluralizeSupplyUnit(rawUnit, qty)} de ${name}`;
+  };
+
+  const suppliesClause = supplyItems.length
+    ? `3.2. A CONTRATADA fornecerá ainda os seguintes materiais, cujos valores já estão incluídos no valor total deste contrato: ${supplyItems
+        .map((it) => buildSupplyLine(it))
+        .join(
+          "; ",
+        )}. Ressalta-se que os materiais mencionados serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.`
+    : `3.2. Caso o contratante deseje a inclusão de papel toalha e papel higiênico, este valor será cobrado à parte e adicionado ao valor total do serviço. Ressalta-se que os materiais mencionados acima serão utilizados exclusivamente para a manutenção da organização, higiene e limpeza dos ambientes relacionados ao serviço contratado.`;
+
+  return `CLÁUSULA 1ª - SERVIÇOS CONTRATADOS:\n\n1.1. O presente contrato tem por objeto a prestação de serviços por parte da contratada, consistentes na disponibilização de:\n${servicesBlock}\n1.2. ${durationClauseText}\n1.3. O evento está previsto para ocorrer ${eventDatesText}, ${eventScheduleText}, ${guestCountLabel ? `com previsão de ${guestCountLabel},` : ""} no local ${eventLocationText}.${displacementClause}\n\nCLÁUSULA 2ª - VALOR DO SERVIÇO E FORMA DE PAGAMENTO:\n\n2.1. O valor dos serviços prestados é de ${totalAmountLabel}${displacementFee > 0 ? `, sendo ${displacementFeeLabel} referente à taxa de deslocamento` : ""}.\n2.2. O pagamento deverá ser realizado à vista, via pix (${paymentReference}) ou dinheiro. Sendo ${advancePercentage}% do valor antes do evento para confirmação do mesmo e ${100 - advancePercentage}% após o evento. Alternativamente, o contratante poderá optar pelo pagamento integral do valor total à vista, no ato da contratação.\n2.3. Caso a prestação dos serviços ultrapasse o horário previamente acordado, será necessário contratar horas adicionais, no valor de R$ 90,00 (noventa reais) por hora extra, por profissional.\n\nCLÁUSULA 3ª - DOS MATERIAIS DE LIMPEZA:\n\n3.1. A contratada se responsabiliza por disponibilizar, para a adequada execução dos serviços durante o evento, os seguintes materiais de limpeza: desinfetante, aromatizante de ambiente (cheirinho de banheiro), pano de chão, rodo, vassoura, pá de lixo, sacos de lixo, luvas e álcool.\n${suppliesClause}\n\nCLÁUSULA 4ª - RESPONSABILIDADES DO CONTRATANTE:\n\n4.1. O contratante deve informar, com antecedência mínima de 5 dias, quaisquer particularidades do evento que possam impactar a prestação dos serviços, como número de convidados, horários e protocolos específicos a serem seguidos.\n4.2. Caso haja necessidade de serviços adicionais não previstos no contrato, o contratante deverá comunicar a empresa com antecedência e arcar com os custos extras.\n\nCLÁUSULA 5ª - RESPONSABILIDADES DA CONTRATADA:\n\n5.1. A ${tradeName} compromete-se a cumprir rigorosamente os horários acordados para a prestação dos serviços, garantindo a pontualidade da equipe designada para o evento.\n5.2. A ${tradeName} compromete-se a prestar os serviços contratados com equipe qualificada, assegurando a adequação técnica e comportamental dos profissionais designados.\n5.3. A contratada se responsabiliza pelo fornecimento dos materiais previstos na Cláusula 3ª, necessários à adequada execução dos serviços contratados.${replacementClause}${penaltyClause}\n\nCLÁUSULA 6ª - CANCELAMENTO E REEMBOLSO:\n\n6.1. O contratante poderá cancelar o serviço a qualquer momento, desde que o faça com pelo menos 5 dias de antecedência em relação à data do evento.\n6.2. Caso o cancelamento ocorra antes do prazo de 5 dias, o valor pago a título de sinal será devolvido ao contratante de forma integral pela contratada.\n6.3. Se o cancelamento for realizado após o prazo de 5 dias, o contratante não terá direito ao reembolso do sinal já pago.\n\nCLÁUSULA 7ª - ALTERAÇÕES CONTRATUAIS (ADENDOS E ADITIVOS):\n\n7.1. Este contrato poderá sofrer alterações mediante comum acordo entre as partes, formalizado por meio de adendos ou aditivos contratuais assinados por ambas as partes.\n7.2. As alterações devem ser solicitadas com antecedência mínima de 5 dias antes da data do evento e estarão sujeitas à aprovação da ${tradeName}.\n7.3. Qualquer alteração de valores, condições ou quantidade de profissionais será formalizada e anexada ao presente contrato como adendo ou aditivo, conforme necessário.\n\nCLÁUSULA 8ª - VIGÊNCIA:\n\n8.1. O presente contrato tem início na data de sua assinatura e terá vigência até a conclusão de todas as obrigações previstas neste instrumento, podendo ser prorrogado por acordo entre as partes.\n\nCLÁUSULA 9ª - CONDIÇÕES GERAIS:\n\n9.1. O contratante declara que todas as suas dúvidas sobre os serviços foram devidamente esclarecidas antes da assinatura deste contrato.\n\nDISPOSIÇÕES FINAIS:\n\nPara quaisquer dúvidas ou maiores esclarecimentos, estamos à disposição.\nAtenciosamente,\nEquipe ${tradeName}`;
 }
 
 function buildDefaultFormValues(initialBudgetId?: string): ContractFormValues {
@@ -598,6 +645,24 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const selectedBudget = useMemo(
     () => budgets.find((budget) => budget.idBudgets === form.idBudgets) || null,
     [budgets, form.idBudgets],
+  );
+
+  // Only approved budgets that don't already have a contract can back a new
+  // one — keeping the currently-selected id visible so the edit view (and a
+  // ?budgetId deep-link) still renders its option.
+  const budgetsWithContract = useMemo(
+    () => new Set(contracts.map((contract) => contract.idBudgets)),
+    [contracts],
+  );
+  const selectableBudgets = useMemo(
+    () =>
+      budgets.filter(
+        (budget) =>
+          budget.idBudgets === form.idBudgets ||
+          (budget.status === "approved" &&
+            !budgetsWithContract.has(budget.idBudgets)),
+      ),
+    [budgets, budgetsWithContract, form.idBudgets],
   );
 
   const selectedLead = useMemo(() => {
@@ -668,6 +733,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
   const [confirmCancelContract, setConfirmCancelContract] = useState(false);
   const [cancellingContract, setCancellingContract] = useState(false);
   const [confirmRevertToDraft, setConfirmRevertToDraft] = useState(false);
+  const [confirmDuplicateBudget, setConfirmDuplicateBudget] = useState(false);
   const [revertingToDraft, setRevertingToDraft] = useState(false);
 
   useEffect(() => {
@@ -686,6 +752,23 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     setForm(buildDefaultFormValues(initialBudgetId));
     setErrors({});
   }, [editing, initialBudgetId, mode]);
+
+  // If we land on "create a contract" for a budget that already has one, send
+  // the user straight to the existing contract instead of letting them submit
+  // into an "orçamento já vinculado" error.
+  useEffect(() => {
+    if (mode !== "create" || !initialBudgetId) {
+      return;
+    }
+    const existing = contracts.find(
+      (contract) => contract.idBudgets === initialBudgetId,
+    );
+    if (existing) {
+      navigate(contractRoutePaths.edit(existing.idContracts), {
+        replace: true,
+      });
+    }
+  }, [mode, initialBudgetId, contracts, navigate]);
 
   const [linkedEventId, setLinkedEventId] = useState<string | undefined>();
 
@@ -779,6 +862,24 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
 
     const savedContract = await save(payload, editing);
     if (!savedContract) {
+      // The most common create failure is "orçamento já vinculado" — recover by
+      // fetching the contract that owns this budget and opening it.
+      if (mode === "create" && form.idBudgets) {
+        try {
+          const owning = await fetchContracts({
+            page: 1,
+            limit: 1,
+            idBudgets: form.idBudgets,
+          });
+          if (owning.items[0]) {
+            navigate(contractRoutePaths.edit(owning.items[0].idContracts), {
+              replace: true,
+            });
+          }
+        } catch {
+          // keep the error toast already shown by `save`
+        }
+      }
       return;
     }
 
@@ -1113,10 +1214,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
     key: "duplicate-budget",
     label: "Duplicar orçamento",
     icon: <Copy size={18} />,
-    onClick: () => {
-      if (!editing?.idBudgets) return;
-      navigate(`${budgetRoutePaths.create}?duplicateFrom=${editing.idBudgets}`);
-    },
+    onClick: () => setConfirmDuplicateBudget(true),
     disabled: !editing?.idBudgets,
     title:
       "Cria um novo orçamento em rascunho com os mesmos dados deste, pronto para ajustar",
@@ -1291,6 +1389,21 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
       ) : null}
 
       <ConfirmDialog
+        open={confirmDuplicateBudget}
+        title="Duplicar orçamento"
+        description="Criar um novo orçamento (rascunho) com os mesmos dados do orçamento deste contrato? Você poderá ajustá-lo antes de salvar."
+        confirmLabel="Duplicar"
+        onConfirm={() => {
+          setConfirmDuplicateBudget(false);
+          if (editing?.idBudgets) {
+            navigate(
+              `${budgetRoutePaths.create}?duplicateFrom=${editing.idBudgets}`,
+            );
+          }
+        }}
+        onCancel={() => setConfirmDuplicateBudget(false)}
+      />
+      <ConfirmDialog
         open={confirmRevertToDraft}
         title="Voltar ao rascunho"
         description={
@@ -1393,7 +1506,7 @@ export default function ContractForm({ mode }: { mode: "create" | "edit" }) {
           error={errors.idBudgets}
         >
           <option value="">Selecione</option>
-          {budgets.map((budget) => {
+          {selectableBudgets.map((budget) => {
             const lead = leads.find((l) => l.idLeads === budget.idLeads);
             return (
               <option key={budget.idBudgets} value={budget.idBudgets}>

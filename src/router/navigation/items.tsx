@@ -11,6 +11,7 @@ import {
   Target,
   Calculator,
   Layers,
+  Package,
   Link2,
   User,
   Shield,
@@ -41,6 +42,7 @@ export const primaryNavigationItems: NavigationItem[] = [
   { id: "clients", label: "Clientes", icon: <ClientsIcon size={20} /> },
   { id: "employees", label: "Funcionários", icon: <EmployeesIcon size={20} /> },
   { id: "positions", label: "Cargos", icon: <Layers size={20} /> },
+  { id: "supplies", label: "Materiais", icon: <Package size={20} /> },
   { id: "payments", label: "Pagamentos", icon: <CreditCard size={20} /> },
 ];
 

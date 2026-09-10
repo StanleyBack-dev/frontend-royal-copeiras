@@ -8,6 +8,7 @@ export {
   customerRoutePaths,
   employeeRoutePaths,
   positionRoutePaths,
+  supplyRoutePaths,
   leadRoutePaths,
   routePaths,
   utilityRoutePaths,

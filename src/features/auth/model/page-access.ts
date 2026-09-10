@@ -12,6 +12,7 @@ const pageAccessByView: Partial<Record<ActiveView, PageAccessKey>> = {
   clients: "CLIENTS",
   employees: "EMPLOYEES",
   positions: "POSITIONS",
+  supplies: "SUPPLIES",
   users: "USERS",
   events: "EVENTS",
   publicIntake: "PUBLIC_INTAKE",

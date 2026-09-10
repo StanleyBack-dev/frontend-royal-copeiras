@@ -4,6 +4,7 @@ import type { CreateLeadPayload, Lead } from "../../api/leads/schema";
 import type { PaginationMeta } from "../../api/shared/contracts";
 import { getHttpErrorMessage } from "../../api/shared/http-error";
 import {
+  fetchLeadById,
   fetchLeads,
   saveLead,
   type LeadListQueryParams,
@@ -25,6 +26,7 @@ export interface UseLeadsResult {
   pagination: PaginationMeta;
   filters: LeadFilters;
   load: (params?: LeadListQueryParams) => Promise<void>;
+  ensureLeadLoaded: (id: string) => Promise<void>;
   setPage: (page: number) => Promise<void>;
   setLimit: (limit: number) => Promise<void>;
   setFilters: (filters: Partial<LeadFilters>) => Promise<void>;
@@ -85,11 +87,17 @@ export function useLeads(): UseLeadsResult {
     useState<PaginationMeta>(EMPTY_PAGINATION);
   const paginationRef = useRef<PaginationMeta>(EMPTY_PAGINATION);
   const prefetchInFlightRef = useRef<Set<string>>(new Set());
+  const leadsRef = useRef<Lead[]>([]);
+  const ensureInFlightRef = useRef<Set<string>>(new Set());
   const { showError, showSuccess } = useToast();
 
   useEffect(() => {
     paginationRef.current = pagination;
   }, [pagination]);
+
+  useEffect(() => {
+    leadsRef.current = leads;
+  }, [leads]);
 
   const load = useCallback(
     async (params: LeadListQueryParams = {}) => {
@@ -117,6 +125,47 @@ export function useLeads(): UseLeadsResult {
         setError(message);
         showError(leadUiCopy.errors.loadLeadsFallback, message);
       } finally {
+        setLoading(false);
+      }
+    },
+    [showError],
+  );
+
+  // Guarantees a specific lead is present in `leads` even when it falls outside
+  // the current list page/filter — the edit form derives its values from this
+  // array, so without this a direct visit to /leads/:id/edit renders blank.
+  const ensureLeadLoaded = useCallback(
+    async (id: string) => {
+      if (!id || leadsRef.current.some((lead) => lead.idLeads === id)) {
+        return;
+      }
+
+      if (ensureInFlightRef.current.has(id)) {
+        return;
+      }
+
+      ensureInFlightRef.current.add(id);
+      setLoading(true);
+      setError(null);
+
+      try {
+        const lead = await fetchLeadById(id);
+        if (lead) {
+          setLeads((current) =>
+            current.some((existing) => existing.idLeads === lead.idLeads)
+              ? current
+              : [lead, ...current],
+          );
+        }
+      } catch (err) {
+        const message = getHttpErrorMessage(
+          err,
+          leadUiCopy.errors.loadLeadsFallback,
+        );
+        setError(message);
+        showError(leadUiCopy.errors.loadLeadsFallback, message);
+      } finally {
+        ensureInFlightRef.current.delete(id);
         setLoading(false);
       }
     },
@@ -295,6 +344,7 @@ export function useLeads(): UseLeadsResult {
     pagination,
     filters,
     load,
+    ensureLeadLoaded,
     setPage,
     setLimit,
     setFilters,

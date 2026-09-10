@@ -7,6 +7,7 @@ import GenericForm from "@/components/organisms/GenericForm";
 import Input from "@/components/atoms/Input";
 import Select from "@/components/atoms/Select";
 import ManagementPanelTemplate from "@/components/templates/management/ManagementPanelTemplate";
+import ConfirmDialog from "@/components/molecules/ConfirmDialog";
 import StatusBadge from "@/components/atoms/StatusBadge";
 import {
   getBudgetStatusLabel,
@@ -35,7 +36,9 @@ import { formatDateTimeDisplay, getSentViaLabel } from "@/utils/format";
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { fetchContracts } from "@/features/contracts/services/contract.service";
 import { fetchPositions } from "@/features/positions/services/position.service";
+import { fetchSupplies } from "@/features/supplies/services/supply.service";
 import type { Position } from "@/api/positions/schema";
+import type { Supply } from "@/api/supplies/schema";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { updateBudget } from "@/api/budgets/methods";
 import { getHttpErrorMessage } from "@/api/shared/http-error";
@@ -64,6 +67,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   const { showError, showSuccess } = useToast();
   const { session } = useAuthSession();
   const [positions, setPositions] = useState<Position[]>([]);
+  const [supplies, setSupplies] = useState<Supply[]>([]);
   const initialLeadId = searchParams.get("leadId") || undefined;
   const duplicateFromId = searchParams.get("duplicateFrom") || undefined;
   const {
@@ -73,6 +77,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     errors,
     setForm,
     addItem,
+    addSupplyItem,
     removeItem,
     updateItem,
     totals,
@@ -86,6 +91,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
   });
 
   const [hasContract, setHasContract] = useState(false);
+  const [confirmDuplicate, setConfirmDuplicate] = useState(false);
   const [openSteps, setOpenSteps] = useState({ details: true, event: true });
 
   const toggleStep = (step: keyof typeof openSteps) =>
@@ -183,6 +189,22 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
         }
 
         setPositions([]);
+      });
+
+    void fetchSupplies({ page: 1, limit: 200 })
+      .then((result) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setSupplies(result.items);
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        setSupplies([]);
       });
 
     return () => {
@@ -425,10 +447,7 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
     key: "duplicate",
     label: "Duplicar",
     icon: <Copy size={18} />,
-    onClick: () => {
-      if (!editing?.idBudgets) return;
-      navigate(`${budgetRoutePaths.create}?duplicateFrom=${editing.idBudgets}`);
-    },
+    onClick: () => setConfirmDuplicate(true),
     disabled: saving,
     title: "Criar um novo orçamento em rascunho a partir deste",
   };
@@ -1001,7 +1020,9 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
                         <BudgetItemsEditor
                           items={dayItems.map(({ item }) => item)}
                           positions={positions}
+                          supplies={supplies}
                           onAddItem={() => addItem(index)}
+                          onAddSupplyItem={() => addSupplyItem(index)}
                           onRemoveItem={(localIndex) =>
                             removeItem(dayItems[localIndex].itemIndex)
                           }
@@ -1136,6 +1157,22 @@ export default function BudgetForm({ mode }: { mode: "create" | "edit" }) {
           </div>
         </div>
       </GenericForm>
+
+      <ConfirmDialog
+        open={confirmDuplicate}
+        title="Duplicar orçamento"
+        description="Criar um novo orçamento (rascunho) a partir deste? Os dados serão copiados e você poderá ajustá-los antes de salvar."
+        confirmLabel="Duplicar"
+        onCancel={() => setConfirmDuplicate(false)}
+        onConfirm={() => {
+          setConfirmDuplicate(false);
+          if (editing?.idBudgets) {
+            navigate(
+              `${budgetRoutePaths.create}?duplicateFrom=${editing.idBudgets}`,
+            );
+          }
+        }}
+      />
     </ManagementPanelTemplate>
   );
 }

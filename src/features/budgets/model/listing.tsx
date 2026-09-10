@@ -51,6 +51,7 @@ export function getBudgetTableColumns(
         idBudgets?: string,
       ) => { idContracts?: string; contractNumber?: string } | undefined)
     | undefined,
+  onDuplicateBudget?: (budget: Budget) => void,
 ): DataTableColumn<Budget>[] {
   return [
     {
@@ -66,14 +67,15 @@ export function getBudgetTableColumns(
           >
             <EditIcon size={18} />
           </Link>
-          <Link
-            to={`${budgetRoutePaths.create}?duplicateFrom=${budget.idBudgets}`}
+          <button
+            type="button"
+            onClick={() => onDuplicateBudget?.(budget)}
             title="Duplicar orçamento"
             className="hover:text-yellow-700"
             style={{ display: "flex", alignItems: "center" }}
           >
             <CopyIcon size={18} />
-          </Link>
+          </button>
         </div>
       ),
     },

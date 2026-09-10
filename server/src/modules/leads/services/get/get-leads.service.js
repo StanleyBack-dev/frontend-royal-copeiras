@@ -25,6 +25,10 @@ export class GetLeadsService {
             document
             legalName
             address
+            addressStreet
+            addressNumber
+            addressComplement
+            addressNeighborhood
             addressCity
             addressState
             addressZipCode

@@ -50,6 +50,13 @@ export function formatBrazilianDocument(value: string): string {
   return formatCNPJ(digits);
 }
 
+// Formata CEP brasileiro (8 dígitos → NNNNN-NNN)
+export function formatCEP(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
 export function formatDate(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 8);
   if (!digits) return "";
