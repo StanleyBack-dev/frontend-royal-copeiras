@@ -11,6 +11,8 @@ import {
 export const employeeUiCopy = {
   form: {
     createTitle: "Novo Funcionário",
+    createInlineDescription:
+      "O funcionário fica cadastrado normalmente e já é selecionado nesta vaga.",
     editTitle: "Editar Funcionário",
     invalidData: "Dados do formulário inválidos",
     labels: {

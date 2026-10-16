@@ -91,7 +91,7 @@ export default function Dashboard() {
     () => [
       { label: "Líquido", value: financials.netRevenue, color: "#059669" },
       {
-        label: "Custo com equipe",
+        label: "Custos dos eventos",
         value: financials.staffCost,
         color: "#e11d48",
       },
@@ -163,9 +163,9 @@ export default function Dashboard() {
           {!loading ? <TrendBadge trend={trends.grossRevenue} /> : null}
         </StatCard>
         <StatCard
-          label="Custo com equipe"
+          label="Custos dos eventos"
           value={loading ? "…" : formatCurrency(financials.staffCost)}
-          sub="Pago aos funcionários alocados"
+          sub="Equipe, horas extras e gastos extras"
           icon={<Users size={18} />}
           color="#e11d48"
         >

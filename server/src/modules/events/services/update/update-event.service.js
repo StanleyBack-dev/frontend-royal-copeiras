@@ -13,6 +13,11 @@ export class UpdateEventService {
             idEvents
             status
             overtimeMinutes
+            overtimeHourlyRate
+            extraExpenses {
+              category
+              amount
+            }
             updatedAt
           }
         }
