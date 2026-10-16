@@ -36,6 +36,8 @@ export interface GenericFormProps<T> {
   contentAfterFieldName?: string;
   contentAfterField?: ReactNode;
   children?: ReactNode;
+  /** Renders without the card frame (border, shadow, padding), e.g. inside a modal. */
+  bare?: boolean;
 }
 
 export default function GenericForm<T extends object>({
@@ -50,6 +52,7 @@ export default function GenericForm<T extends object>({
   contentAfterFieldName,
   contentAfterField,
   children,
+  bare = false,
 }: GenericFormProps<T>) {
   const valuesRecord = values as Record<string, unknown>;
   const errorsRecord = (errors ?? {}) as Record<string, string | undefined>;
@@ -73,8 +76,12 @@ export default function GenericForm<T extends object>({
 
   return (
     <form
-      className="w-full rounded-2xl border bg-white p-4 shadow-2xl sm:p-6 lg:p-8"
-      style={{ borderColor: "#e8d5c9" }}
+      className={
+        bare
+          ? "w-full"
+          : "w-full rounded-2xl border bg-white p-4 shadow-2xl sm:p-6 lg:p-8"
+      }
+      style={bare ? undefined : { borderColor: "#e8d5c9" }}
       onSubmit={onSubmit}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -31,7 +31,14 @@ export class GetEventsService {
             displacementFee
             discountTotal
             overtimeMinutes
+            overtimeHourlyRate
             overtimeAmount
+            overtimeCost
+            extraExpenses {
+              category
+              amount
+            }
+            extraExpensesTotal
             serviceBreakdown {
               idBudgetItems
               serviceDescription
@@ -52,6 +59,7 @@ export class GetEventsService {
               idEmployees
               allocationIndex
               employeePayment
+              overtimeHourlyPayment
               isActive
               budgetItemDescription
               budgetItemQuantity

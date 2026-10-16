@@ -12,7 +12,11 @@ import {
   type EventItem,
 } from "../model/listing";
 import { eventUiCopy } from "../model/messages";
-import type { EventStatus } from "../../../api/events/schema";
+import type {
+  EventStatus,
+  UpdateEventAssignmentPayload,
+  UpdateEventPayload,
+} from "../../../api/events/schema";
 import { useNavigate } from "react-router-dom";
 import { eventRoutePaths } from "../../../router/navigation/paths";
 
@@ -208,7 +212,7 @@ export function useEvents() {
 
   async function handleUpdateAssignment(
     idEventAssignments: string,
-    payload: { idEmployees: string; employeePayment: number },
+    payload: UpdateEventAssignmentPayload,
   ) {
     return handleUpdateAssignments([
       {
@@ -221,7 +225,7 @@ export function useEvents() {
   async function handleUpdateAssignments(
     updates: Array<{
       idEventAssignments: string;
-      payload: { idEmployees: string; employeePayment: number };
+      payload: UpdateEventAssignmentPayload;
     }>,
   ) {
     if (!updates.length) {
@@ -250,10 +254,7 @@ export function useEvents() {
   }
 
   const handleUpdateEvent = useCallback(
-    async (
-      idEvents: string,
-      payload: { overtimeMinutes?: number; status?: EventStatus },
-    ) => {
+    async (idEvents: string, payload: UpdateEventPayload) => {
       try {
         await updateEvent(idEvents, payload);
         showSuccess(

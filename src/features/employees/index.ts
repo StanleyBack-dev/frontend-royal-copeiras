@@ -4,6 +4,7 @@ export {
   EmployeesProviderOutlet,
 } from "./context/EmployeesContext";
 export { useEmployeesContext } from "./context/useEmployeesContext";
+export { default as EmployeeCreateModal } from "./components/EmployeeCreateModal";
 export { useEmployeeForm } from "./hooks/useEmployeeForm";
 export { useEmployeesList } from "./hooks/useEmployeesList";
 export * from "./model/constants";

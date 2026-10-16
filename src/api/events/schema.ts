@@ -15,6 +15,7 @@ export const EventAssignmentSchema = z.object({
   idEmployees: z.string().nullable().optional(),
   allocationIndex: z.number(),
   employeePayment: z.number(),
+  overtimeHourlyPayment: z.number(),
   isActive: z.boolean(),
   budgetItemDescription: z.string().nullable().optional(),
   budgetItemQuantity: z.number().nullable().optional(),
@@ -32,6 +33,24 @@ export const EventServiceBreakdownSchema = z.object({
   totalPrice: z.number(),
   sortOrder: z.number(),
   eventDateIndex: z.number().int().min(0).optional().default(0),
+});
+
+export const eventExtraExpenseCategoryOptions = [
+  "FOOD",
+  "TRANSPORT",
+  "FUEL",
+  "PARKING",
+  "TOLL",
+  "SUPPLIES",
+  "OTHER",
+] as const;
+
+export type EventExtraExpenseCategory =
+  (typeof eventExtraExpenseCategoryOptions)[number];
+
+export const EventExtraExpenseSchema = z.object({
+  category: z.enum(eventExtraExpenseCategoryOptions),
+  amount: z.number(),
 });
 
 export const EventSchema = z.object({
@@ -57,7 +76,11 @@ export const EventSchema = z.object({
   displacementFee: z.number().optional().default(0),
   discountTotal: z.number().optional().default(0),
   overtimeMinutes: z.number().int().min(0).optional().default(0),
+  overtimeHourlyRate: z.number(),
   overtimeAmount: z.number().optional().default(0),
+  overtimeCost: z.number().optional().default(0),
+  extraExpenses: z.array(EventExtraExpenseSchema).optional().default([]),
+  extraExpensesTotal: z.number().optional().default(0),
   serviceBreakdown: z.array(EventServiceBreakdownSchema).optional().default([]),
   totalRevenue: z.number(),
   totalCost: z.number(),
@@ -70,15 +93,19 @@ export const EventSchema = z.object({
 export const UpdateEventAssignmentPayloadSchema = z.object({
   idEmployees: z.string().min(1),
   employeePayment: z.number(),
+  overtimeHourlyPayment: z.number().min(0).optional(),
 });
 
 export const UpdateEventPayloadSchema = z.object({
   overtimeMinutes: z.number().int().min(0).optional(),
+  overtimeHourlyRate: z.number().min(0).optional(),
+  extraExpenses: z.array(EventExtraExpenseSchema).optional(),
   status: z.enum(eventStatusOptions).optional(),
 });
 
 export type Event = z.infer<typeof EventSchema>;
 export type EventAssignment = z.infer<typeof EventAssignmentSchema>;
+export type EventExtraExpense = z.infer<typeof EventExtraExpenseSchema>;
 export type UpdateEventAssignmentPayload = z.infer<
   typeof UpdateEventAssignmentPayloadSchema
 >;

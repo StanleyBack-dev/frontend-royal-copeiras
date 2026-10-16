@@ -16,6 +16,7 @@ export class UpdateEventAssignmentService {
             idEmployees
             allocationIndex
             employeePayment
+            overtimeHourlyPayment
             isActive
             employeeName
             budgetItemDescription
